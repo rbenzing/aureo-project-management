@@ -1,0 +1,117 @@
+# ===============================
+# General Files to Ignore
+# ===============================
+*.log
+*.lock
+*.sqlite
+*.env
+.env.*
+!.env.example
+*.key
+
+# ===============================
+# IDE-Specific Files
+# ===============================
+# PhpStorm / WebStorm
+.idea/
+*.iml
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.settings/
+.project
+.classpath
+
+# NetBeans
+nbproject/
+
+# ===============================
+# PHP-Specific Files
+# ===============================
+# Composer
+/vendor/
+composer.lock
+composer.phar
+
+# Cache and Logs
+cache/
+logs/
+tmp/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+storage/logs/
+
+# Laravel-specific (if applicable)
+bootstrap/cache/*.php
+.env.testing
+
+# ===============================
+# Node.js-Specific Files
+# ===============================
+# Node Modules
+/node_modules/
+package-lock.json
+yarn.lock
+npm-debug.log*
+
+# Build Output
+/public/css/output.css
+/public/js/*.js
+
+# Tailwind CSS
+.tailwindcss/
+tailwind.config.cache
+
+# ===============================
+# Assets and Media
+# ===============================
+# Compiled Assets
+/public/build/
+/public/dist/
+
+# Uploaded Media
+/uploads/
+/storage/app/public/
+
+# ===============================
+# OS-Specific Files
+# ===============================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ===============================
+# Testing and Debugging
+# ===============================
+/phpunit.xml
+/phpunit.xml.dist
+/coverage/
+/report.xml
+
+# ===============================
+# Backup Files
+# ===============================
+*.bak
+*.tmp
+*~
+*.orig
+*.swp
