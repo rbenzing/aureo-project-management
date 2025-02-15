@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the user details
-require_once __DIR__ . '/../controllers/UserController.php';
+require_once __DIR__ . '/../Controllers/UserController.php';
 $controller = new \App\Controllers\UserController();
 $user = (new \App\Models\User())->find($_GET['id']);
 if (!$user) {

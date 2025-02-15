@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the list of projects
-require_once __DIR__ . '/../controllers/ProjectController.php';
+require_once __DIR__ . '/../Controllers/ProjectController.php';
 $controller = new \App\Controllers\ProjectController();
 $projects = (new \App\Models\Project())->getAllPaginated(10); // Fetch first page, 10 items per page
 

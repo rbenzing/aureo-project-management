@@ -2,8 +2,12 @@
 // Start the session
 session_start();
 
-// Include autoloader for classes
+// Include Composer's autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 
 // Define base path
 define('BASE_PATH', __DIR__);
@@ -29,12 +33,15 @@ $route = trim($requestUri, '/') ?: 'login'; // Default to 'login' if no route is
 
 // Route mapping (you can expand this as needed)
 $routes = [
+    '' => ['controller' => 'AuthController', 'method' => 'login'], // Default route
     'login' => ['controller' => 'AuthController', 'method' => 'login'],
     'register' => ['controller' => 'AuthController', 'method' => 'register'],
     'dashboard' => ['controller' => 'DashboardController', 'method' => 'index'],
     'projects' => ['controller' => 'ProjectController', 'method' => 'index'],
     'tasks' => ['controller' => 'TaskController', 'method' => 'index'],
+    'subtasks' => ['controller' => 'SubtaskController', 'method' => 'index'], // Subtasks route
     'users' => ['controller' => 'UsersController', 'method' => 'index'],
+    'roles' => ['controller' => 'RoleController', 'method' => 'index'], // Roles route
     'companies' => ['controller' => 'CompaniesController', 'method' => 'index'],
     'reset-password' => ['controller' => 'AuthController', 'method' => 'resetPassword'],
 ];
@@ -44,9 +51,16 @@ if (array_key_exists($route, $routes)) {
     $controllerName = '\\App\\Controllers\\' . $routes[$route]['controller'];
     $methodName = $routes[$route]['method'];
 
-    // Instantiate the controller and call the method
-    $controller = new $controllerName();
-    $controller->$methodName();
+    // Ensure the controller and method exist
+    if (class_exists($controllerName) && method_exists($controllerName, $methodName)) {
+        // Instantiate the controller and call the method
+        $controller = new $controllerName();
+        $controller->$methodName();
+    } else {
+        // Handle invalid controller or method
+        http_response_code(500);
+        echo 'Internal Server Error: Invalid controller or method.';
+    }
 } else {
     // Handle 404 Not Found
     http_response_code(404);

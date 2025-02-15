@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the list of roles
-require_once __DIR__ . '/../controllers/RoleController.php';
+require_once __DIR__ . '/../Controllers/RoleController.php';
 $controller = new \App\Controllers\RoleController();
 $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 items per page
 

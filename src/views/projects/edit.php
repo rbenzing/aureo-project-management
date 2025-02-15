@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the project details
-require_once __DIR__ . '/../controllers/ProjectController.php';
+require_once __DIR__ . '/../Controllers/ProjectController.php';
 $controller = new \App\Controllers\ProjectController();
 $project = (new \App\Models\Project())->find($_GET['id']);
 if (!$project) {

@@ -7,8 +7,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch data for the dashboard
-require_once __DIR__ . '/../controllers/ProjectController.php';
-require_once __DIR__ . '/../controllers/TaskController.php';
+require_once __DIR__ . '/../Controllers/ProjectController.php';
+require_once __DIR__ . '/../Controllers/TaskController.php';
 
 $projectController = new \App\Controllers\ProjectController();
 $taskController = new \App\Controllers\TaskController();

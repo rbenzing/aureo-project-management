@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../controllers/RoleController.php';
+    require_once __DIR__ . '/../Controllers/RoleController.php';
     $controller = new \App\Controllers\RoleController();
     $controller->create($_POST);
 }

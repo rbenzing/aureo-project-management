@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the list of tasks
-require_once __DIR__ . '/../controllers/TaskController.php';
+require_once __DIR__ . '/../Controllers/TaskController.php';
 $controller = new \App\Controllers\TaskController();
 $tasks = (new \App\Models\Task())->getByUserIdPaginated($_SESSION['user_id'], 10); // Fetch first page, 10 items per page
 

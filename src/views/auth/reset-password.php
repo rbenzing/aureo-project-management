@@ -16,7 +16,7 @@ if (!$user || strtotime($user->reset_password_token_expires_at) < time()) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../controllers/AuthController.php';
+    require_once __DIR__ . '/../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
     $controller->requestPasswordReset($_POST);
 }

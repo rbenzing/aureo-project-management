@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../controllers/TaskController.php';
+    require_once __DIR__ . '/../Controllers/TaskController.php';
     $controller = new \App\Controllers\TaskController();
     $controller->create($_POST);
 }

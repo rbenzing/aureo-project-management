@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the company details
-require_once __DIR__ . '/../controllers/CompanyController.php';
+require_once __DIR__ . '/../Controllers/CompanyController.php';
 $controller = new \App\Controllers\CompanyController();
 $company = (new \App\Models\Company())->find($_GET['id']);
 if (!$company) {

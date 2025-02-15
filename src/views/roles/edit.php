@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the role details
-require_once __DIR__ . '/../controllers/RoleController.php';
+require_once __DIR__ . '/../Controllers/RoleController.php';
 $controller = new \App\Controllers\RoleController();
 $role = (new \App\Models\Role())->find($_GET['id']);
 if (!$role) {
