@@ -1,19 +1,11 @@
 <?php
 namespace App\Core;
 
-use Dotenv\Dotenv;
-
 class Database {
     private static $instance = null;
     private $pdo;
 
     private function __construct() {
-        // Load environment variables if not already loaded
-        if (!isset($_ENV['DB_HOST'])) {
-            $dotenv = Dotenv::createImmutable(__DIR__ . '/../'); // Adjust path as needed
-            $dotenv->load();
-        }
-
         // Retrieve database credentials from environment variables
         $host = $_ENV['DB_HOST'] ?? 'localhost';
         $dbname = $_ENV['DB_NAME'] ?? '';

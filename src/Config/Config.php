@@ -2,15 +2,11 @@
 namespace App\Config;
 
 class Config {
-    public static $db = [
-        'host' => 'localhost',
-        'dbname' => 'your_database_name',
-        'username' => 'your_username',
-        'password' => 'your_password',
-    ];
+    public const PAGINATION_LIMIT = 10;
+    public const DEFAULT_TIMEZONE = 'UTC';
 
     public static $app = [
         'debug' => true,
-        'timezone' => 'UTC',
+        'timezone' => DEFAULT_TIMEZONE,
     ];
 }
