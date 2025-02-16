@@ -1,6 +1,8 @@
 <?php
 namespace App\Utils;
 
+use App\Core\Database;
+
 class Validator {
     private $data;
     private $rules;
@@ -16,7 +18,7 @@ class Validator {
     public function __construct($data, $rules) {
         $this->data = $data;
         $this->rules = $rules;
-        $this->db = \App\Core\Database::getInstance(); // Consistent with models
+        $this->db = Database::getInstance(); // Consistent with models
     }
 
     /**

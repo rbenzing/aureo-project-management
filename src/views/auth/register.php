@@ -9,7 +9,6 @@ if (isset($_SESSION['user_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once __DIR__ . '/../../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
-    die(print_r($_POST));
     $controller->register($_POST);
 }
 ?>

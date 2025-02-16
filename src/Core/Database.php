@@ -15,13 +15,18 @@ class Database {
         }
 
         // Retrieve database credentials from environment variables
-        $host = $_ENV['DB_HOST'] ?? 'localhost';
-        $dbname = $_ENV['DB_NAME'] ?? '';
-        $username = $_ENV['DB_USERNAME'] ?? '';
-        $password = $_ENV['DB_PASSWORD'] ?? '';
+        $host = $_ENV['DB_HOST'];
+        $dbname = $_ENV['DB_NAME'];
+        $username = $_ENV['DB_USERNAME'];
+        $password = $_ENV['DB_PASSWORD'];
+        $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
+
+        if (!isset($host) || !isset($dbname) || !isset($username) || !isset($password)) {
+            die("Invalid database credentials.");
+        }
 
         try {
-            $this->pdo = new \PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+            $this->pdo = new \PDO("mysql:host=$host;dbname=$dbname;charset=$charset", $username, $password);
             $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         } catch (\PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
