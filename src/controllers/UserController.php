@@ -18,6 +18,7 @@ class UserController {
     public function index() {
         // Fetch all active users from the database (paginated)
         $users = (new User())->getAllPaginated(10); // Paginate results (e.g., 10 per page)
+        
         include __DIR__ . '/../views/users/index.php';
     }
 

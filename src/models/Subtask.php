@@ -2,13 +2,14 @@
 namespace App\Models;
 
 use PDO;
+use App\Core\Database;
 
 class Subtask {
-    private $db;
+    private PDO $db;
 
     public function __construct() {
         // Initialize the database connection
-        $this->db = \App\Core\Database::getInstance();
+        $this->db = Database::getInstance();
     }
 
     /**

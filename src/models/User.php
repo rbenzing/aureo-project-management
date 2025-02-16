@@ -69,6 +69,18 @@ class User {
     }
 
     /**
+     * Find a user by ID.
+     *
+     * @param int $id The user ID.
+     * @return object|null The user object or null if not found.
+     */
+    public function findById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_OBJ);
+    }
+
+    /**
      * Save or update a user.
      */
     public function save(): bool {
@@ -134,13 +146,13 @@ class User {
     /**
      * Activate a user account.
      */
-    public function activate(): bool {
+    public function activate(string $token): bool {
         $stmt = $this->db->prepare("
             UPDATE users 
             SET is_active = 1, activation_token = NULL, activation_token_expires_at = NULL, updated_at = NOW() 
-            WHERE id = :id
+            WHERE activation_token = :activation_token
         ");
-        return $stmt->execute(['id' => $this->id]);
+        return $stmt->execute(['activation_token' => $token]);
     }
 
     /**

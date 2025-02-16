@@ -6,7 +6,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_POST)) {
     require_once __DIR__ . '/../../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
     $controller->login($_POST);

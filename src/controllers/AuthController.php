@@ -7,7 +7,7 @@ use App\Utils\Validator;
 
 class AuthController {
     public function login($data = null) {
-        if (isset($data)) {
+        if (!empty($data)) {
             // Validate input data
             $validator = new Validator($data, [
                 'email' => 'required|email',
@@ -16,7 +16,7 @@ class AuthController {
 
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                include __DIR__ . '/../views/auth/login.php';
+                include_once __DIR__ . '/../views/auth/login.php';
                 exit;
             }
 
@@ -25,13 +25,13 @@ class AuthController {
             $user = $userModel->findByEmail($data['email']);
             if (!$user || !password_verify($data['password'], $user->password_hash)) {
                 $_SESSION['error'] = 'Invalid email or password.';
-                include __DIR__ . '/../views/auth/login.php';
+                include_once __DIR__ . '/../views/auth/login.php';
                 exit;
             }
 
             if (!$user->is_active) {
                 $_SESSION['error'] = 'Your account is not active. Please check your email for activation instructions.';
-                include __DIR__ . '/../views/auth/login.php';
+                include_once __DIR__ . '/../views/auth/login.php';
                 exit;
             }
 
@@ -49,9 +49,8 @@ class AuthController {
             header('Location: /dashboard');
             exit;
         }
-
         // Display the login form
-        include __DIR__ . '/../views/auth/login.php';
+        include_once __DIR__ . '/../views/auth/login.php';
     }
 
     public function register($data = null) {
@@ -67,7 +66,7 @@ class AuthController {
 
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                include __DIR__ . '/../views/auth/register.php';
+                header('Location: /register');
                 exit;
             }
 
@@ -90,7 +89,7 @@ class AuthController {
         }
 
         // Display the register form
-        include __DIR__ . '/../views/auth/register.php';
+        include_once __DIR__ . '/../views/auth/register.php';
     }
 
     public function resetPassword($data = null) {
@@ -119,7 +118,7 @@ class AuthController {
 
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                include __DIR__ . '/../views/auth/reset-password.php';
+                header('Location: /reset-password');
                 exit;
             }
 
@@ -135,7 +134,33 @@ class AuthController {
         }
 
         // Display the reset password form
-        include __DIR__ . '/../views/auth/reset-password.php';
+        include_once __DIR__ . '/../views/auth/reset-password.php';
+    }
+
+    /**
+     * Activate the users account
+     */
+    public function activate() {
+        if (isset($_GET['token'])) {
+            // Validate input data
+            $validator = new Validator($_GET, [
+                'token' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                $_SESSION['error'] = 'Activation failed: ' . implode(', ', $validator->errors());
+                include_once __DIR__ . '/../views/auth/login.php';
+                exit;
+            }
+
+            $userModel = new User();
+            $userModel->activate($_GET['token']);
+        
+            $_SESSION['success'] = 'Your account has been activated successfully.';
+        }
+
+        // Display the login form
+        include_once __DIR__ . '/../views/auth/login.php';
     }
 
     /**
@@ -186,6 +211,6 @@ class AuthController {
         }
 
         // Display the forgot password form
-        include __DIR__ . '/../views/auth/forgot-password.php';
+        include_once __DIR__ . '/../views/auth/forgot-password.php';
     }
 }

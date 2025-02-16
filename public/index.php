@@ -33,6 +33,7 @@ $routes = [
     '' => ['controller' => 'AuthController', 'method' => 'login'], // Default route
     'login' => ['controller' => 'AuthController', 'method' => 'login'],
     'register' => ['controller' => 'AuthController', 'method' => 'register'],
+    'activate' => ['controller' => 'AuthController', 'method' => 'activate'],
     'dashboard' => ['controller' => 'DashboardController', 'method' => 'index'],
     'projects' => ['controller' => 'ProjectController', 'method' => 'index'],
     'tasks' => ['controller' => 'TaskController', 'method' => 'index'],
