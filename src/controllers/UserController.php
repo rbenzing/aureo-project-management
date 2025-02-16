@@ -1,8 +1,10 @@
 <?php
 namespace App\Controllers;
 
+use DateTime;
 use App\Middleware\AuthMiddleware;
 use App\Models\User;
+use App\Utils\Email;
 use App\Utils\Validator;
 
 class UserController {
@@ -30,7 +32,7 @@ class UserController {
         $user = (new User())->find($id);
         if (!$user) {
             $_SESSION['error'] = 'User not found.';
-            header('Location: /users/index.php');
+            header('Location: /users');
             exit;
         }
 
@@ -53,7 +55,7 @@ class UserController {
         // Validate CSRF token
         if (!isset($data['csrf_token']) || !$this->validateCsrfToken($data['csrf_token'])) {
             $_SESSION['error'] = 'Invalid or expired CSRF token.';
-            header('Location: /users/create.php');
+            header('Location: /create_users');
             exit;
         }
 
@@ -67,7 +69,7 @@ class UserController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header('Location: /users/create.php');
+            header('Location: /create_users');
             exit;
         }
 
@@ -79,15 +81,15 @@ class UserController {
         $user->password_hash = password_hash('default_password', PASSWORD_ARGON2ID); // Set a default password
         $user->role_id = $data['role_id'];
         $user->activation_token = bin2hex(random_bytes(16));
-        $user->activation_token_expires_at = date('Y-m-d H:i:s', strtotime('+1 day')); // Token expires in 1 day
+        $user->activation_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s'); // Token expires in 1 day
         $user->is_active = false; // Require activation via email
         $user->save();
 
         // Send activation email
-        \App\Utils\Email::sendActivationEmail($user);
+        Email::sendActivationEmail($user);
 
-        $_SESSION['success'] = 'User created successfully.';
-        header('Location: /users/index.php');
+        $_SESSION['success'] = 'User was create successfully. An email was sent to the user to activate the account.';
+        header('Location: /create_users');
         exit;
     }
 
@@ -99,7 +101,7 @@ class UserController {
         $user = (new User())->find($id);
         if (!$user) {
             $_SESSION['error'] = 'User not found.';
-            header('Location: /users/index.php');
+            header('Location: /users');
             exit;
         }
 
@@ -114,7 +116,7 @@ class UserController {
         // Validate CSRF token
         if (!isset($data['csrf_token']) || !$this->validateCsrfToken($data['csrf_token'])) {
             $_SESSION['error'] = 'Invalid or expired CSRF token.';
-            header("Location: /users/edit.php?id=$id");
+            header("Location: /edit_users?id=$id");
             exit;
         }
 
@@ -128,7 +130,7 @@ class UserController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header("Location: /users/edit.php?id=$id");
+            header("Location: /edit_users?id=$id");
             exit;
         }
 
@@ -136,7 +138,7 @@ class UserController {
         $user = (new User())->find($id);
         if (!$user) {
             $_SESSION['error'] = 'User not found.';
-            header('Location: /users/index.php');
+            header('Location: /users');
             exit;
         }
 
@@ -147,7 +149,7 @@ class UserController {
         $user->save();
 
         $_SESSION['success'] = 'User updated successfully.';
-        header('Location: /users/index.php');
+        header('Location: /users');
         exit;
     }
 
@@ -159,7 +161,7 @@ class UserController {
         $user = (new User())->find($id);
         if (!$user) {
             $_SESSION['error'] = 'User not found.';
-            header('Location: /users/index.php');
+            header('Location: /users');
             exit;
         }
 
@@ -168,30 +170,7 @@ class UserController {
         $user->save();
 
         $_SESSION['success'] = 'User deleted successfully.';
-        header('Location: /users/index.php');
-        exit;
-    }
-
-    /**
-     * Activate a user account using the activation token.
-     */
-    public function activateAccount($token) {
-        // Find the user with a valid activation token
-        $user = (new User())->findByActivationToken($token);
-        if (!$user || strtotime($user->activation_token_expires_at) < time()) {
-            $_SESSION['error'] = 'Invalid or expired activation token.';
-            header('Location: /auth/login.php');
-            exit;
-        }
-
-        // Activate the account
-        $user->activation_token = null;
-        $user->activation_token_expires_at = null;
-        $user->is_active = true;
-        $user->save();
-
-        $_SESSION['success'] = 'Account activated successfully. You can now log in.';
-        header('Location: /auth/login.php');
+        header('Location: /users');
         exit;
     }
 

@@ -94,7 +94,7 @@ class Validator {
                 list($table, $column) = explode(',', $params[1]);
                 $excludeId = isset($this->data['id']) ? intval($this->data['id']) : null;
                 if (!$this->isUnique($table, $column, $value, $excludeId)) {
-                    $this->addError($field, "$field must be unique.");
+                    $this->addError($field, "$field already exists.");
                 }
                 break;
     

@@ -20,6 +20,8 @@ class User {
     public ?string $reset_password_token = null;
     public ?string $reset_password_token_expires_at = null;
     public bool $is_deleted = false;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
 
     public function __construct() {
         $this->db = Database::getInstance();
@@ -144,15 +146,24 @@ class User {
     }
 
     /**
-     * Activate a user account.
+     * Find a user account by token.
      */
-    public function activate(string $token): bool {
+    public function findByActivationToken(string $token): ?self {
         $stmt = $this->db->prepare("
-            UPDATE users 
-            SET is_active = 1, activation_token = NULL, activation_token_expires_at = NULL, updated_at = NOW() 
-            WHERE activation_token = :activation_token
+            SELECT * FROM users 
+            WHERE activation_token = :activation_token 
+            AND activation_token_expires_at > NOW() 
+            AND is_deleted = 0
         ");
-        return $stmt->execute(['activation_token' => $token]);
+        $stmt->execute(['activation_token' => $token]);
+        $userData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$userData) {
+            return null;
+        }
+
+        $this->hydrate($userData);
+        return $this;
     }
 
     /**

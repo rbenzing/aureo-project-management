@@ -1,6 +1,7 @@
 <?php
 namespace App\Utils;
 
+use App\Config\Config;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -12,7 +13,7 @@ class Email {
      */
     public function __construct() {
         // Initialize PHPMailer
-        $this->mail = new PHPMailer(true);
+        $this->mail = new PHPMailer();
 
         // Configure SMTP settings
         $this->mail->isSMTP();
@@ -20,7 +21,6 @@ class Email {
         $this->mail->SMTPAuth = true;
         $this->mail->Username = $_ENV['SMTP_USERNAME']; // SMTP username
         $this->mail->Password = $_ENV['SMTP_PASSWORD']; // SMTP password
-        $this->mail->SMTPSecure = $_ENV['SMTP_ENCRYPTION']; // Encryption (e.g., tls or ssl)
         $this->mail->Port = $_ENV['SMTP_PORT']; // SMTP port
 
         // Set default sender
@@ -42,6 +42,7 @@ class Email {
             $this->mail->Body = $body;
             $this->mail->isHTML(false); // Plain text email
             $this->mail->send();
+            $this->clear();
             return true;
         } catch (Exception $e) {
             error_log("Email sending failed: " . $this->mail->ErrorInfo);
@@ -65,6 +66,7 @@ class Email {
             $this->mail->isHTML(true); // HTML email
             $this->mail->AltBody = strip_tags($htmlBody); // Fallback plain text for non-HTML clients
             $this->mail->send();
+            $this->clear();
             return true;
         } catch (Exception $e) {
             error_log("Email sending failed: " . $this->mail->ErrorInfo);
@@ -100,13 +102,17 @@ class Email {
      */
     public static function sendActivationEmail($user) {
         $email = new self(); // Create an instance of the Email class
-        $activationLink = "https://slimbooks.app/login?token=" . urlencode($user->activation_token);
+
+        $domain = Config::$app['domain'];
+        $scheme = Config::$app['scheme'];
+        $activationLink = "$scheme://$domain/activate?token=" . urlencode($user->activation_token);
+        
         $subject = "Activate Your Account";
-        $body = "
-            <h1>Welcome, {$user->first_name}!</h1>
+        
+        $body = "<h1>Welcome, {$user->first_name}!</h1>
             <p>Please click the link below to activate your account:</p>
-            <a href='$activationLink'>$activationLink</a>
-        ";
+            <a href='$activationLink'>$activationLink</a>";
+        
         return $email->sendHtml($user->email, $subject, $body);
     }
 
@@ -114,18 +120,21 @@ class Email {
      * Send a password reset email.
      *
      * @param object $user The user object containing email and first_name.
-     * @param string $resetToken The password reset token.
      * @return bool Returns true if the email was sent successfully, false otherwise.
      */
-    public static function sendPasswordResetEmail($user, $resetToken) {
+    public static function sendPasswordResetEmail($user) {
         $email = new self(); // Create an instance of the Email class
-        $resetLink = "https://slimbooks.app/reset-password?token=" . urlencode($resetToken);
+
+        $domain = Config::$app['domain'];
+        $scheme = Config::$app['scheme'];
+        $resetLink = "$scheme://$domain/reset-password?token=" . urlencode($user->reset_password_token);
+
         $subject = "Password Reset Request";
-        $body = "
-            <h1>Hello, {$user->first_name}!</h1>
+
+        $body = "<h1>Hello, {$user->first_name}!</h1>
             <p>You requested a password reset. Please click the link below to reset your password:</p>
-            <a href='$resetLink'>$resetLink</a>
-        ";
+            <a href='$resetLink'>$resetLink</a>";
+
         return $email->sendHtml($user->email, $subject, $body);
     }
 }

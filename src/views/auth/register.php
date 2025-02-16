@@ -6,13 +6,12 @@ if (isset($_SESSION['user_id'])) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_register'])) {
     require_once __DIR__ . '/../../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
     $controller->register($_POST);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit"
+                <button type="submit" name="submit_register"
                     class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Register
                 </button>

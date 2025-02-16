@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
 use App\Models\User;
+use App\Utils\Email;
 use App\Utils\Validator;
 
 class AuthController {
@@ -89,11 +90,12 @@ class AuthController {
             $userModel->email = htmlspecialchars($data['email']);
             $userModel->password_hash = password_hash($data['password'], PASSWORD_ARGON2ID);
             $userModel->activation_token = bin2hex(random_bytes(16));
+            $userModel->activation_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
             $userModel->is_active = false;
             $userModel->save();
 
             // Send activation email
-            \App\Utils\Email::sendActivationEmail($userModel);
+            Email::sendActivationEmail($userModel);
 
             $_SESSION['success'] = 'Registration successful. Please check your email to activate your account.';
             header('Location: /login');
@@ -137,7 +139,6 @@ class AuthController {
             // Update the user's password
             $user->password_hash = password_hash($data['password'], PASSWORD_ARGON2ID);
             $user->reset_password_token = null;
-            $user->reset_password_token_expires_at = null;
             $user->save();
 
             $_SESSION['success'] = 'Your password has been reset successfully.';
@@ -160,15 +161,25 @@ class AuthController {
             ]);
 
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Activation failed: ' . implode(', ', $validator->errors());
-                include_once __DIR__ . '/../views/auth/login.php';
+                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
+                header('Location: /login');
                 exit;
             }
 
-            $userModel = new User();
-            $userModel->activate($_GET['token']);
+            // Find the user with a valid activation token
+            $user = (new User())->findByActivationToken($_GET['token']);
+            if (!$user || strtotime($user->activation_token_expires_at) < time()) {
+                $_SESSION['error'] = 'Invalid or expired activation token.';
+                header('Location: /login');
+                exit;
+            }
+
+            // Activate the account
+            $user->is_active = true;
+            $user->activation_token = null; // Clear the activation token
+            $user->save();
         
-            $_SESSION['success'] = 'Your account has been activated successfully.';
+            $_SESSION['success'] = 'Account activated successfully. You can now log in.';
         }
 
         // Display the login form
@@ -206,20 +217,17 @@ class AuthController {
             }
 
             // Generate a password reset token
-            $resetToken = bin2hex(random_bytes(32));
+            $resetToken = bin2hex(random_bytes(16));
             $user->reset_token = $resetToken;
+            $user->reset_password_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
             $user->save();
 
             // Send the password reset email
-            $resetLink = "https://slimbooks.app/reset-password?token=" . urlencode($resetToken);
-            if (Email::sendPasswordResetEmail($user, $resetToken)) {
+            if (Email::sendPasswordResetEmail($user)) {
                 $_SESSION['success'] = 'A password reset link has been sent to your email.';
             } else {
                 $_SESSION['error'] = 'Failed to send the password reset email. Please try again later.';
             }
-
-            header('Location: /forgot-password');
-            exit;
         }
 
         // Display the forgot password form

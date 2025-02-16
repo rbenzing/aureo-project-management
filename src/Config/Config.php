@@ -2,11 +2,16 @@
 namespace App\Config;
 
 class Config {
-    public const PAGINATION_LIMIT = 10;
-    public const DEFAULT_TIMEZONE = 'UTC';
+    private const PAGINATION_LIMIT = 10;
+    private const DEFAULT_TIMEZONE = 'UTC';
+    private const APP_DOMAIN = 'slimbooks'; // domain.com
+    private const APP_SCHEME = 'http';
 
-    public static $app = [
+    public static array $app = [
         'debug' => true,
-        'timezone' => DEFAULT_TIMEZONE,
+        'max_pages' => self::PAGINATION_LIMIT,
+        'timezone' => self::DEFAULT_TIMEZONE,
+        'domain' => self::APP_DOMAIN,
+        'scheme' => self::APP_SCHEME
     ];
 }
