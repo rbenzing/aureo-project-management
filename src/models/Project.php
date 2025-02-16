@@ -137,4 +137,24 @@ class Project {
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }
+
+    /**
+     * Get recent projects for a user.
+     *
+     * @param int $userId The user ID.
+     * @return array An array of project objects.
+     */
+    public function getRecentProjectsByUser($userId) {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT p.* 
+            FROM projects p
+            INNER JOIN tasks t ON p.id = t.project_id
+            INNER JOIN users u ON u.id = t.assigned_to
+            WHERE u.id = :user_id AND u.is_deleted = 0
+            ORDER BY p.created_at DESC
+            LIMIT 5
+        ");
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }    
 }

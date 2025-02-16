@@ -148,7 +148,7 @@ class Task {
     public function getRecentTasksByUser($userId) {
         $stmt = $this->db->prepare("
             SELECT * FROM tasks 
-            WHERE user_id = :user_id 
+            WHERE assigned_to = :user_id 
             ORDER BY created_at DESC 
             LIMIT 5
         ");
