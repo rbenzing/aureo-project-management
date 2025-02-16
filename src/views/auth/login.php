@@ -6,7 +6,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 // Handle form submission
-if (isset($_POST)) {
+if (isset($_POST['login_submit'])) {
     require_once __DIR__ . '/../../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
     $controller->login($_POST);
@@ -64,7 +64,7 @@ if (isset($_POST)) {
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit"
+                <button type="submit" name="login_submit"
                     class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Login
                 </button>

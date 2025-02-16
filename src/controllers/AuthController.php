@@ -16,7 +16,7 @@ class AuthController {
 
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                include_once __DIR__ . '/../views/auth/login.php';
+                header('Location: /login');
                 exit;
             }
 
@@ -25,13 +25,13 @@ class AuthController {
             $user = $userModel->findByEmail($data['email']);
             if (!$user || !password_verify($data['password'], $user->password_hash)) {
                 $_SESSION['error'] = 'Invalid email or password.';
-                include_once __DIR__ . '/../views/auth/login.php';
+                header('Location: /login');
                 exit;
             }
 
             if (!$user->is_active) {
                 $_SESSION['error'] = 'Your account is not active. Please check your email for activation instructions.';
-                include_once __DIR__ . '/../views/auth/login.php';
+                header('Location: /login');
                 exit;
             }
 
