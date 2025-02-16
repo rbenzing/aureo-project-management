@@ -3,7 +3,6 @@ namespace App\Controllers;
 
 use App\Models\Project;
 use App\Models\Task;
-use App\Core\Database;
 
 class DashboardController {
     /**
