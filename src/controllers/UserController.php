@@ -79,10 +79,9 @@ class UserController {
         $user->last_name = htmlspecialchars($data['last_name']);
         $user->email = htmlspecialchars($data['email']);
         $user->password_hash = password_hash('default_password', PASSWORD_ARGON2ID); // Set a default password
-        $user->role_id = $data['role_id'];
-        $user->activation_token = bin2hex(random_bytes(16));
-        $user->activation_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s'); // Token expires in 1 day
-        $user->is_active = false; // Require activation via email
+        $user->role_id = parseInt($data['role_id']);
+
+        $user->generateActivationToken();
         $user->save();
 
         // Send activation email

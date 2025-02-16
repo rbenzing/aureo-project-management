@@ -36,6 +36,9 @@ class AuthController {
                 exit;
             }
 
+            // Fetch roles and permissions
+            $rolesAndPermissions = (new User())->getRolesAndPermissions($user->id);
+
             // Log the user in
             $_SESSION['user_id'] = $user->id;
             $_SESSION['user'] = [
@@ -45,6 +48,8 @@ class AuthController {
                 'email' => $user->email,
                 'role_id' => $user->role_id,
                 'company_id' => $user->company_id,
+                'roles' => $rolesAndPermissions['roles'],
+                'permissions' => $rolesAndPermissions['permissions']
             ];
 
             header('Location: /dashboard');
@@ -89,9 +94,8 @@ class AuthController {
             $userModel->last_name = htmlspecialchars($data['last_name']);
             $userModel->email = htmlspecialchars($data['email']);
             $userModel->password_hash = password_hash($data['password'], PASSWORD_ARGON2ID);
-            $userModel->activation_token = bin2hex(random_bytes(16));
-            $userModel->activation_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
-            $userModel->is_active = false;
+            
+            $userModel->generateActivationToken();
             $userModel->save();
 
             // Send activation email
@@ -217,9 +221,7 @@ class AuthController {
             }
 
             // Generate a password reset token
-            $resetToken = bin2hex(random_bytes(16));
-            $user->reset_token = $resetToken;
-            $user->reset_password_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
+            $user->generateActivationToken();
             $user->save();
 
             // Send the password reset email

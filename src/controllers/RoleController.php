@@ -18,6 +18,7 @@ class RoleController {
     public function index() {
         // Fetch all roles from the database (paginated)
         $roles = (new Role())->getAllPaginated(10); // Paginate results (e.g., 10 per page)
+        
         include __DIR__ . '/../views/roles/index.php';
     }
 
@@ -29,7 +30,7 @@ class RoleController {
         $role = (new Role())->find($id);
         if (!$role) {
             $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles/index.php');
+            header('Location: /roles');
             exit;
         }
 
@@ -56,7 +57,7 @@ class RoleController {
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
-            header('Location: /roles/create.php');
+            header('Location: /create_role');
             exit;
         }
 
@@ -68,7 +69,7 @@ class RoleController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header('Location: /roles/create.php');
+            header('Location: /create_role');
             exit;
         }
 
@@ -86,7 +87,7 @@ class RoleController {
         }
 
         $_SESSION['success'] = 'Role created successfully.';
-        header('Location: /roles/index.php');
+        header('Location: /roles');
         exit;
     }
 
@@ -98,7 +99,7 @@ class RoleController {
         $role = (new Role())->find($id);
         if (!$role) {
             $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles/index.php');
+            header('Location: /roles');
             exit;
         }
 
@@ -117,7 +118,7 @@ class RoleController {
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
-            header("Location: /roles/edit.php?id=$id");
+            header("Location: /edit_role?id=$id");
             exit;
         }
 
@@ -129,7 +130,7 @@ class RoleController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header("Location: /roles/edit.php?id=$id");
+            header("Location: /edit_role?id=$id");
             exit;
         }
 
@@ -137,7 +138,7 @@ class RoleController {
         $role = (new Role())->find($id);
         if (!$role) {
             $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles/index.php');
+            header('Location: /roles');
             exit;
         }
 
@@ -149,7 +150,7 @@ class RoleController {
         $role->syncPermissions($data['permissions'] ?? []);
 
         $_SESSION['success'] = 'Role updated successfully.';
-        header('Location: /roles/index.php');
+        header('Location: /roles');
         exit;
     }
 
@@ -161,7 +162,7 @@ class RoleController {
         $role = (new Role())->find($id);
         if (!$role) {
             $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles/index.php');
+            header('Location: /roles');
             exit;
         }
 
@@ -170,7 +171,7 @@ class RoleController {
         $role->save();
 
         $_SESSION['success'] = 'Role deleted successfully.';
-        header('Location: /roles/index.php');
+        header('Location: /roles');
         exit;
     }
 }

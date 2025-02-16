@@ -26,7 +26,7 @@ class Role {
      */
     public function getAllPaginated($limit = 10, $page = 1) {
         $offset = ($page - 1) * $limit;
-        $stmt = $this->db->prepare("SELECT * FROM roles WHERE is_deleted = 0 LIMIT :limit OFFSET :offset");
+        $stmt = $this->db->prepare("SELECT * FROM roles LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();

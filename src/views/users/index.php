@@ -32,7 +32,7 @@ if (!isset($_SESSION['user_id'])) {
             <ul class="space-y-2">
                 <?php foreach ($users as $user): ?>
                     <li>
-                        <a href="/users/view.php?id=<?php echo $user->id; ?>" class="text-indigo-600 hover:text-indigo-900">
+                        <a href="/view_user?id=<?php echo $user->id; ?>" class="text-indigo-600 hover:text-indigo-900">
                             <?php echo htmlspecialchars($user->first_name . ' ' . $user->last_name); ?>
                         </a>
                     </li>
@@ -57,7 +57,7 @@ if (!isset($_SESSION['user_id'])) {
         </div>
 
         <!-- Create Button -->
-        <a href="/users/create.php" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
+        <a href="/create_user" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
     </main>
 
     <!-- Footer -->

@@ -39,6 +39,18 @@ class User {
     }
 
     /**
+     * Fetch all users (paginated).
+     */
+    public function getAllPaginated($limit = 10, $page = 1) {
+        $offset = ($page - 1) * $limit;
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE is_deleted = 0 LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
      * Find a user by their ID.
      */
     public function find(int $id): ?self {
@@ -146,6 +158,43 @@ class User {
     }
 
     /**
+     * Get the roles and permissions for a user.
+     *
+     * @param int $userId The user ID.
+     * @return array An array of roles and permissions.
+     */
+    public function getRolesAndPermissions($userId) {
+        $stmt = $this->db->prepare("
+            SELECT r.name AS role_name, p.name AS permission_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN role_permissions pr ON r.id = pr.role_id
+            LEFT JOIN permissions p ON pr.permission_id = p.id
+            WHERE u.id = :user_id
+        ");
+        $stmt->execute(['user_id' => $userId]);
+
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        // Organize roles and permissions
+        $roles = [];
+        $permissions = [];
+        foreach ($results as $row) {
+            if (!in_array($row['role_name'], $roles)) {
+                $roles[] = $row['role_name'];
+            }
+            if (!empty($row['permission_name']) && !in_array($row['permission_name'], $permissions)) {
+                $permissions[] = $row['permission_name'];
+            }
+        }
+
+        return [
+            'roles' => $roles,
+            'permissions' => $permissions,
+        ];
+    }
+
+    /**
      * Find a user account by token.
      */
     public function findByActivationToken(string $token): ?self {
@@ -171,7 +220,7 @@ class User {
      */
     public function generatePasswordResetToken(): string {
         $this->reset_password_token = bin2hex(random_bytes(16));
-        $this->reset_password_token_expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $this->reset_password_token_expires_at = (new \DateTime())->modify('+1 hours')->format('Y-m-d H:i:s');
 
         $stmt = $this->db->prepare("
             UPDATE users
@@ -188,12 +237,45 @@ class User {
     }
 
     /**
+     * Generate a account activation token.
+     */
+    public function generateActivationToken(): string {
+        $this->reset_password_token = bin2hex(random_bytes(16));
+        $this->reset_password_token_expires_at = (new \DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
+
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET activation_token = :token, activation_token_expires_at = :expires_at, updated_at = NOW()
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            'id' => $this->id,
+            'token' => $this->activation_token,
+            'expires_at' => $this->activation_token_expires_at,
+        ]);
+
+        return $this->activation_token;
+    }
+
+    /**
      * Clear the password reset token after use.
      */
     public function clearPasswordResetToken(): bool {
         $stmt = $this->db->prepare("
             UPDATE users
-            SET reset_password_token = NULL, reset_password_token_expires_at = NULL, updated_at = NOW()
+            SET reset_password_token = NULL, updated_at = NOW()
+            WHERE id = :id
+        ");
+        return $stmt->execute(['id' => $this->id]);
+    }
+
+    /**
+     * Clear the activation token after use.
+     */
+    public function clearActivationToken(): bool {
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET activation_token = NULL, updated_at = NOW()
             WHERE id = :id
         ");
         return $stmt->execute(['id' => $this->id]);

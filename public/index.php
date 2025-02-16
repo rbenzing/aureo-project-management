@@ -35,15 +35,15 @@ $routes = [
     'logout' => ['controller' => 'AuthController', 'method' => 'logout'],
     'register' => ['controller' => 'AuthController', 'method' => 'register'],
     'activate' => ['controller' => 'AuthController', 'method' => 'activate'],
+    'reset-password' => ['controller' => 'AuthController', 'method' => 'resetPassword'],
+    'forgot-password' => ['controller' => 'AuthController', 'method' => 'forgotPassword'],
     'dashboard' => ['controller' => 'DashboardController', 'method' => 'index'],
     'projects' => ['controller' => 'ProjectController', 'method' => 'index'],
     'tasks' => ['controller' => 'TaskController', 'method' => 'index'],
     'subtasks' => ['controller' => 'SubtaskController', 'method' => 'index'],
-    'users' => ['controller' => 'UsersController', 'method' => 'index'],
+    'users' => ['controller' => 'UserController', 'method' => 'index'],
     'roles' => ['controller' => 'RoleController', 'method' => 'index'],
-    'companies' => ['controller' => 'CompaniesController', 'method' => 'index'],
-    'reset-password' => ['controller' => 'AuthController', 'method' => 'resetPassword'],
-    'forgot-password' => ['controller' => 'AuthController', 'method' => 'forgotPassword']
+    'companies' => ['controller' => 'CompanyController', 'method' => 'index']
 ];
 
 // Check if the route exists
