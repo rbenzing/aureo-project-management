@@ -15,9 +15,6 @@ define('BASE_PATH', __DIR__);
 // Load configuration
 require_once __DIR__ . '/../src/config/Config.php';
 
-// Load helpers
-require_once __DIR__ . '/../src/utils/Helpers.php';
-
 // Initialize CSRF token if not set
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -29,7 +26,7 @@ $baseDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'); // Get the base directo
 $requestUri = substr($requestUri, strlen($baseDir)); // Remove base directory from URI
 
 // Default route
-$route = trim($requestUri, '/') ?: 'login'; // Default to 'login' if no route is provided
+$route = str_replace('.php','',trim($requestUri, '/')) ?: 'login'; // Default to 'login' if no route is provided
 
 // Route mapping (you can expand this as needed)
 $routes = [
@@ -44,6 +41,7 @@ $routes = [
     'roles' => ['controller' => 'RoleController', 'method' => 'index'], // Roles route
     'companies' => ['controller' => 'CompaniesController', 'method' => 'index'],
     'reset-password' => ['controller' => 'AuthController', 'method' => 'resetPassword'],
+    'forgot-password' => ['controller' => 'AuthController', 'method' => 'forgotPassword']
 ];
 
 // Check if the route exists

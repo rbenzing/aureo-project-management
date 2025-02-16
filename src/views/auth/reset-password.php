@@ -46,7 +46,7 @@ if (isset($_SESSION['error'])) {
         <h1 class="text-2xl font-bold mb-6">Reset Password</h1>
 
         <!-- Reset Password Form -->
-        <form method="POST" action="/auth/reset-password.php" class="space-y-4 max-w-md">
+        <form method="POST" action="/reset-password" class="space-y-4 max-w-md" autocomplete="off">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -66,7 +66,7 @@ if (isset($_SESSION['error'])) {
 
         <!-- Links -->
         <div class="mt-4">
-            <a href="/auth/login.php" class="text-indigo-600 hover:text-indigo-900">Back to Login</a>
+            <a href="/login" class="text-indigo-600 hover:text-indigo-900">Back to Login</a>
         </div>
     </main>
 

@@ -4,7 +4,7 @@
         <nav class="space-x-4">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <a href="/dashboard.php" class="hover:text-indigo-200">Dashboard</a>
-                <a href="/src/Controllers/UserController.php?action=logout" class="hover:text-indigo-200">Logout</a>
+                <a href="/logout.php" class="hover:text-indigo-200">Logout</a>
             <?php else: ?>
                 <a href="/" class="hover:text-indigo-200">Login</a>
             <?php endif; ?>

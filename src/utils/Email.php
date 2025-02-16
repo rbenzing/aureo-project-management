@@ -16,15 +16,15 @@ class Email {
 
         // Configure SMTP settings
         $this->mail->isSMTP();
-        $this->mail->Host = $_ENV['SMTP_HOST'] ?? 'smtp.example.com'; // SMTP server
+        $this->mail->Host = $_ENV['SMTP_HOST']; // SMTP server
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = $_ENV['SMTP_USERNAME'] ?? 'your-email@example.com'; // SMTP username
-        $this->mail->Password = $_ENV['SMTP_PASSWORD'] ?? 'your-password'; // SMTP password
-        $this->mail->SMTPSecure = $_ENV['SMTP_ENCRYPTION'] ?? 'tls'; // Encryption (e.g., tls or ssl)
-        $this->mail->Port = $_ENV['SMTP_PORT'] ?? 587; // SMTP port
+        $this->mail->Username = $_ENV['SMTP_USERNAME']; // SMTP username
+        $this->mail->Password = $_ENV['SMTP_PASSWORD']; // SMTP password
+        $this->mail->SMTPSecure = $_ENV['SMTP_ENCRYPTION']; // Encryption (e.g., tls or ssl)
+        $this->mail->Port = $_ENV['SMTP_PORT']; // SMTP port
 
         // Set default sender
-        $this->mail->setFrom($_ENV['EMAIL_FROM'] ?? 'no-reply@example.com', $_ENV['EMAIL_FROM_NAME'] ?? 'Your Application');
+        $this->mail->setFrom($_ENV['EMAIL_FROM'], $_ENV['EMAIL_FROM_NAME']);
     }
 
     /**
@@ -100,7 +100,7 @@ class Email {
      */
     public static function sendActivationEmail($user) {
         $email = new self(); // Create an instance of the Email class
-        $activationLink = "http://yourdomain.com/index.php?token=" . urlencode($user->activation_token);
+        $activationLink = "https://slimbooks.app/login?token=" . urlencode($user->activation_token);
         $subject = "Activate Your Account";
         $body = "
             <h1>Welcome, {$user->first_name}!</h1>
@@ -119,7 +119,7 @@ class Email {
      */
     public static function sendPasswordResetEmail($user, $resetToken) {
         $email = new self(); // Create an instance of the Email class
-        $resetLink = "http://yourdomain.com/reset-password.php?token=" . urlencode($resetToken);
+        $resetLink = "https://slimbooks.app/reset-password?token=" . urlencode($resetToken);
         $subject = "Password Reset Request";
         $body = "
             <h1>Hello, {$user->first_name}!</h1>

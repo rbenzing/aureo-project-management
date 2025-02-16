@@ -1,9 +1,10 @@
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: [
-        './src/**/*.php',       // Scan PHP files for Tailwind classes
-        './src/**/*.html',      // Include HTML files if used
-        './src/**/*.js',        // Include JavaScript files if used
+        './src/**/*.php',
+        './src/**/*.html',
+        './src/**/*.js',
     ],
     theme: {
         extend: {
@@ -13,5 +14,9 @@ module.exports = {
             },
         },
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/typography'), // Add the Typography plugin
+        require('@tailwindcss/forms'), // Add the Forms plugin
+        require('@tailwindcss/aspect-ratio'), // Add the Aspect Ratio plugin
+    ],
 };

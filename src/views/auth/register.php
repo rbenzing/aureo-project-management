@@ -33,59 +33,61 @@ if (isset($_SESSION['error'])) {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
-        <h1 class="text-2xl font-bold mb-6">Register</h1>
+    <main class="flex-grow flex items-center justify-center mt-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
+            <h1 class="text-2xl font-bold mb-6 text-center">Register</h1>
 
-        <!-- Registration Form -->
-        <form method="POST" action="/auth/register.php" class="space-y-4 max-w-md">
-            <!-- CSRF Token -->
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+            <!-- Registration Form -->
+            <form method="POST" action="/register" class="space-y-4" autocomplete="off">
+                <!-- CSRF Token -->
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
-            <!-- First Name -->
-            <div>
-                <label for="first_name" class="block text-sm font-medium">First Name</label>
-                <input type="text" id="first_name" name="first_name" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <!-- First Name -->
+                <div>
+                    <label for="first_name" class="block text-sm font-medium">First Name</label>
+                    <input type="text" id="first_name" name="first_name" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                    <label for="last_name" class="block text-sm font-medium">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium">Email</label>
+                    <input type="email" id="email" name="email" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium">Password</label>
+                    <input type="password" id="password" name="password" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Register
+                </button>
+            </form>
+
+            <!-- Links -->
+            <div class="mt-4 text-center">
+                <a href="/login" class="text-indigo-600 hover:text-indigo-900">Already have an account? Login</a>
             </div>
-
-            <!-- Last Name -->
-            <div>
-                <label for="last_name" class="block text-sm font-medium">Last Name</label>
-                <input type="text" id="last_name" name="last_name" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-
-            <!-- Email -->
-            <div>
-                <label for="email" class="block text-sm font-medium">Email</label>
-                <input type="email" id="email" name="email" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-
-            <!-- Password -->
-            <div>
-                <label for="password" class="block text-sm font-medium">Password</label>
-                <input type="password" id="password" name="password" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-
-            <!-- Confirm Password -->
-            <div>
-                <label for="confirm_password" class="block text-sm font-medium">Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Register
-            </button>
-        </form>
-
-        <!-- Links -->
-        <div class="mt-4">
-            <a href="/auth/login.php" class="text-indigo-600 hover:text-indigo-900">Already have an account? Login</a>
         </div>
     </main>
 
