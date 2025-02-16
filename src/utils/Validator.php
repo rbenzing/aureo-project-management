@@ -137,6 +137,12 @@ class Validator {
             case 'nullable':
                 // No action needed; nullable fields are ignored if empty.
                 break;
+            
+            case 'same':
+                if ($value !== $data['password']) {
+                    $this->addError($field, "$field must match.");
+                }
+                break;
 
             default:
                 $this->addError($field, "Unknown validation rule: $ruleName.");
