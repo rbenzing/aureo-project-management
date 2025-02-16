@@ -10,15 +10,15 @@ class Database {
     private function __construct() {
         // Load environment variables if not already loaded
         if (!isset($_ENV['DB_HOST'])) {
-            $dotenv = Dotenv::createImmutable(__DIR__ . '/../'); // Adjust path as needed
+            $dotenv = Dotenv::createImmutable(__DIR__ . '/../../'); // Adjust path as needed
             $dotenv->load();
         }
 
         // Retrieve database credentials from environment variables
-        $host = $_ENV['DB_HOST'];
-        $dbname = $_ENV['DB_NAME'];
-        $username = $_ENV['DB_USERNAME'];
-        $password = $_ENV['DB_PASSWORD'];
+        $host = $_ENV['DB_HOST'] ?? 'localhost';
+        $dbname = $_ENV['DB_NAME'] ?? 'database_name';
+        $username = $_ENV['DB_USERNAME'] ?? 'root';
+        $password = $_ENV['DB_PASSWORD'] ?? '';
         $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
 
         if (!isset($host) || !isset($dbname) || !isset($username) || !isset($password)) {

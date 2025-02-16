@@ -164,14 +164,22 @@ class Validator {
      * @return bool True if the value is unique, false otherwise.
      */
     private function isUnique($table, $column, $value, $excludeId = null) {
+        if (empty($value)) {
+            return true; // Skip validation if the value is empty
+        }
+    
         $query = "SELECT COUNT(*) FROM $table WHERE $column = :value";
         $params = [':value' => $value];
+    
         if ($excludeId) {
             $query .= " AND id != :id";
             $params[':id'] = $excludeId;
         }
+    
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
+        
         return $stmt->fetchColumn() === 0;
     }
+    
 }
