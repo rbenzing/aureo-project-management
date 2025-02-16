@@ -53,6 +53,18 @@ class AuthController {
         include_once __DIR__ . '/../views/auth/login.php';
     }
 
+    /**
+     * Log out the user.
+     */
+    public function logout() {
+        // Destroy the session
+        session_destroy();
+
+        // Redirect to the login page
+        header('Location: /login');
+        exit;
+    }
+
     public function register($data = null) {
         if (isset($data)) {
             // Validate input data

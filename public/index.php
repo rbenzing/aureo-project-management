@@ -32,14 +32,15 @@ $route = str_replace('.php','',trim($requestUri, '/')) ?: 'login'; // Default to
 $routes = [
     '' => ['controller' => 'AuthController', 'method' => 'login'], // Default route
     'login' => ['controller' => 'AuthController', 'method' => 'login'],
+    'logout' => ['controller' => 'AuthController', 'method' => 'logout'],
     'register' => ['controller' => 'AuthController', 'method' => 'register'],
     'activate' => ['controller' => 'AuthController', 'method' => 'activate'],
     'dashboard' => ['controller' => 'DashboardController', 'method' => 'index'],
     'projects' => ['controller' => 'ProjectController', 'method' => 'index'],
     'tasks' => ['controller' => 'TaskController', 'method' => 'index'],
-    'subtasks' => ['controller' => 'SubtaskController', 'method' => 'index'], // Subtasks route
+    'subtasks' => ['controller' => 'SubtaskController', 'method' => 'index'],
     'users' => ['controller' => 'UsersController', 'method' => 'index'],
-    'roles' => ['controller' => 'RoleController', 'method' => 'index'], // Roles route
+    'roles' => ['controller' => 'RoleController', 'method' => 'index'],
     'companies' => ['controller' => 'CompaniesController', 'method' => 'index'],
     'reset-password' => ['controller' => 'AuthController', 'method' => 'resetPassword'],
     'forgot-password' => ['controller' => 'AuthController', 'method' => 'forgotPassword']

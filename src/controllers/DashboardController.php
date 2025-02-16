@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Models\User;
 use App\Models\Project;
 use App\Models\Task;
 
@@ -17,7 +18,8 @@ class DashboardController {
 
         // Fetch the logged-in user's details
         $userId = $_SESSION['user_id'];
-
+        $user = (new User())->findById($userId);
+        
         // Fetch recent projects for the user
         $projects = (new Project())->getRecentProjectsByUser($userId);
 

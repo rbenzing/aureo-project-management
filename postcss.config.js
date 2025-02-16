@@ -1,10 +1,10 @@
 module.exports = {
-    plugins: [
-        require('postcss-import'), // Modular imports
-        require('postcss-nested'), // Nested rules
-        require('autoprefixer'),   // Add vendor prefixes
-        ...(process.env.NODE_ENV === 'production'
-            ? [require('cssnano')({ preset: 'default' })] // Minify CSS in production
-            : []),
-    ],
+    plugins: {
+        'postcss-import': {}, // Modular imports
+        'postcss-nested': {}, // Nested rules
+        'tailwindcss/nesting': 'postcss-nesting',
+        tailwindcss: {},
+        autoprefixer: {},   // Add vendor prefixes
+        ...(process.env.NODE_ENV === 'production' ? { cssnano: {} } : {})
+    },
 };

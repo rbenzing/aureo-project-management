@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Sidebar -->
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="flex-grow p-6">
         <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
         <!-- Welcome Message -->

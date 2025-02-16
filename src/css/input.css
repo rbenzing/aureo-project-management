@@ -26,6 +26,15 @@
         @apply bg-white text-gray-900;
     }
 
+    button,
+    [type='button'],
+    [type='reset'],
+    [type='submit'] {
+        -webkit-appearance: button; 
+        background-color: transparent;
+        background-image: none;
+    }
+
     /* Dark mode styles */
     .dark input, .dark textarea, .dark select, .dark button {
         @apply bg-gray-900 text-gray-200 border border-gray-600 focus:ring-indigo-500 focus:border-indigo-500;
