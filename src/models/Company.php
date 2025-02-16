@@ -7,6 +7,16 @@ use App\Core\Database;
 class Company {
     private PDO $db;
 
+    public ?int $id = null;
+    public string $name;
+    public ?string $address = null;
+    public ?string $phone = null;
+    public string $email;
+    public ?string $website = null;
+    public bool $is_deleted = false;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
+
     public function __construct() {
         // Initialize the database connection
         $this->db = Database::getInstance();

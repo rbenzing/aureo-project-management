@@ -7,6 +7,16 @@ use App\Core\Database;
 class Role {
     private PDO $db;
 
+    public ?int $id = null;
+    public string $name;
+    public ?string $address = null;
+    public ?string $phone = null;
+    public string $email;
+    public ?string $website = null;
+    public bool $is_deleted = false;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
+
     public function __construct() {
         // Initialize the database connection
         $this->db = Database::getInstance();
@@ -26,7 +36,7 @@ class Role {
      */
     public function getAllPaginated($limit = 10, $page = 1) {
         $offset = ($page - 1) * $limit;
-        $stmt = $this->db->prepare("SELECT * FROM roles LIMIT :limit OFFSET :offset");
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE is_deleted = 0 LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();

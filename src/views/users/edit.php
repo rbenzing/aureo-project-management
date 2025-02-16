@@ -17,11 +17,10 @@ if (!$user) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller->update($_POST, $_GET['id']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_updateuser'])) {
+    $controller->update($_POST);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,9 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1 class="text-2xl font-bold mb-6">Edit User</h1>
 
         <!-- Edit User Form -->
-        <form method="POST" action="/users/edit.php?id=<?php echo $user->id; ?>" class="space-y-4 max-w-md">
+        <form method="POST" action="/edit_user" class="space-y-4 max-w-md">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+            <input type="hidden" name="id" value="<?php echo $user->id; ?>">
 
             <!-- First Name -->
             <div>
@@ -85,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit"
+            <button type="submit" name="submit_updateuser"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Update User
             </button>

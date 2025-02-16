@@ -7,6 +7,18 @@ use App\Core\Database;
 class Subtask {
     private PDO $db;
 
+    public ?int $id = null;
+    public int $task_id;
+    public ?int $assigned_to = null;
+    public string $title;
+    public ?string $description = null;
+    public int $status_id;
+    public ?int $estimated_time = null;
+    public ?int $time_spent = null;
+    public bool $is_deleted = false;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
+
     public function __construct() {
         // Initialize the database connection
         $this->db = Database::getInstance();
@@ -36,16 +48,16 @@ class Subtask {
     public function save($data) {
         $stmt = $this->db->prepare("
             INSERT INTO subtasks (
-                task_id, title, description, status, estimated_time, time_spent, is_deleted, created_at, updated_at
+                task_id, title, description, status_id, estimated_time, time_spent, is_deleted, created_at, updated_at
             ) VALUES (
-                :task_id, :title, :description, :status, :estimated_time, :time_spent, :is_deleted, NOW(), NOW()
+                :task_id, :title, :description, :status_id, :estimated_time, :time_spent, :is_deleted, NOW(), NOW()
             )
         ");
         $stmt->execute([
             'task_id' => $data['task_id'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'status' => $data['status'] ?? 'todo',
+            'status_id' => $data['status_id'] ?? 'todo',
             'estimated_time' => $data['estimated_time'] ?? null,
             'time_spent' => $data['time_spent'] ?? 0,
             'is_deleted' => 0,
@@ -62,7 +74,7 @@ class Subtask {
             SET 
                 title = :title, 
                 description = :description, 
-                status = :status, 
+                status_id = :status_id, 
                 estimated_time = :estimated_time, 
                 time_spent = :time_spent, 
                 updated_at = NOW()
@@ -72,7 +84,7 @@ class Subtask {
             'id' => $id,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'status' => $data['status'] ?? 'todo',
+            'status_id' => $data['status_id'] ?? 'todo',
             'estimated_time' => $data['estimated_time'] ?? null,
             'time_spent' => $data['time_spent'] ?? 0,
         ]);

@@ -7,6 +7,18 @@ use App\Core\Database;
 class Project {
     private PDO $db;
 
+    public ?int $id = null;
+    public int $company_id;
+    public string $name;
+    public ?string $description = null;
+    public ?string $start_date = null;
+    public ?string $end_date = null;
+    public ?string $website = null;
+    public int $status_id;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
+    public bool $is_deleted = false;
+
     public function __construct() {
         // Initialize the database connection
         $this->db = Database::getInstance();

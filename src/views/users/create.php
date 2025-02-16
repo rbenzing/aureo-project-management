@@ -7,13 +7,12 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_createuser'])) {
     require_once __DIR__ . '/../Controllers/UserController.php';
     $controller = new \App\Controllers\UserController();
     $controller->create($_POST);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1 class="text-2xl font-bold mb-6">Create User</h1>
 
         <!-- Create User Form -->
-        <form method="POST" action="/users/create.php" class="space-y-4 max-w-md">
+        <form method="POST" action="/create_user" class="space-y-4 max-w-md">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -89,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit"
+            <button type="submit" name="submit_createuser"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Create User
             </button>

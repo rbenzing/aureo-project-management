@@ -7,6 +7,21 @@ use App\Core\Database;
 class Task {
     private PDO $db;
 
+    public ?int $id = null;
+    public int $project_id;
+    public ?int $assigned_to = null;
+    public string $title;
+    public ?string $description = null;
+    public string $priority;
+    public int $status_id;
+    public ?int $estimated_time = null;
+    public ?int $time_spent = null;
+    public ?string $due_date = null;
+    public ?string $complete_date = null;
+    public bool $is_deleted = false;
+    public ?string $created_at = null;
+    public ?string $updated_at = null;
+
     public function __construct() {
         // Initialize the database connection
         $this->db = Database::getInstance();
@@ -55,8 +70,8 @@ class Task {
      */
     public function save() {
         $stmt = $this->db->prepare("
-            INSERT INTO tasks (project_id, assigned_to, title, description, priority, status, estimated_time, due_date, created_at, updated_at)
-            VALUES (:project_id, :assigned_to, :title, :description, :priority, :status, :estimated_time, :due_date, NOW(), NOW())
+            INSERT INTO tasks (project_id, assigned_to, title, description, priority, status_id, estimated_time, due_date, created_at, updated_at)
+            VALUES (:project_id, :assigned_to, :title, :description, :priority, :status_id, :estimated_time, :due_date, NOW(), NOW())
         ");
         $stmt->execute([
             'project_id' => $this->project_id,
@@ -64,9 +79,9 @@ class Task {
             'title' => $this->title,
             'description' => $this->description ?? null,
             'priority' => $this->priority,
-            'status' => $this->status,
+            'status_id' => $this->status_id,
             'estimated_time' => $this->estimated_time ?? null,
-            'due_date' => $this->due_date ?? null,
+            'due_date' => $this->due_date ?? null
         ]);
         $this->id = $this->db->lastInsertId();
     }
@@ -78,7 +93,7 @@ class Task {
         $stmt = $this->db->prepare("
             UPDATE tasks
             SET project_id = :project_id, assigned_to = :assigned_to, title = :title, description = :description,
-                priority = :priority, status = :status, estimated_time = :estimated_time, due_date = :due_date,
+                priority = :priority, status_id = :status_id, estimated_time = :estimated_time, due_date = :due_date,
                 time_spent = :time_spent, updated_at = NOW()
             WHERE id = :id
         ");
@@ -89,9 +104,10 @@ class Task {
             'title' => $this->title,
             'description' => $this->description ?? null,
             'priority' => $this->priority,
-            'status' => $this->status,
+            'status_id' => $this->status_id,
             'estimated_time' => $this->estimated_time ?? null,
             'due_date' => $this->due_date ?? null,
+            'complete_date' => $this->complete_date ?? null,
             'time_spent' => $this->time_spent ?? 0,
         ]);
     }
@@ -102,6 +118,15 @@ class Task {
     public function delete() {
         $stmt = $this->db->prepare("UPDATE tasks SET is_deleted = 1, updated_at = NOW() WHERE id = :id");
         $stmt->execute(['id' => $this->id]);
+    }
+
+    /**
+     * Fetch task statuses.
+     */
+    public function getTaskStatuses() {
+        $stmt = $this->db->prepare("SELECT * FROM task_statuses WHERE is_deleted = 0");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -120,23 +145,6 @@ class Task {
         $stmt = $this->db->prepare("SELECT * FROM time_tracking WHERE task_id = :task_id");
         $stmt->execute(['task_id' => $this->id]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
-
-    /**
-     * Check if a task with the given title already exists for the same project (for validation).
-     */
-    public static function titleExistsInProject($title, $projectId, $excludeId = null) {
-        $query = "SELECT COUNT(*) FROM tasks WHERE title = :title AND project_id = :project_id AND is_deleted = 0";
-        $params = ['title' => $title, 'project_id' => $projectId];
-
-        if ($excludeId) {
-            $query .= " AND id != :id";
-            $params['id'] = $excludeId;
-        }
-
-        $stmt = $this->db->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetchColumn() > 0;
     }
 
     /**
