@@ -55,15 +55,23 @@ class Validator {
         // Extract parameters from the rule (e.g., "max:255" -> ["max", "255"])
         $params = explode(':', $rule);
         $ruleName = $params[0];
+    
+        // Retrieve & Sanitize the input value
         $value = $this->data[$field] ?? null;
-
+    
+        if (is_string($value)) {
+            $value = trim($value); // Remove unnecessary whitespace
+            $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); // Prevent XSS
+        }
+    
+        // Apply different sanitization methods based on data type
         switch ($ruleName) {
             case 'required':
                 if (empty($value)) {
                     $this->addError($field, "$field is required.");
                 }
                 break;
-
+    
             case 'string':
                 if (!is_string($value)) {
                     $this->addError($field, "$field must be a string.");
@@ -74,34 +82,36 @@ class Validator {
                     }
                 }
                 break;
-
+    
             case 'email':
+                $value = filter_var($value, FILTER_SANITIZE_EMAIL); // Sanitize email
                 if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $this->addError($field, "$field must be a valid email address.");
                 }
                 break;
-
+    
             case 'unique':
                 list($table, $column) = explode(',', $params[1]);
-                $excludeId = isset($this->data['id']) ? $this->data['id'] : null;
+                $excludeId = isset($this->data['id']) ? intval($this->data['id']) : null;
                 if (!$this->isUnique($table, $column, $value, $excludeId)) {
                     $this->addError($field, "$field must be unique.");
                 }
                 break;
-
+    
             case 'max':
                 if (isset($params[1]) && strlen($value) > intval($params[1])) {
                     $this->addError($field, "$field must not exceed {$params[1]} characters.");
                 }
                 break;
-
+    
             case 'min':
                 if (isset($params[1]) && strlen($value) < intval($params[1])) {
                     $this->addError($field, "$field must be at least {$params[1]} characters.");
                 }
                 break;
-
+    
             case 'integer':
+                $value = filter_var($value, FILTER_SANITIZE_NUMBER_INT); // Sanitize integer input
                 if (!is_numeric($value) || intval($value) != $value) {
                     $this->addError($field, "$field must be an integer.");
                 } elseif (isset($params[1])) { // Check min/max values
@@ -114,41 +124,44 @@ class Validator {
                     }
                 }
                 break;
-
+    
             case 'boolean':
                 if (!in_array($value, [0, 1, '0', '1', true, false], true)) {
                     $this->addError($field, "$field must be a boolean value.");
                 }
                 break;
-
+    
             case 'in':
                 $allowedValues = explode(',', $params[1]);
                 if (!in_array($value, $allowedValues)) {
                     $this->addError($field, "$field must be one of: " . implode(', ', $allowedValues));
                 }
                 break;
-
+    
             case 'date':
                 if (!strtotime($value)) {
                     $this->addError($field, "$field must be a valid date.");
                 }
                 break;
-
+    
             case 'nullable':
                 // No action needed; nullable fields are ignored if empty.
                 break;
-            
+    
             case 'same':
-                if ($value !== $data['password']) {
-                    $this->addError($field, "$field must match.");
+                if (trim($value) !== trim($this->data[$params[1]])) {
+                    $this->addError($field, "$params[1] fields must match.");
                 }
                 break;
-
+    
             default:
                 $this->addError($field, "Unknown validation rule: $ruleName.");
                 break;
         }
-    }
+    
+        // Store the sanitized value back to the original data array
+        $this->data[$field] = $value;
+    }    
 
     /**
      * Add an error message for a specific field.
