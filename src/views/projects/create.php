@@ -8,18 +8,11 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../Controllers/ProjectController.php';
+    require_once __DIR__ . '/../../Controllers/ProjectController.php';
     $controller = new \App\Controllers\ProjectController();
     $controller->create($_POST);
 }
-
-// Display errors or success messages
-if (isset($_SESSION['error'])) {
-    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">' . htmlspecialchars($_SESSION['error']) . '</div>';
-    unset($_SESSION['error']);
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

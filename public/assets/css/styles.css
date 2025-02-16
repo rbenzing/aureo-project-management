@@ -1,5 +1,7 @@
 /* File Path: /src/css/input.css */
 
+/* Include Tailwind's base styles */
+
 *, ::before, ::after {
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -554,6 +556,19 @@ video {
   display: none;
 }
 
+/* Default light mode styles */
+
+input, textarea, select, button {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+
+/* Dark mode styles */
+
+/* Include Tailwind's component styles */
+
 .container {
   width: 100%;
 }
@@ -587,6 +602,8 @@ video {
     max-width: 1536px;
   }
 }
+
+/* Include Tailwind's utility styles */
 
 .static {
   position: static;
@@ -927,6 +944,12 @@ video {
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
+.shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-md {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
@@ -952,6 +975,8 @@ video {
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Extend Tailwind's configuration with custom styles if needed */
 
 .hover\:bg-gray-700:hover {
   --tw-bg-opacity: 1;

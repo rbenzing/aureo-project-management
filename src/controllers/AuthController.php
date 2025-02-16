@@ -89,7 +89,7 @@ class AuthController {
             exit;
         }
 
-        // Display the login form
+        // Display the register form
         include __DIR__ . '/../views/auth/register.php';
     }
 

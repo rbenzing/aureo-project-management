@@ -7,7 +7,7 @@ if (isset($_SESSION['user_id'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../Controllers/AuthController.php';
+    require_once __DIR__ . '/../../Controllers/AuthController.php';
     $controller = new \App\Controllers\AuthController();
     $controller->forgotPassword($_POST);
 }

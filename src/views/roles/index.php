@@ -7,19 +7,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the list of roles
-require_once __DIR__ . '/../Controllers/RoleController.php';
+require_once __DIR__ . '/../../Controllers/RoleController.php';
 $controller = new \App\Controllers\RoleController();
 $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 items per page
-
-// Display errors or success messages
-if (isset($_SESSION['error'])) {
-    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">' . htmlspecialchars($_SESSION['error']) . '</div>';
-    unset($_SESSION['error']);
-}
-if (isset($_SESSION['success'])) {
-    echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">' . htmlspecialchars($_SESSION['success']) . '</div>';
-    unset($_SESSION['success']);
-}
 ?>
 
 <!DOCTYPE html>

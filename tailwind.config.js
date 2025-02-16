@@ -3,7 +3,6 @@
 module.exports = {
     content: [
         './src/**/*.php',
-        './src/**/*.html',
         './src/**/*.js',
     ],
     theme: {
@@ -16,7 +15,6 @@ module.exports = {
     },
     plugins: [
         require('@tailwindcss/typography'), // Add the Typography plugin
-        require('@tailwindcss/forms'), // Add the Forms plugin
         require('@tailwindcss/aspect-ratio'), // Add the Aspect Ratio plugin
     ],
 };

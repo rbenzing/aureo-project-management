@@ -7,24 +7,18 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the company details
-require_once __DIR__ . '/../Controllers/CompanyController.php';
+require_once __DIR__ . '/../../Controllers/CompanyController.php';
 $controller = new \App\Controllers\CompanyController();
 $company = (new \App\Models\Company())->find($_GET['id']);
 if (!$company) {
     $_SESSION['error'] = 'Company not found.';
-    header('Location: /companies/index.php');
+    header('Location: /companies');
     exit;
 }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controller->update($_POST, $_GET['id']);
-}
-
-// Display errors or success messages
-if (isset($_SESSION['error'])) {
-    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">' . htmlspecialchars($_SESSION['error']) . '</div>';
-    unset($_SESSION['error']);
 }
 ?>
 

@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch the list of users
-require_once __DIR__ . '/../Controllers/UserController.php';
+require_once __DIR__ . '/../../Controllers/UserController.php';
 $controller = new \App\Controllers\UserController();
 $users = (new \App\Models\User())->getAllPaginated(10); // Fetch first page, 10 items per page
 
