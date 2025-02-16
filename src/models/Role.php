@@ -152,7 +152,6 @@ class Role {
      * Check if a role with the given name already exists (for validation).
      */
     public static function nameExists($name, $excludeId = null) {
-        $db = \App\Core\Database::getInstance();
         $query = "SELECT COUNT(*) FROM roles WHERE name = :name AND is_deleted = 0";
         $params = ['name' => $name];
 
@@ -161,7 +160,7 @@ class Role {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }

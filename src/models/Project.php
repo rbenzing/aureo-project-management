@@ -125,7 +125,6 @@ class Project {
      * Check if a project with the given name already exists for the same company (for validation).
      */
     public static function nameExistsInCompany($name, $companyId, $excludeId = null) {
-        $db = \App\Core\Database::getInstance();
         $query = "SELECT COUNT(*) FROM projects WHERE name = :name AND company_id = :company_id AND is_deleted = 0";
         $params = ['name' => $name, 'company_id' => $companyId];
 
@@ -134,7 +133,7 @@ class Project {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }

@@ -90,7 +90,6 @@ class Subtask {
      * Check if a subtask exists for a specific task (for validation).
      */
     public static function existsForTask($taskId, $excludeId = null) {
-        $db = \App\Core\Database::getInstance();
         $query = "SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id AND is_deleted = 0";
         $params = ['task_id' => $taskId];
 
@@ -99,7 +98,7 @@ class Subtask {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }

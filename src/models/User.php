@@ -192,7 +192,6 @@ class User {
      * Check if an email exists in the database (for validation).
      */
     public static function emailExists(string $email, ?int $excludeId = null): bool {
-        $db = Database::getInstance();
         $query = "SELECT COUNT(*) FROM users WHERE email = :email AND is_deleted = 0";
         $params = ['email' => $email];
 
@@ -201,7 +200,7 @@ class User {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
     }

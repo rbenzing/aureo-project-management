@@ -126,7 +126,6 @@ class Task {
      * Check if a task with the given title already exists for the same project (for validation).
      */
     public static function titleExistsInProject($title, $projectId, $excludeId = null) {
-        $db = \App\Core\Database::getInstance();
         $query = "SELECT COUNT(*) FROM tasks WHERE title = :title AND project_id = :project_id AND is_deleted = 0";
         $params = ['title' => $title, 'project_id' => $projectId];
 
@@ -135,8 +134,25 @@ class Task {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Get recent tasks for a user.
+     *
+     * @param int $userId The user ID.
+     * @return array An array of task objects.
+     */
+    public function getRecentTasksByUser($userId) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM tasks 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC 
+            LIMIT 5
+        ");
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 }

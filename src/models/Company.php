@@ -98,7 +98,6 @@ class Company {
      * Check if a company with the given email already exists (for validation).
      */
     public static function emailExists($email, $excludeId = null) {
-        $db = \App\Core\Database::getInstance();
         $query = "SELECT COUNT(*) FROM companies WHERE email = :email AND is_deleted = 0";
         $params = ['email' => $email];
 
@@ -107,8 +106,25 @@ class Company {
             $params['id'] = $excludeId;
         }
 
-        $stmt = $db->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Get recent projects for a user.
+     *
+     * @param int $userId The user ID.
+     * @return array An array of project objects.
+     */
+    public function getRecentProjectsByUser($userId) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM projects 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC 
+            LIMIT 5
+        ");
+        $stmt->execute(['user_id' => $userId]);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 }
