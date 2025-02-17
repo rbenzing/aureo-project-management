@@ -5,13 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: /login');
     exit;
 }
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../../Controllers/ProjectController.php';
-    $controller = new \App\Controllers\ProjectController();
-    $controller->create($_POST);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,11 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Create Project</h1>
 
         <!-- Create Project Form -->
-        <form method="POST" action="/projects/create.php" class="space-y-4 max-w-md">
+        <form method="POST" action="/create_project" class="space-y-4 max-w-md">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -55,13 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Company -->
             <div>
                 <label for="company_id" class="block text-sm font-medium">Company</label>
-                <select id="company_id" name="company_id" required
+                <select id="company_id" name="company_id"
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Select a company</option>
                     <?php
-                    $companies = (new \App\Models\Company())->getAll();
                     foreach ($companies as $company): ?>
-                        <option value="<?php echo $company->id; ?>"><?php echo htmlspecialchars($company->name); ?></option>
+                        <option value="<?php echo $company['id']; ?>"><?php echo htmlspecialchars($company['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -73,11 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Select a status</option>
                     <?php
-                    $statuses = [
-                        ['id' => 1, 'name' => 'Not Started'],
-                        ['id' => 2, 'name' => 'In Progress'],
-                        ['id' => 3, 'name' => 'Completed'],
-                    ];
                     foreach ($statuses as $status): ?>
                         <option value="<?php echo $status['id']; ?>"><?php echo htmlspecialchars($status['name']); ?></option>
                     <?php endforeach; ?>
@@ -85,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit"
+            <button type="submit" name="submit_createproject"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Create Project
             </button>

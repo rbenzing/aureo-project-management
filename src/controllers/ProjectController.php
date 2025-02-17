@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
 use App\Models\Project;
+use App\Models\Company;
 use App\Utils\Validator;
 
 class ProjectController {
@@ -13,6 +14,7 @@ class ProjectController {
 
     public function index() {
         $projects = (new Project())->getAllPaginated(10); // Paginate results
+
         include __DIR__ . '/../views/projects/index.php';
     }
 
@@ -20,73 +22,78 @@ class ProjectController {
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects/index.php');
+            header('Location: /projects');
             exit;
         }
 
-        $tasks = (new \App\Models\Task())->getByProjectId($id);
+        $tasks = (new \App\Models\Project())->getProjectTasks($id);
+
         include __DIR__ . '/../views/projects/view.php';
     }
 
-    public function createForm() {
-        include __DIR__ . '/../views/projects/create.php';
-    }
-
-    public function create($data) {
+    public function create() {
         $middleware = new AuthMiddleware();
         $middleware->hasPermission('create_projects');
 
-        if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
-            $_SESSION['error'] = 'Invalid CSRF token.';
-            header('Location: /projects/create.php');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_createproject'])) {
+            if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+                $_SESSION['error'] = 'Invalid CSRF token.';
+                header('Location: /create_project');
+                exit;
+            }
+
+            $validator = new Validator($_POST, [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string|max:500',
+                'status_id' => 'required|integer',
+            ]);
+
+            if ($validator->fails()) {
+                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
+                header('Location: /create_project');
+                exit;
+            }
+
+            $project = new Project();
+            $project->name = htmlspecialchars($_POST['name']);
+            $project->description = htmlspecialchars($_POST['description'] ?? null);
+            $project->status_id = $_POST['status_id'];
+            $project->company_id = $_POST['company_id'];
+            $project->save();
+
+            $_SESSION['success'] = 'Project created successfully.';
+            header('Location: /projects');
             exit;
         }
 
-        $validator = new Validator($data, [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500',
-            'status_id' => 'required|integer',
-        ]);
+        $statuses = (new Project())->getAllStatuses(); // Get project statuses
+        $companies = (new Company())->getAll(); // Get companies
 
-        if ($validator->fails()) {
-            $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header('Location: /projects/create.php');
-            exit;
-        }
-
-        $project = new Project();
-        $project->name = htmlspecialchars($data['name']);
-        $project->description = htmlspecialchars($data['description'] ?? null);
-        $project->status_id = $data['status_id'];
-        $project->company_id = $_SESSION['user']['company_id'];
-        $project->save();
-
-        $_SESSION['success'] = 'Project created successfully.';
-        header('Location: /projects/index.php');
-        exit;
+        include __DIR__ . '/../views/projects/create.php';
     }
 
-    public function editForm($id) {
+    public function edit() {
+        $id = $_GET['id'];
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects/index.php');
+            header('Location: /projects');
             exit;
         }
         include __DIR__ . '/../views/projects/edit.php';
     }
 
-    public function update($data, $id) {
+    public function update($id) {
         $middleware = new AuthMiddleware();
         $middleware->hasPermission('edit_projects');
 
-        if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
-            header("Location: /projects/edit.php?id=$id");
+            header("Location: /edit_project?id=$id");
             exit;
         }
 
-        $validator = new Validator($data, [
+        $validator = new Validator($_POST, [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'status_id' => 'required|integer',
@@ -94,24 +101,24 @@ class ProjectController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header("Location: /projects/edit.php?id=$id");
+            header("Location: /edit_project?id=$id");
             exit;
         }
 
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects/index.php');
+            header('Location: /projects');
             exit;
         }
 
-        $project->name = htmlspecialchars($data['name']);
-        $project->description = htmlspecialchars($data['description'] ?? null);
-        $project->status_id = $data['status_id'];
+        $project->name = htmlspecialchars($_POST['name']);
+        $project->description = htmlspecialchars($_POST['description'] ?? null);
+        $project->status_id = $_POST['status_id'];
         $project->save();
 
         $_SESSION['success'] = 'Project updated successfully.';
-        header('Location: /projects/index.php');
+        header('Location: /projects');
         exit;
     }
 
@@ -122,7 +129,7 @@ class ProjectController {
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects/index.php');
+            header('Location: /projects');
             exit;
         }
 
@@ -130,7 +137,7 @@ class ProjectController {
         $project->save();
 
         $_SESSION['success'] = 'Project deleted successfully.';
-        header('Location: /projects/index.php');
+        header('Location: /projects');
         exit;
     }
 }

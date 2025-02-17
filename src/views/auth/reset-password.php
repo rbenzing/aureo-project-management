@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Reset Password</h1>
 
         <!-- Reset Password Form -->

@@ -49,7 +49,7 @@ class Company {
     public function getAll() {
         $stmt = $this->db->prepare("SELECT * FROM companies WHERE is_deleted = 0");
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

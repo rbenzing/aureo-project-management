@@ -17,8 +17,8 @@ if (!$project) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller->update($_POST, $_GET['id']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_editproject'])) {
+    $controller->update($_POST);
 }
 ?>
 <!DOCTYPE html>
@@ -38,13 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Edit Project</h1>
 
         <!-- Edit Project Form -->
-        <form method="POST" action="/projects/edit.php?id=<?php echo $project->id; ?>" class="space-y-4 max-w-md">
+        <form method="POST" action="/edit_project" class="space-y-4 max-w-md">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+            <input type="hidden" name="id" value="<?php echo $project->id; ?>">
 
             <!-- Name -->
             <div>
@@ -97,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit"
+            <button type="submit" name="submit_editproject"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Update Project
             </button>

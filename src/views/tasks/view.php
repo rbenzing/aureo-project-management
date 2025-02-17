@@ -5,23 +5,7 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: /login');
     exit;
 }
-
-// Fetch the task details
-require_once __DIR__ . '/../../Controllers/TaskController.php';
-$controller = new \App\Controllers\TaskController();
-$task = (new \App\Models\Task())->find($_GET['id']);
-if (!$task) {
-    $_SESSION['error'] = 'Task not found.';
-    header('Location: /tasks');
-    exit;
-}
-
-// Fetch related data
-$subtasks = (new \App\Models\Subtask())->getByTaskId($task->id);
-$timeEntries = (new \App\Models\Task())->getTimeEntries($task->id);
-$project = (new \App\Models\Project())->find($task->project_id);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +23,7 @@ $project = (new \App\Models\Project())->find($task->project_id);
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Task Details</h1>
 
         <!-- Task Information -->
@@ -108,7 +92,7 @@ $project = (new \App\Models\Project())->find($task->project_id);
         <!-- Add Subtask Form -->
         <div class="mt-6">
             <h2 class="text-xl font-bold mb-4">Add Subtask</h2>
-            <form method="POST" action="/subtasks/create/<?php echo $task->id; ?>" class="space-y-4 max-w-md">
+            <form method="POST" action="/create_subtask?id=<?php echo $task->id; ?>" class="space-y-4 max-w-md">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
                 <!-- Title -->
@@ -153,8 +137,8 @@ $project = (new \App\Models\Project())->find($task->project_id);
 
         <!-- Action Buttons -->
         <div class="mt-6 space-x-4">
-            <a href="/tasks/edit.php?id=<?php echo $task->id; ?>" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Edit Task</a>
-            <a href="/tasks/delete.php?id=<?php echo $task->id; ?>" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            <a href="/edit_tasks?id=<?= htmlspecialchars($task->id) ?>" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Edit Task</a>
+            <a href="/delete_task?id=<?= htmlspecialchars($task->id) ?>" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                onclick="return confirm('Are you sure you want to delete this task?')">Delete Task</a>
         </div>
     </main>

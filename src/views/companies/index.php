@@ -28,7 +28,7 @@ $companies = (new \App\Models\Company())->getAllPaginated(10); // Fetch first pa
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Companies</h1>
 
         <!-- List of Companies -->
@@ -36,7 +36,7 @@ $companies = (new \App\Models\Company())->getAllPaginated(10); // Fetch first pa
             <ul class="space-y-2">
                 <?php foreach ($companies as $company): ?>
                     <li>
-                        <a href="/companies/view.php?id=<?php echo $company->id; ?>" class="text-indigo-600 hover:text-indigo-900">
+                        <a href="/view_company?id=<?php echo $company->id; ?>" class="text-indigo-600 hover:text-indigo-900">
                             <?php echo htmlspecialchars($company->name); ?>
                         </a>
                     </li>
@@ -61,7 +61,7 @@ $companies = (new \App\Models\Company())->getAllPaginated(10); // Fetch first pa
         </div>
 
         <!-- Create Button -->
-        <a href="/companies/create.php" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Company</a>
+        <a href="/create_company" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Company</a>
     </main>
 
     <!-- Footer -->

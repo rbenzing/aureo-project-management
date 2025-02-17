@@ -21,10 +21,10 @@ class DashboardController {
         $user = (new User())->findById($userId);
         
         // Fetch recent projects for the user
-        $projects = (new Project())->getRecentProjectsByUser($userId);
+        $projects = (new Project())->getRecentProjectsByUserId($userId);
 
         // Fetch recent tasks for the user
-        $tasks = (new Task())->getRecentTasksByUser($userId);
+        $tasks = (new Task())->getRecentTasksByUserId($userId);
 
         // Include the dashboard view
         include __DIR__ . '/../views/dashboard/index.php';

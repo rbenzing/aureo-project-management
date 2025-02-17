@@ -28,8 +28,31 @@ class Project {
      * Find a project by its ID.
      */
     public function find($id) {
-        $stmt = $this->db->prepare("SELECT * FROM projects WHERE id = :id AND is_deleted = 0");
-        $stmt->execute(['id' => $id]);
+        $stmt = $this->db->prepare("SELECT 
+            p.id,
+            p.name,
+            p.description,
+            c.name as 'company_name',
+            ps.name AS 'status',
+            u.first_name as 'owner_firstname',
+            u.last_name as 'owner_lastname',
+            p.start_date,
+            p.end_date,
+            p.created_at
+        FROM 
+            projects p
+        LEFT JOIN 
+            project_statuses ps ON p.status_id = ps.id AND ps.is_deleted = 0
+        LEFT JOIN 
+            companies c ON c.id = p.company_id AND c.is_deleted = 0
+        LEFT JOIN 
+            users u ON u.id = p.owner_id AND u.is_deleted = 0
+        WHERE 
+            p.id = :project_id
+            AND p.is_deleted = 0");
+        $stmt->execute([
+            'project_id' => $id
+        ]);
         return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
@@ -46,12 +69,21 @@ class Project {
     }
 
     /**
+     * Get all project statuses
+     */
+    public function getAllStatuses() {
+        $stmt = $this->db->prepare("SELECT * FROM project_statuses WHERE is_deleted = 0");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Fetch all projects without pagination.
      */
     public function getAll() {
         $stmt = $this->db->prepare("SELECT * FROM projects WHERE is_deleted = 0");
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -110,12 +142,57 @@ class Project {
     }
 
     /**
-     * Fetch tasks associated with this project.
+     * Fetch tasks and subtasks grouped by status for a project.
+     *
+     * @param int $projectId The project ID.
+     * @return array Tasks grouped by status.
      */
-    public function getTasks() {
-        $stmt = $this->db->prepare("SELECT * FROM tasks WHERE project_id = :project_id AND is_deleted = 0");
-        $stmt->execute(['project_id' => $this->id]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    public function getProjectTasks($projectId) {
+        $query = "
+            SELECT 
+                t.id AS task_id,
+                t.title AS task_title,
+                t.description AS task_description,
+                ts.name AS task_status,
+                t.due_date AS task_due_date
+            FROM 
+                tasks t
+            LEFT JOIN
+                task_statuses ts ON t.status_id = ts.id AND ts.is_deleted = 0
+            WHERE 
+                t.project_id = :project_id
+                AND t.is_deleted = 0
+            GROUP BY 
+                t.id, t.title, t.description, ts.name, t.due_date
+            ORDER BY 
+                FIELD(ts.name, 'to_do', 'in_progress', 'done');
+        ";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute(['project_id' => $projectId]);
+        $rawData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Organize tasks by status
+        $tasks = [
+            'to_do' => [],
+            'in_progress' => [],
+            'done' => [],
+        ];
+
+        foreach ($rawData as $row) {
+            $task = [
+                'id' => $row['task_id'],
+                'title' => $row['task_title'],
+                'description' => $row['task_description'],
+                'status' => $row['task_status'],
+                'due_date' => $row['task_due_date'],
+                'subtasks' => json_decode($row['subtasks'], true) ?: [],
+            ];
+
+            $tasks[$row['task_status']][] = $task;
+        }
+
+        return $tasks;
     }
 
     /**
@@ -156,12 +233,11 @@ class Project {
      * @param int $userId The user ID.
      * @return array An array of project objects.
      */
-    public function getRecentProjectsByUser($userId) {
+    public function getRecentProjectsByUserId($userId) {
         $stmt = $this->db->prepare("
             SELECT DISTINCT p.* 
             FROM projects p
-            INNER JOIN tasks t ON p.id = t.project_id
-            INNER JOIN users u ON u.id = t.assigned_to
+            INNER JOIN users u ON u.id = p.owner_id
             WHERE u.id = :user_id AND u.is_deleted = 0
             ORDER BY p.created_at DESC
             LIMIT 5

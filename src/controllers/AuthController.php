@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Config\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\User;
 use App\Utils\Email;
@@ -39,18 +40,20 @@ class AuthController {
             // Fetch roles and permissions
             $rolesAndPermissions = (new User())->getRolesAndPermissions($user->id);
 
-            // Log the user in
-            $_SESSION['user_id'] = $user->id;
-            $_SESSION['user'] = [
-                'id' => $user->id,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'role_id' => $user->role_id,
-                'company_id' => $user->company_id,
+            // Save session data
+            \App\Middleware\SessionMiddleware::saveSession($user->id, [
+                'profile' => [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'company_id' => $user->company_id,
+                    'is_active' => $user->is_active
+                ],
                 'roles' => $rolesAndPermissions['roles'],
-                'permissions' => $rolesAndPermissions['permissions']
-            ];
+                'permissions' => $rolesAndPermissions['permissions'],
+                'config' => Config::$app
+            ]);
 
             header('Location: /dashboard');
             exit;
@@ -64,7 +67,7 @@ class AuthController {
      */
     public function logout() {
         // Destroy the session
-        session_destroy();
+        \App\Middleware\SessionMiddleware::destroySession();
 
         // Redirect to the login page
         header('Location: /login');

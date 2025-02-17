@@ -12,6 +12,7 @@ class User {
     public string $first_name;
     public string $last_name;
     public string $email;
+    public ?string $phone;
     public string $password_hash;
     public ?int $role_id = null;
     public ?string $activation_token = null;
@@ -101,7 +102,7 @@ class User {
         if ($this->id) {
             $stmt = $this->db->prepare("
                 UPDATE users
-                SET company_id = :company_id, role_id = :role_id, first_name = :first_name, last_name = :last_name, email = :email, 
+                SET company_id = :company_id, role_id = :role_id, first_name = :first_name, last_name = :last_name, email = :email, phone = :phone,
                 password_hash = :password_hash, activation_token = :activation_token, activation_token_expires_at = :activation_token_expires_at,
                 is_active = :is_active, is_deleted = :is_deleted, updated_at = NOW()
                 WHERE id = :id
@@ -114,6 +115,7 @@ class User {
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'email' => $this->email,
+                'phone' => $this->phone,
                 'password_hash' => $this->password_hash,
                 'activation_token' => $this->activation_token,
                 'activation_token_expires_at' => $this->activation_token_expires_at,
@@ -122,9 +124,9 @@ class User {
             ]);
         } else {
             $stmt = $this->db->prepare("
-                INSERT INTO users (company_id, role_id, first_name, last_name, email, password_hash, activation_token,
+                INSERT INTO users (company_id, role_id, first_name, last_name, email, phone, password_hash, activation_token,
                                   activation_token_expires_at, is_active, created_at, updated_at, is_deleted)
-                VALUES (:company_id, :role_id, :first_name, :last_name, :email, :password_hash, :activation_token,
+                VALUES (:company_id, :role_id, :first_name, :last_name, :email, :phone, :password_hash, :activation_token,
                         :activation_token_expires_at, :is_active, NOW(), NOW(), :is_deleted)
             ");
 
@@ -134,6 +136,7 @@ class User {
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'email' => $this->email,
+                'phone' => $this->phone,
                 'password_hash' => $this->password_hash,
                 'activation_token' => $this->activation_token,
                 'activation_token_expires_at' => $this->activation_token_expires_at,

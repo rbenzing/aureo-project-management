@@ -25,7 +25,7 @@ if (isset($_POST['login_submit'])) {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow flex items-center justify-center mt-6 mb-6">
+    <main class="container flex items-center justify-center mt-6 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
             <h1 class="text-2xl font-bold mb-6">Login</h1>
 

@@ -29,7 +29,7 @@ $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Roles</h1>
 
         <!-- List of Roles -->
@@ -37,7 +37,7 @@ $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 
             <ul class="space-y-2">
                 <?php foreach ($roles as $role): ?>
                     <li>
-                        <a href="/roles/view.php?id=<?php echo $role->id; ?>" class="text-indigo-600 hover:text-indigo-900">
+                        <a href="/view_role?id=<?php echo $role->id; ?>" class="text-indigo-600 hover:text-indigo-900">
                             <?php echo htmlspecialchars($role->name); ?>
                         </a>
                     </li>
@@ -62,7 +62,7 @@ $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 
         </div>
 
         <!-- Create Button -->
-        <a href="/roles/create.php" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Role</a>
+        <a href="/create_role" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Role</a>
     </main>
 
     <!-- Footer -->

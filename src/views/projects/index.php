@@ -5,11 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: /login');
     exit;
 }
-
-// Fetch the list of projects
-require_once __DIR__ . '/../../Controllers/ProjectController.php';
-$controller = new \App\Controllers\ProjectController();
-$projects = (new \App\Models\Project())->getAllPaginated(10); // Fetch first page, 10 items per page
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,7 +23,7 @@ $projects = (new \App\Models\Project())->getAllPaginated(10); // Fetch first pag
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Projects</h1>
 
         <!-- List of Projects -->
@@ -36,7 +31,7 @@ $projects = (new \App\Models\Project())->getAllPaginated(10); // Fetch first pag
             <ul class="space-y-2">
                 <?php foreach ($projects as $project): ?>
                     <li>
-                        <a href="/projects/view.php?id=<?php echo $project->id; ?>" class="text-indigo-600 hover:text-indigo-900">
+                        <a href="/view_project?id=<?php echo $project->id; ?>" class="text-indigo-600 hover:text-indigo-900">
                             <?php echo htmlspecialchars($project->name); ?>
                         </a>
                     </li>
@@ -61,7 +56,7 @@ $projects = (new \App\Models\Project())->getAllPaginated(10); // Fetch first pag
         </div>
 
         <!-- Create Button -->
-        <a href="/projects/create.php" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Project</a>
+        <a href="/create_project" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Project</a>
     </main>
 
     <!-- Footer -->

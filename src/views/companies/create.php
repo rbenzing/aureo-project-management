@@ -7,13 +7,12 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_createcompany'])) {
     require_once __DIR__ . '/../../Controllers/CompanyController.php';
     $controller = new \App\Controllers\CompanyController();
     $controller->create($_POST);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,11 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-grow md:ml-64 p-6">
+    <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Create Company</h1>
 
         <!-- Create Company Form -->
-        <form method="POST" action="/companies/create.php" class="space-y-4 max-w-md">
+        <form method="POST" action="/create_company" class="space-y-4 max-w-md">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -68,11 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Submit Button -->
-            <button type="submit"
+            <button type="submit" name="submit_createcompany"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Create Company
             </button>
         </form>
+
+        <!-- Actions -->
+        <div class="mt-6 flex gap-4">
+            <a href="/companies" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">&larr; Back to Companies</a>
+        </div>
     </main>
 
     <!-- Footer -->

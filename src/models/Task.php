@@ -31,8 +31,8 @@ class Task {
      * Find a task by its ID.
      */
     public function find($id) {
-        $stmt = $this->db->prepare("SELECT * FROM tasks WHERE id = :id AND is_deleted = 0");
-        $stmt->execute(['id' => $id]);
+        $stmt = $this->db->prepare("SELECT * FROM tasks WHERE id = :task_id AND is_deleted = 0");
+        $stmt->execute(['task_id' => $id]);
         return $stmt->fetch(PDO::FETCH_OBJ);
     }
 
@@ -153,7 +153,7 @@ class Task {
      * @param int $userId The user ID.
      * @return array An array of task objects.
      */
-    public function getRecentTasksByUser($userId) {
+    public function getRecentTasksByUserId($userId) {
         $stmt = $this->db->prepare("
             SELECT * FROM tasks 
             WHERE assigned_to = :user_id 

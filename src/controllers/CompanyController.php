@@ -18,18 +18,21 @@ class CompanyController {
     public function index() {
         // Fetch all companies from the database (paginated)
         $companies = (new Company())->getAllPaginated(10); // Paginate results (e.g., 10 per page)
+        
         include __DIR__ . '/../views/companies/index.php';
     }
 
     /**
      * View details of a specific company.
      */
-    public function view($id) {
+    public function view() {
+        $id = $_GET['id'] ?? null;
+
         // Fetch a single company by ID
         $company = (new Company())->find($id);
         if (!$company) {
             $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies/index.php');
+            header('Location: /companies');
             exit;
         }
 
@@ -41,60 +44,57 @@ class CompanyController {
     }
 
     /**
-     * Show the form to create a new company.
+     * Create a new company.
      */
-    public function createForm() {
+    public function create($data = null) {
+        if (isset($data)) {
+            // Validate CSRF token
+            if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
+                $_SESSION['error'] = 'Invalid CSRF token.';
+                header('Location: /create_company');
+                exit;
+            }
+
+            // Validate input data
+            $validator = new Validator($data, [
+                'name' => 'required|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'phone' => 'nullable|string|max:20',
+                'email' => 'nullable|email|unique:companies,email',
+            ]);
+
+            if ($validator->fails()) {
+                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
+                header('Location: /create_company');
+                exit;
+            }
+
+            // Create the company
+            $company = new Company();
+            $company->name = htmlspecialchars($data['name']);
+            $company->address = htmlspecialchars($data['address'] ?? '');
+            $company->phone = htmlspecialchars($data['phone'] ?? '');
+            $company->email = htmlspecialchars($data['email'] ?? '');
+            $company->save();
+
+            $_SESSION['success'] = "Company '$company->name' was created successfully.";
+            header('Location: /companies');
+            exit;
+        }
+
         // Render the create form
         include __DIR__ . '/../views/companies/create.php';
     }
 
     /**
-     * Create a new company.
-     */
-    public function create($data) {
-        // Validate CSRF token
-        if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
-            $_SESSION['error'] = 'Invalid CSRF token.';
-            header('Location: /companies/create.php');
-            exit;
-        }
-
-        // Validate input data
-        $validator = new Validator($data, [
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|unique:companies,email',
-        ]);
-
-        if ($validator->fails()) {
-            $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header('Location: /companies/create.php');
-            exit;
-        }
-
-        // Create the company
-        $company = new Company();
-        $company->name = htmlspecialchars($data['name']);
-        $company->address = htmlspecialchars($data['address'] ?? null);
-        $company->phone = htmlspecialchars($data['phone'] ?? null);
-        $company->email = htmlspecialchars($data['email'] ?? null);
-        $company->save();
-
-        $_SESSION['success'] = 'Company created successfully.';
-        header('Location: /companies/index.php');
-        exit;
-    }
-
-    /**
      * Show the form to edit an existing company.
      */
-    public function editForm($id) {
+    public function edit($id) {
         // Fetch the company
         $company = (new Company())->find($id);
         if (!$company) {
             $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies/index.php');
+            header('Location: /companies');
             exit;
         }
 
@@ -105,11 +105,13 @@ class CompanyController {
     /**
      * Update an existing company.
      */
-    public function update($data, $id) {
+    public function update($data) {
+        $id = parseInt($data['id']);
+
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
-            header("Location: /companies/edit.php?id=$id");
+            header("Location: /edit_company?id=$id");
             exit;
         }
 
@@ -123,7 +125,7 @@ class CompanyController {
 
         if ($validator->fails()) {
             $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header("Location: /companies/edit.php?id=$id");
+            header("Location: /edit_company?id=$id");
             exit;
         }
 
@@ -131,7 +133,7 @@ class CompanyController {
         $company = (new Company())->find($id);
         if (!$company) {
             $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies/index.php');
+            header('Location: /companies');
             exit;
         }
 
@@ -142,7 +144,7 @@ class CompanyController {
         $company->save();
 
         $_SESSION['success'] = 'Company updated successfully.';
-        header('Location: /companies/index.php');
+        header('Location: /companies');
         exit;
     }
 
@@ -154,7 +156,7 @@ class CompanyController {
         $company = (new Company())->find($id);
         if (!$company) {
             $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies/index.php');
+            header('Location: /companies');
             exit;
         }
 
@@ -163,7 +165,7 @@ class CompanyController {
         $company->save();
 
         $_SESSION['success'] = 'Company deleted successfully.';
-        header('Location: /companies/index.php');
+        header('Location: /companies');
         exit;
     }
 }

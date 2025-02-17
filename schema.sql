@@ -87,10 +87,11 @@ CREATE TABLE `role_permissions` (
 -- Table: Project Statuses
 CREATE TABLE `project_statuses` (
     `id` TINYINT AUTO_INCREMENT PRIMARY KEY,
-    `status_name` VARCHAR(50) UNIQUE NOT NULL
+    `name` VARCHAR(50) UNIQUE NOT NULL,
+    `is_deleted` BOOLEAN DEFAULT FALSE,
 ) ENGINE=InnoDB;
 
-INSERT INTO `project_statuses` (status_name) VALUES
+INSERT INTO `project_statuses` (name) VALUES
 ('not_started'),
 ('in_progress'),
 ('completed'),
