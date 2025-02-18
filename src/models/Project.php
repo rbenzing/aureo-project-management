@@ -15,6 +15,7 @@ class Project {
     public ?string $end_date = null;
     public ?string $website = null;
     public int $status_id;
+    public ?int $owner_id = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
     public bool $is_deleted = false;
@@ -25,13 +26,26 @@ class Project {
     }
 
     /**
+     * Hydrate the object with database row data.
+     */
+    private function hydrate(array $data): void {
+        foreach ($data as $key => $value) {
+            if (property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
+    /**
      * Find a project by its ID.
      */
-    public function find($id) {
+    public function find($id): ?self {
         $stmt = $this->db->prepare("SELECT 
             p.id,
             p.name,
             p.description,
+            p.company_id,
+            p.status_id,
             c.name as 'company_name',
             ps.name AS 'status',
             u.first_name as 'owner_firstname',
@@ -50,10 +64,17 @@ class Project {
         WHERE 
             p.id = :project_id
             AND p.is_deleted = 0");
-        $stmt->execute([
-            'project_id' => $id
-        ]);
-        return $stmt->fetch(PDO::FETCH_OBJ);
+        
+        $stmt->execute(['project_id' => $id]);
+
+        $projData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$projData) {
+            return null;
+        }
+
+        $this->hydrate($projData);
+        return $this;
     }
 
     /**
@@ -61,7 +82,31 @@ class Project {
      */
     public function getAllPaginated($limit = 10, $page = 1) {
         $offset = ($page - 1) * $limit;
-        $stmt = $this->db->prepare("SELECT * FROM projects WHERE is_deleted = 0 LIMIT :limit OFFSET :offset");
+        $stmt = $this->db->prepare("SELECT 
+            p.id,
+            p.name,
+            p.description,
+            p.company_id,
+            p.status_id,
+            p.owner_id,
+            c.name as 'company_name',
+            ps.name AS 'status',
+            u.first_name as 'owner_firstname',
+            u.last_name as 'owner_lastname',
+            p.start_date,
+            p.end_date,
+            p.created_at
+        FROM 
+            projects p
+        LEFT JOIN 
+            project_statuses ps ON p.status_id = ps.id AND ps.is_deleted = 0
+        LEFT JOIN 
+            companies c ON c.id = p.company_id AND c.is_deleted = 0
+        LEFT JOIN 
+            users u ON u.id = p.owner_id AND u.is_deleted = 0
+        WHERE 
+            p.is_deleted = 0
+        LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -99,38 +144,43 @@ class Project {
     }
 
     /**
-     * Save a new project to the database.
+     * Save or update a project.
      */
-    public function save() {
-        $stmt = $this->db->prepare("
-            INSERT INTO projects (company_id, name, description, status_id, created_at, updated_at)
-            VALUES (:company_id, :name, :description, :status_id, NOW(), NOW())
-        ");
-        $stmt->execute([
-            'company_id' => $this->company_id,
-            'name' => $this->name,
-            'description' => $this->description ?? null,
-            'status_id' => $this->status_id,
-        ]);
-        $this->id = $this->db->lastInsertId();
-    }
+    public function save(): bool {
+        if ($this->id) {
+            $stmt = $this->db->prepare("
+                UPDATE projects
+                SET company_id = :company_id, name = :name, description = :description, status_id = :status_id, updated_at = NOW()
+                WHERE id = :id
+            ");
 
-    /**
-     * Update an existing project in the database.
-     */
-    public function update() {
-        $stmt = $this->db->prepare("
-            UPDATE projects
-            SET company_id = :company_id, name = :name, description = :description, status_id = :status_id, updated_at = NOW()
-            WHERE id = :id
-        ");
-        $stmt->execute([
-            'id' => $this->id,
-            'company_id' => $this->company_id,
-            'name' => $this->name,
-            'description' => $this->description ?? null,
-            'status_id' => $this->status_id,
-        ]);
+            $stmt->execute([
+                'id' => $this->id,
+                'company_id' => $this->company_id,
+                'name' => $this->name,
+                'description' => $this->description ?? null,
+                'status_id' => $this->status_id
+            ]);
+        } else {
+            $stmt = $this->db->prepare("
+                NSERT INTO projects (company_id, name, description, owner_id, status_id, created_at, updated_at)
+                VALUES (:company_id, :name, :description, :owner_id, :status_id, NOW(), NOW())
+            ");
+
+            $stmt->execute([
+                'company_id' => $this->company_id,
+                'name' => $this->name,
+                'description' => $this->description ?? null,
+                'status_id' => $this->status_id,
+                'owner_id' => $this->owner_id
+            ]);
+        }
+
+        if (!$this->id) {
+            $this->id = $this->db->lastInsertId();
+        }
+
+        return true;
     }
 
     /**
@@ -153,6 +203,8 @@ class Project {
                 t.id AS task_id,
                 t.title AS task_title,
                 t.description AS task_description,
+                t.is_subtask,
+                t.parent_task_id,
                 ts.name AS task_status,
                 t.due_date AS task_due_date
             FROM 
@@ -165,7 +217,9 @@ class Project {
             GROUP BY 
                 t.id, t.title, t.description, ts.name, t.due_date
             ORDER BY 
-                FIELD(ts.name, 'to_do', 'in_progress', 'done');
+                is_subtask ASC,
+                parent_task_id ASC,
+                id ASC;
         ";
 
         $stmt = $this->db->prepare($query);

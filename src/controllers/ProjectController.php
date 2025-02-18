@@ -3,7 +3,6 @@ namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
 use App\Models\Project;
-use App\Models\Company;
 use App\Utils\Validator;
 
 class ProjectController {
@@ -12,13 +11,23 @@ class ProjectController {
         $middleware->hasPermission('view_projects'); // Default permission for all actions
     }
 
+    private function hydrate(array $data): void {
+        foreach ($data as $key => $value) {
+            if (property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
     public function index() {
         $projects = (new Project())->getAllPaginated(10); // Paginate results
 
         include __DIR__ . '/../views/projects/index.php';
     }
 
-    public function view($id) {
+    public function view($data) {
+        $id = $data['id'];
+
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
@@ -26,10 +35,11 @@ class ProjectController {
             exit;
         }
 
-        $tasks = (new \App\Models\Project())->getProjectTasks($id);
+        $tasks = (new Project())->getProjectTasks($id);
 
         include __DIR__ . '/../views/projects/view.php';
     }
+    
 
     public function create() {
         $middleware = new AuthMiddleware();
@@ -67,25 +77,35 @@ class ProjectController {
         }
 
         $statuses = (new Project())->getAllStatuses(); // Get project statuses
-        $companies = (new Company())->getAll(); // Get companies
+        $companies = (new \App\Models\Company())->getAll(); // Get companies
 
         include __DIR__ . '/../views/projects/create.php';
     }
 
-    public function edit() {
-        $id = $_GET['id'];
+    public function edit($data) {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('edit_projects');
+
+        $id = $data['id'];
+        
         $project = (new Project())->find($id);
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
             header('Location: /projects');
             exit;
         }
+
+        $statuses = (new Project())->getAllStatuses(); // Get project statuses
+        $companies = (new \App\Models\Company())->getAll(); // Get companies
+
         include __DIR__ . '/../views/projects/edit.php';
     }
 
-    public function update($id) {
+    public function update($data) {
         $middleware = new AuthMiddleware();
         $middleware->hasPermission('edit_projects');
+
+        $id = $data['id'];
 
         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
@@ -93,7 +113,7 @@ class ProjectController {
             exit;
         }
 
-        $validator = new Validator($_POST, [
+        $validator = new Validator($data, [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'status_id' => 'required|integer',
@@ -111,10 +131,11 @@ class ProjectController {
             header('Location: /projects');
             exit;
         }
-
-        $project->name = htmlspecialchars($_POST['name']);
-        $project->description = htmlspecialchars($_POST['description'] ?? null);
-        $project->status_id = $_POST['status_id'];
+        $project->id = intval($data['id']);
+        $project->name = htmlspecialchars($data['name']);
+        $project->description = htmlspecialchars($data['description'] ?? null);
+        $project->status_id = intval($data['status_id']);
+        $project->company_id = intval($data['company_id']);
         $project->save();
 
         $_SESSION['success'] = 'Project updated successfully.';
@@ -122,9 +143,11 @@ class ProjectController {
         exit;
     }
 
-    public function delete($id) {
+    public function delete($data) {
         $middleware = new AuthMiddleware();
         $middleware->hasPermission('delete_projects');
+
+        $id = $data['id'];
 
         $project = (new Project())->find($id);
         if (!$project) {

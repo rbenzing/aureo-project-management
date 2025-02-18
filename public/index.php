@@ -46,31 +46,43 @@ $routes = [
     'create_project' => ['controller' => 'ProjectController', 'method' => 'create'],
     'view_project' => ['controller' => 'ProjectController', 'method' => 'view'],
     'edit_project' => ['controller' => 'ProjectController', 'method' => 'edit'],
+    'update_project' => ['controller' => 'ProjectController', 'method' => 'update'],
+    'delete_project' => ['controller' => 'ProjectController', 'method' => 'delete'],
     
     'tasks' => ['controller' => 'TaskController', 'method' => 'index'],
     'create_task' => ['controller' => 'TaskController', 'method' => 'create'],
     'view_task' => ['controller' => 'TaskController', 'method' => 'view'],
     'edit_task' => ['controller' => 'TaskController', 'method' => 'edit'],
+    'update_task' => ['controller' => 'TaskController', 'method' => 'update'],
+    'delete_task' => ['controller' => 'TaskController', 'method' => 'delete'],
     
     'subtasks' => ['controller' => 'SubtaskController', 'method' => 'index'],
-    'create_task' => ['controller' => 'SubtaskController', 'method' => 'create'],
-    'view_task' => ['controller' => 'SubtaskController', 'method' => 'view'],
-    'edit_task' => ['controller' => 'SubtaskController', 'method' => 'edit'],
+    'create_subtask' => ['controller' => 'SubtaskController', 'method' => 'create'],
+    'view_subtask' => ['controller' => 'SubtaskController', 'method' => 'view'],
+    'edit_subtask' => ['controller' => 'SubtaskController', 'method' => 'edit'],
+    'update_subtask' => ['controller' => 'SubtaskController', 'method' => 'update'],
+    'delete_subtask' => ['controller' => 'SubtaskController', 'method' => 'delete'],
     
     'users' => ['controller' => 'UserController', 'method' => 'index'],
     'create_user' => ['controller' => 'UserController', 'method' => 'create'],
     'view_user' => ['controller' => 'UserController', 'method' => 'view'],
     'edit_user' => ['controller' => 'UserController', 'method' => 'edit'],
+    'update_user' => ['controller' => 'UserController', 'method' => 'update'],
+    'delete_user' => ['controller' => 'UserController', 'method' => 'delete'],
     
     'roles' => ['controller' => 'RoleController', 'method' => 'index'],
     'create_role' => ['controller' => 'RoleController', 'method' => 'create'],
     'view_role' => ['controller' => 'RoleController', 'method' => 'view'],
     'edit_role' => ['controller' => 'RoleController', 'method' => 'edit'],
+    'update_role' => ['controller' => 'RoleController', 'method' => 'update'],
+    'delete_role' => ['controller' => 'RoleController', 'method' => 'delete'],
     
     'companies' => ['controller' => 'CompanyController', 'method' => 'index'],
     'create_company' => ['controller' => 'CompanyController', 'method' => 'create'],
     'view_company' => ['controller' => 'CompanyController', 'method' => 'view'],
     'edit_company' => ['controller' => 'CompanyController', 'method' => 'edit'],
+    'update_company' => ['controller' => 'CompanyController', 'method' => 'update'],
+    'delete_company' => ['controller' => 'CompanyController', 'method' => 'delete'],
 ];
 
 // Check if the route exists
@@ -80,9 +92,16 @@ if (array_key_exists($route, $routes)) {
 
     // Ensure the controller and method exist
     if (class_exists($controllerName) && method_exists($controllerName, $methodName)) {
+        $params = null;
+        if ($_SERVER["REQUEST_METHOD"] == "GET") {
+            $params = $_GET;
+        } 
+        else if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $params = $_POST;
+        }
         // Instantiate the controller and call the method
         $controller = new $controllerName();
-        $controller->$methodName(isset($_GET['id']) ? htmlspecialchars(trim($_GET['id'])) : null);
+        $controller->$methodName($params);
     } else {
         // Handle invalid controller or method
         http_response_code(500);

@@ -114,7 +114,9 @@ class RoleController {
     /**
      * Update an existing role.
      */
-    public function update($data, $id) {
+    public function update($data) {
+        $id = $data['id'];
+
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
             $_SESSION['error'] = 'Invalid CSRF token.';
@@ -135,13 +137,12 @@ class RoleController {
         }
 
         // Update the role
-        $role = (new Role())->find($id);
-        if (!$role) {
+        $found = (new Role())->find($id);
+        if (!$found) {
             $_SESSION['error'] = 'Role not found.';
             header('Location: /roles');
             exit;
         }
-
         $role->name = htmlspecialchars($data['name']);
         $role->description = htmlspecialchars($data['description'] ?? null);
         $role->save();

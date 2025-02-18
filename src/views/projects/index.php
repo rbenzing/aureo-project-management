@@ -15,28 +15,47 @@ if (!isset($_SESSION['user_id'])) {
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-
     <!-- Header -->
     <?php include __DIR__ . '/../layouts/header.php'; ?>
-
     <!-- Sidebar -->
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
-
     <!-- Main Content -->
     <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Projects</h1>
 
-        <!-- List of Projects -->
+        <!-- Table of Projects -->
         <?php if (!empty($projects)): ?>
-            <ul class="space-y-2">
-                <?php foreach ($projects as $project): ?>
-                    <li>
-                        <a href="/view_project?id=<?php echo $project->id; ?>" class="text-indigo-600 hover:text-indigo-900">
-                            <?php echo htmlspecialchars($project->name); ?>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 mt-2">
+                    <thead class="bg-gray-200 dark:bg-gray-700">
+                        <tr class="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 pl-6">
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Name</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Status</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Company</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Created At</th>
+                            <th class="py-3 px-6 text-center text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <?php foreach ($projects as $project): ?>
+                            <tr class="border-b border-gray-300 dark:border-gray-600">
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">
+                                    <a href="/view_project?id=<?= htmlspecialchars($project->id) ?>" class="text-indigo-600 hover:text-indigo-900">
+                                        <?= htmlspecialchars($project->name) ?>
+                                    </a>
+                                </td>
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($project->status ?? 'Unknown') ?></td>
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($project->company_name ?? 'None') ?></td>
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($project->created_at ?? 'Unknown') ?></td>
+                                <td class="py-4 px-6 text-center text-sm">
+                                    <a href="/edit_project?id=<?= htmlspecialchars($project->id) ?>" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
+                                    <a href="/delete_project?id=<?= htmlspecialchars($project->id) ?>" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this project?')">Delete</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php else: ?>
             <p class="text-gray-500">No projects found.</p>
         <?php endif; ?>
@@ -46,10 +65,10 @@ if (!isset($_SESSION['user_id'])) {
             <?php if (isset($pagination)): ?>
                 <nav class="flex justify-between items-center">
                     <?php if ($pagination['prev_page']): ?>
-                        <a href="?page=<?php echo $pagination['prev_page']; ?>" class="text-indigo-600 hover:text-indigo-900">&laquo; Previous</a>
+                        <a href="?page=<?= htmlspecialchars($pagination['prev_page']) ?>" class="text-indigo-600 hover:text-indigo-900">&laquo; Previous</a>
                     <?php endif; ?>
                     <?php if ($pagination['next_page']): ?>
-                        <a href="?page=<?php echo $pagination['next_page']; ?>" class="text-indigo-600 hover:text-indigo-900">Next &raquo;</a>
+                        <a href="?page=<?= htmlspecialchars($pagination['next_page']) ?>" class="text-indigo-600 hover:text-indigo-900">Next &raquo;</a>
                     <?php endif; ?>
                 </nav>
             <?php endif; ?>
@@ -58,9 +77,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Create Button -->
         <a href="/create_project" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New Project</a>
     </main>
-
     <!-- Footer -->
     <?php include __DIR__ . '/../layouts/footer.php'; ?>
-
 </body>
 </html>

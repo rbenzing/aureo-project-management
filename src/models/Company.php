@@ -23,6 +23,17 @@ class Company {
     }
 
     /**
+     * Hydrate the object with database row data.
+     */
+    private function hydrate(array $data): void {
+        foreach ($data as $key => $value) {
+            if (property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
+    /**
      * Find a company by its ID.
      */
     public function find($id) {

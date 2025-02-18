@@ -15,7 +15,6 @@
             $menuItems = [
                 ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => '🏠'],
                 ['label' => 'Projects', 'path' => '/projects', 'icon' => '📋'],
-                ['label' => 'Tasks', 'path' => '/tasks', 'icon' => '📝'],
                 ['label' => 'Users', 'path' => '/users', 'icon' => '👥'],
                 ['label' => 'Roles', 'path' => '/roles', 'icon' => '🔑'],
                 ['label' => 'Companies', 'path' => '/companies', 'icon' => '🏢'],

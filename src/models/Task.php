@@ -133,7 +133,19 @@ class Task {
      * Fetch subtasks associated with this task.
      */
     public function getSubtasks() {
-        $stmt = $this->db->prepare("SELECT * FROM subtasks WHERE task_id = :task_id AND is_deleted = 0");
+        $stmt = $this->db->prepare("
+            SELECT 
+                id,
+                title,
+                description,
+                status_id
+            FROM 
+                tasks
+            WHERE 
+                parent_task_id = :task_id
+                AND is_subtask = 1
+                AND is_deleted = 0;
+        ");
         $stmt->execute(['task_id' => $this->id]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }

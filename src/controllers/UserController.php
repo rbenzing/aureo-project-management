@@ -79,7 +79,7 @@ class UserController {
         $user->last_name = htmlspecialchars($data['last_name']);
         $user->email = htmlspecialchars($data['email']);
         $user->password_hash = password_hash('default_password', PASSWORD_ARGON2ID); // Set a default password
-        $user->role_id = parseInt($data['role_id']);
+        $user->role_id = intval($data['role_id']);
 
         $user->generateActivationToken();
         $user->save();
@@ -134,13 +134,14 @@ class UserController {
         }
 
         // Update the user
-        $user = (new User())->find($id);
-        if (!$user) {
+        $found = (new User())->find($id);
+        if (!$found) {
             $_SESSION['error'] = 'User not found.';
             header('Location: /users');
             exit;
         }
-
+        $user = new User();
+        $user->hydrate($found);
         $user->first_name = htmlspecialchars($data['first_name']);
         $user->last_name = htmlspecialchars($data['last_name']);
         $user->email = htmlspecialchars($data['email']);

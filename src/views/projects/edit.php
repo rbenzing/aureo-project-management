@@ -39,71 +39,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_editproject'])
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-6">Edit Project</h1>
+        <div class="flex-col">
+            <small><a href="/view_project?id=<?php echo $project->id; ?>" class="text-gray-200 py-4">&laquo; Back to Project</a></small>
+            <h1 class="text-2xl font-bold mb-6">Edit Project</h1>
 
-        <!-- Edit Project Form -->
-        <form method="POST" action="/edit_project" class="space-y-4 max-w-md">
-            <!-- CSRF Token -->
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+            <!-- Edit Project Form -->
+            <form method="POST" action="/update_project" class="space-y-4 max-w-md">
+                <!-- CSRF Token -->
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
-            <input type="hidden" name="id" value="<?php echo $project->id; ?>">
+                <input type="hidden" name="id" value="<?php echo $project->id; ?>">
 
-            <!-- Name -->
-            <div>
-                <label for="name" class="block text-sm font-medium">Name</label>
-                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($project->name); ?>" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
+                <!-- Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium">Name</label>
+                    <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($project->name); ?>" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
 
-            <!-- Description -->
-            <div>
-                <label for="description" class="block text-sm font-medium">Description</label>
-                <textarea id="description" name="description"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"><?php echo htmlspecialchars($project->description ?? ''); ?></textarea>
-            </div>
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium">Description</label>
+                    <textarea id="description" name="description"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"><?php echo htmlspecialchars($project->description ?? ''); ?></textarea>
+                </div>
 
-            <!-- Company -->
-            <div>
-                <label for="company_id" class="block text-sm font-medium">Company</label>
-                <select id="company_id" name="company_id" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">Select a company</option>
-                    <?php
-                    $companies = (new \App\Models\Company())->getAll();
-                    foreach ($companies as $company): ?>
-                        <option value="<?php echo $company->id; ?>" <?php echo $company->id == $project->company_id ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($company->name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Company -->
+                <div>
+                    <label for="company_id" class="block text-sm font-medium">Company</label>
+                    <select id="company_id" name="company_id" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Select a company</option>
+                        <?php
+                        foreach ($companies as $company): ?>
+                            <option value="<?php echo $company['id']; ?>"<?php echo $company['id'] === $project->company_id ? ' selected' : '' ?>><?php echo htmlspecialchars($company['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Status -->
-            <div>
-                <label for="status_id" class="block text-sm font-medium">Status</label>
-                <select id="status_id" name="status_id" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">Select a status</option>
-                    <?php
-                    $statuses = [
-                        ['id' => 1, 'name' => 'Not Started'],
-                        ['id' => 2, 'name' => 'In Progress'],
-                        ['id' => 3, 'name' => 'Completed'],
-                    ];
-                    foreach ($statuses as $status): ?>
-                        <option value="<?php echo $status['id']; ?>" <?php echo $status['id'] == $project->status_id ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($status['name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Status -->
+                <div>
+                    <label for="status_id" class="block text-sm font-medium">Status</label>
+                    <select id="status_id" name="status_id" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Select a status</option>
+                        <?php
+                        foreach ($statuses as $status): ?>
+                            <option value="<?php echo $status['id']; ?>"<?php echo $status['id'] === $project->status_id ? ' selected' : '' ?>><?php echo htmlspecialchars($status['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Submit Button -->
-            <button type="submit" name="submit_editproject"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Update Project
-            </button>
-        </form>
+                <!-- Submit Button -->
+                <button type="submit" name="submit_editproject"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Update Project
+                </button>
+            </form>
+        </div>
     </main>
 
     <!-- Footer -->

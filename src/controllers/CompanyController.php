@@ -106,7 +106,7 @@ class CompanyController {
      * Update an existing company.
      */
     public function update($data) {
-        $id = parseInt($data['id']);
+        $id = intval($data['id']);
 
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
