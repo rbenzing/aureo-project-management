@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="container flex items-center justify-center mt-6 mb-6">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
+    <main class="container grow h-max mx-auto flex flex-col items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-1/3 p-6">
             <h1 class="text-2xl font-bold mb-6">Forgot Password</h1>
 
             <!-- Display Errors or Success Messages -->
@@ -62,11 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Send Reset Link
                 </button>
             </form>
+        </div>
 
-            <!-- Links -->
-            <div class="mt-4">
-                <a href="/login" class="text-indigo-600 hover:text-indigo-900">Back to Login</a>
-            </div>
+        <!-- Links -->
+        <div class="mt-4">
+            <a href="/login" class="text-indigo-600 hover:text-indigo-900">Back to Login</a>
         </div>
     </main>
 

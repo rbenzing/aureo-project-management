@@ -32,7 +32,7 @@ if (!isset($_SESSION['user_id'])) {
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Name</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Status</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Company</th>
-                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Created At</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Created</th>
                             <th class="py-3 px-6 text-center text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                         </tr>
                     </thead>

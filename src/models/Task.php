@@ -53,16 +53,74 @@ class Task {
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
-    /**
-     * Fetch all tasks associated with a specific project.
+        /**
+     * Fetch tasks and subtasks grouped by status for a project.
+     *
+     * @param int $projectId The project ID.
+     * @return array Tasks grouped by status.
      */
     public function getByProjectId($projectId) {
-        $stmt = $this->db->prepare("
-            SELECT * FROM tasks 
-            WHERE project_id = :project_id AND is_deleted = 0
-        ");
+        $query = "
+            SELECT 
+                t.id AS task_id,
+                t.title AS task_title,
+                t.description AS task_description,
+                t.is_subtask,
+                t.parent_task_id,
+                ts.name AS task_status,
+                t.due_date AS task_due_date
+            FROM 
+                tasks t
+            LEFT JOIN
+                task_statuses ts ON t.status_id = ts.id AND ts.is_deleted = 0
+            WHERE 
+                t.project_id = :project_id
+                AND t.is_deleted = 0
+            ORDER BY 
+                t.is_subtask ASC,
+                t.parent_task_id ASC,
+                t.id ASC
+        ";
+        $stmt = $this->db->prepare($query);
         $stmt->execute(['project_id' => $projectId]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        $rawData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Organize tasks and subtasks
+        $tasks = [
+            'open' => [],
+            'in_progress' => [],
+            'completed' => [],
+        ];
+        $subtasksByParent = [];
+    
+        // Separate tasks and subtasks
+        foreach ($rawData as $row) {
+            if ($row['is_subtask']) {
+                // Collect subtasks by their parent_task_id
+                $subtasksByParent[$row['parent_task_id']][] = $row['task_id'];
+            } else {
+                // Add parent tasks to their respective status groups
+                $tasks[$row['task_status']][] = [
+                    'id' => $row['task_id'],
+                    'title' => $row['task_title'],
+                    'description' => $row['task_description'],
+                    'status' => $row['task_status'],
+                    'due_date' => $row['task_due_date'],
+                    'subtasks' => [], // Placeholder for subtasks
+                ];
+            }
+        }
+    
+        // Assign subtasks to their parent tasks
+        foreach ($tasks as &$statusGroup) {
+            foreach ($statusGroup as &$task) {
+                if (isset($subtasksByParent[$task['id']])) {
+                    $task['subtasks'] = $subtasksByParent[$task['id']];
+                }
+            }
+        }
+    
+        return $tasks;
     }
 
     /**

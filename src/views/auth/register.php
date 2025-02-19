@@ -4,13 +4,6 @@ if (isset($_SESSION['user_id'])) {
     header('Location: /dashboard');
     exit;
 }
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_register'])) {
-    require_once __DIR__ . '/../../Controllers/AuthController.php';
-    $controller = new \App\Controllers\AuthController();
-    $controller->register($_POST);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,8 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_register'])) {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="container flex items-center justify-center mt-6 mb-6">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
+    <main class="container grow h-max mx-auto flex flex-col items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-1/3 p-6">
             <h1 class="text-2xl font-bold mb-6 text-center">Register</h1>
 
             <!-- Registration Form -->
@@ -76,11 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_register'])) {
                     Register
                 </button>
             </form>
-
-            <!-- Links -->
-            <div class="mt-4 text-center">
-                <a href="/login" class="text-indigo-600 hover:text-indigo-900">Already have an account? Login</a>
-            </div>
+        </div>
+        
+        <!-- Links -->
+        <div class="mt-4 text-center">
+            Already have an account? <a href="/login" class="text-indigo-600 hover:text-indigo-900">Login</a>
         </div>
     </main>
 

@@ -39,17 +39,17 @@ class Project {
     /**
      * Find a project by its ID.
      */
-    public function find($id): ?self {
+    public function find($id) {
         $stmt = $this->db->prepare("SELECT 
             p.id,
             p.name,
             p.description,
             p.company_id,
             p.status_id,
-            c.name as 'company_name',
-            ps.name AS 'status',
-            u.first_name as 'owner_firstname',
-            u.last_name as 'owner_lastname',
+            c.name AS company_name,
+            ps.name AS project_status,
+            u.first_name AS owner_firstname,
+            u.last_name AS owner_lastname,
             p.start_date,
             p.end_date,
             p.created_at
@@ -74,7 +74,7 @@ class Project {
         }
 
         $this->hydrate($projData);
-        return $this;
+        return $projData;
     }
 
     /**
@@ -89,10 +89,10 @@ class Project {
             p.company_id,
             p.status_id,
             p.owner_id,
-            c.name as 'company_name',
+            c.name AS 'company_name',
             ps.name AS 'status',
-            u.first_name as 'owner_firstname',
-            u.last_name as 'owner_lastname',
+            u.first_name AS 'owner_firstname',
+            u.last_name AS 'owner_lastname',
             p.start_date,
             p.end_date,
             p.created_at
@@ -189,64 +189,6 @@ class Project {
     public function delete() {
         $stmt = $this->db->prepare("UPDATE projects SET is_deleted = 1, updated_at = NOW() WHERE id = :id");
         $stmt->execute(['id' => $this->id]);
-    }
-
-    /**
-     * Fetch tasks and subtasks grouped by status for a project.
-     *
-     * @param int $projectId The project ID.
-     * @return array Tasks grouped by status.
-     */
-    public function getProjectTasks($projectId) {
-        $query = "
-            SELECT 
-                t.id AS task_id,
-                t.title AS task_title,
-                t.description AS task_description,
-                t.is_subtask,
-                t.parent_task_id,
-                ts.name AS task_status,
-                t.due_date AS task_due_date
-            FROM 
-                tasks t
-            LEFT JOIN
-                task_statuses ts ON t.status_id = ts.id AND ts.is_deleted = 0
-            WHERE 
-                t.project_id = :project_id
-                AND t.is_deleted = 0
-            GROUP BY 
-                t.id, t.title, t.description, ts.name, t.due_date
-            ORDER BY 
-                is_subtask ASC,
-                parent_task_id ASC,
-                id ASC;
-        ";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->execute(['project_id' => $projectId]);
-        $rawData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        // Organize tasks by status
-        $tasks = [
-            'to_do' => [],
-            'in_progress' => [],
-            'done' => [],
-        ];
-
-        foreach ($rawData as $row) {
-            $task = [
-                'id' => $row['task_id'],
-                'title' => $row['task_title'],
-                'description' => $row['task_description'],
-                'status' => $row['task_status'],
-                'due_date' => $row['task_due_date'],
-                'subtasks' => json_decode($row['subtasks'], true) ?: [],
-            ];
-
-            $tasks[$row['task_status']][] = $task;
-        }
-
-        return $tasks;
     }
 
     /**

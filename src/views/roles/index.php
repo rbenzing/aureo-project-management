@@ -32,17 +32,37 @@ $roles = (new \App\Models\Role())->getAllPaginated(10); // Fetch first page, 10 
     <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6">Roles</h1>
 
-        <!-- List of Roles -->
+        <!-- Table of Roles -->
         <?php if (!empty($roles)): ?>
-            <ul class="space-y-2">
-                <?php foreach ($roles as $role): ?>
-                    <li>
-                        <a href="/view_role?id=<?php echo $role->id; ?>" class="text-indigo-600 hover:text-indigo-900">
-                            <?php echo htmlspecialchars($role->name); ?>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 mt-2">
+                    <thead class="bg-gray-200 dark:bg-gray-700">
+                        <tr class="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 pl-6">
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Name</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Description</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Created</th>
+                            <th class="py-3 px-6 text-center text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <?php foreach ($roles as $role): ?>
+                            <tr class="border-b border-gray-300 dark:border-gray-600">
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">
+                                    <a href="/view_role?id=<?= htmlspecialchars($role->id) ?>" class="text-indigo-600 hover:text-indigo-900">
+                                        <?= htmlspecialchars($role->name) ?>
+                                    </a>
+                                </td>
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($role->description ?? '') ?></td>
+                                <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($role->created_at ?? '') ?></td>
+                                <td class="py-4 px-6 text-center text-sm">
+                                    <a href="/edit_role?id=<?= htmlspecialchars($role->id) ?>" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
+                                    <a href="/delete_role?id=<?= htmlspecialchars($role->id) ?>" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this role?')">Delete</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php else: ?>
             <p class="text-gray-500">No roles found.</p>
         <?php endif; ?>

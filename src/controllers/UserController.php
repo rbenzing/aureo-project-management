@@ -28,6 +28,9 @@ class UserController {
      * View details of a specific user.
      */
     public function view($id) {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('view_users');
+
         // Fetch a single user by ID (excluding soft-deleted users)
         $user = (new User())->find($id);
         if (!$user) {
@@ -41,61 +44,64 @@ class UserController {
     }
 
     /**
-     * Show the form to create a new user.
+     * Create a new user.
      */
-    public function createForm() {
+    public function create($data = null) {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('create_users');
+
+        if (!empty($data)) {
+            // Validate CSRF token
+            if (!isset($data['csrf_token']) || !$this->validateCsrfToken($data['csrf_token'])) {
+                $_SESSION['error'] = 'Invalid or expired CSRF token.';
+                header('Location: /create_users');
+                exit;
+            }
+
+            // Validate input data
+            $validator = new Validator($data, [
+                'first_name' => 'required|string|max:100',
+                'last_name' => 'required|string|max:100',
+                'email' => 'required|email|unique:users,email',
+                'role_id' => 'required|integer',
+            ]);
+
+            if ($validator->fails()) {
+                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
+                header('Location: /create_users');
+                exit;
+            }
+
+            // Create the user
+            $user = new User();
+            $user->first_name = htmlspecialchars($data['first_name']);
+            $user->last_name = htmlspecialchars($data['last_name']);
+            $user->email = htmlspecialchars($data['email']);
+            $user->password_hash = password_hash('default_password', PASSWORD_ARGON2ID); // Set a default password
+            $user->role_id = intval($data['role_id']);
+
+            $user->generateActivationToken();
+            $user->save();
+
+            // Send activation email
+            Email::sendActivationEmail($user);
+
+            $_SESSION['success'] = 'User was create successfully. An email was sent to the user to activate the account.';
+            header('Location: /create_users');
+            exit;
+        }
+
         // Render the create form
         include __DIR__ . '/../views/users/create.php';
     }
 
     /**
-     * Create a new user.
-     */
-    public function create($data) {
-        // Validate CSRF token
-        if (!isset($data['csrf_token']) || !$this->validateCsrfToken($data['csrf_token'])) {
-            $_SESSION['error'] = 'Invalid or expired CSRF token.';
-            header('Location: /create_users');
-            exit;
-        }
-
-        // Validate input data
-        $validator = new Validator($data, [
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'role_id' => 'required|integer',
-        ]);
-
-        if ($validator->fails()) {
-            $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-            header('Location: /create_users');
-            exit;
-        }
-
-        // Create the user
-        $user = new User();
-        $user->first_name = htmlspecialchars($data['first_name']);
-        $user->last_name = htmlspecialchars($data['last_name']);
-        $user->email = htmlspecialchars($data['email']);
-        $user->password_hash = password_hash('default_password', PASSWORD_ARGON2ID); // Set a default password
-        $user->role_id = intval($data['role_id']);
-
-        $user->generateActivationToken();
-        $user->save();
-
-        // Send activation email
-        Email::sendActivationEmail($user);
-
-        $_SESSION['success'] = 'User was create successfully. An email was sent to the user to activate the account.';
-        header('Location: /create_users');
-        exit;
-    }
-
-    /**
      * Show the form to edit an existing user.
      */
-    public function editForm($id) {
+    public function edit($id) {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('edit_users');
+
         // Fetch the user (excluding soft-deleted users)
         $user = (new User())->find($id);
         if (!$user) {
@@ -111,7 +117,12 @@ class UserController {
     /**
      * Update an existing user.
      */
-    public function update($data, $id) {
+    public function update($data) {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('edit_users');
+
+        $id = $data['id'];
+
         // Validate CSRF token
         if (!isset($data['csrf_token']) || !$this->validateCsrfToken($data['csrf_token'])) {
             $_SESSION['error'] = 'Invalid or expired CSRF token.';

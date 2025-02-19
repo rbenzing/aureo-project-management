@@ -36,27 +36,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-6">Reset Password</h1>
+    <main class="container grow h-max mx-auto flex flex-col items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-1/3 p-6">
+            <h1 class="text-2xl font-bold mb-6">Reset Password</h1>
 
-        <!-- Reset Password Form -->
-        <form method="POST" action="/reset-password" class="space-y-4 max-w-md" autocomplete="off">
-            <!-- CSRF Token -->
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+            <!-- Reset Password Form -->
+            <form method="POST" action="/reset-password" class="space-y-4 max-w-md" autocomplete="off">
+                <!-- CSRF Token -->
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
-            <!-- Email -->
-            <div>
-                <label for="email" class="block text-sm font-medium">Email</label>
-                <input type="email" id="email" name="email" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium">Email</label>
+                    <input type="email" id="email" name="email" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
 
-            <!-- Submit Button -->
-            <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Send Reset Link
-            </button>
-        </form>
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Send Reset Link
+                </button>
+            </form>
+        </div>
 
         <!-- Links -->
         <div class="mt-4">

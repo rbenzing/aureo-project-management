@@ -3,6 +3,8 @@ namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
 use App\Models\Project;
+use App\Models\Task;
+use App\Models\Company;
 use App\Utils\Validator;
 
 class ProjectController {
@@ -29,13 +31,14 @@ class ProjectController {
         $id = $data['id'];
 
         $project = (new Project())->find($id);
+        //die(print_r($project));
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
             header('Location: /projects');
             exit;
         }
 
-        $tasks = (new Project())->getProjectTasks($id);
+        $tasksByStatus = (new Task())->getByProjectId($id);
 
         include __DIR__ . '/../views/projects/view.php';
     }
@@ -77,7 +80,7 @@ class ProjectController {
         }
 
         $statuses = (new Project())->getAllStatuses(); // Get project statuses
-        $companies = (new \App\Models\Company())->getAll(); // Get companies
+        $companies = (new Company())->getAll(); // Get companies
 
         include __DIR__ . '/../views/projects/create.php';
     }
@@ -96,7 +99,7 @@ class ProjectController {
         }
 
         $statuses = (new Project())->getAllStatuses(); // Get project statuses
-        $companies = (new \App\Models\Company())->getAll(); // Get companies
+        $companies = (new Company())->getAll(); // Get companies
 
         include __DIR__ . '/../views/projects/edit.php';
     }

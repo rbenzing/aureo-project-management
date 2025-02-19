@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,132 +20,89 @@ if (!isset($_SESSION['user_id'])) {
     <?php include __DIR__ . '/../layouts/header.php'; ?>
     <!-- Sidebar -->
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
+
     <!-- Main Content -->
     <main class="container mx-auto p-6">
-        <div class="flex justify-between">
-            <div class="flex-col">
-                <small><a href="/projects" class="text-gray-200 py-4">&laquo; Back to Projects</a></small>
-                <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($project->name) ?></h1>
-            </div>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold"><?= htmlspecialchars($project['name']) ?></h1>
+            <a href="/edit_project?id=<?= htmlspecialchars($project['id']) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
         </div>
+
         <!-- Project Details -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6 mb-6">
             <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Project Details</h2>
-            <div class="flex">
-                <div class="w-2/3">
-                    <strong>Description:</strong><br><?= htmlspecialchars($project->description ?? 'No description available') ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p><strong>Description:</strong> <?= htmlspecialchars($project['description'] ?? 'No description') ?></p>
+                    <p><strong>Status:</strong> <?= htmlspecialchars($project['project_status'] ?? 'Unknown') ?></p>
+                    <p><strong>Start Date:</strong> <?= htmlspecialchars($project['start_date'] ?? '') ?></p>
+                    <p><strong>End Date:</strong> <?= htmlspecialchars($project['end_date'] ?? '') ?></p>
                 </div>
-                <div class="w-1/3">
-                    <ul class="space-y-2">
-                        <li><span class="mr-2 font-bold">Status:</span> <?= htmlspecialchars($project->status ?? 'Unknown') ?></li>
-                        <li><span class="mr-2 font-bold">Created:</span> <?= htmlspecialchars($project->created_at ?? 'Unknown') ?></li>
-                        <li><span class="mr-2 font-bold">Company:</span> <?= htmlspecialchars($project->company_name ?? 'None') ?></li>
-                    </ul>
+                <div>
+                    <p><strong>Company:</strong> <?= htmlspecialchars($project['company_name'] ?? '') ?></p>
+                    <p><strong>Owner:</strong> <?= htmlspecialchars($project['owner_firstname'] ?? '') ?> <?= htmlspecialchars($project['owner_lastname'] ?? '') ?></p>
+                    <p><strong>Created At:</strong> <?= htmlspecialchars($project['created_at'] ?? 'Unknown') ?></p>
                 </div>
             </div>
         </div>
-        <!-- Kanban Board -->
+
+        <!-- Milestones -->
+        <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Milestones</h2>
+                <a href="/create_milestone?project_id=<?= htmlspecialchars($project['id']) ?>" class="text-indigo-600 hover:text-indigo-900">[+]</a>
+            </div>
+            <?php if (!empty($milestones)): ?>
+                <ul class="space-y-2">
+                    <?php foreach ($milestones as $milestone): ?>
+                        <li class="flex justify-between items-center">
+                            <div>
+                                <span class="font-medium"><?= htmlspecialchars($milestone['title']) ?></span>
+                                <span class="text-sm text-gray-500">(<?= htmlspecialchars($milestoneStatuses[$milestone['status_id']] ?? 'Unknown') ?>)</span>
+                            </div>
+                            <span class="text-sm text-gray-500"><?= htmlspecialchars($milestone['due_date'] ?? 'No due date') ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="text-gray-500 dark:text-gray-400">No milestones found.</p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Tasks -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- To Do Column -->
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">To Do</h3>
-                    <button id="add-task-to-do" class="text-indigo-600 hover:text-indigo-800 cursor-pointer">[+]</button>
+            <?php foreach ($tasksByStatus as $status => $tasks): ?>
+                <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100"><?= ucfirst($status) ?></h3>
+                        <button id="add-task-<?= $status ?>" class="text-indigo-600 hover:text-indigo-900 cursor-pointer">[+]</button>
+                    </div>
+                    <form id="task-form-<?= $status ?>" class="hidden mb-4">
+                        <input type="text" name="title" placeholder="Task title" class="w-full p-2 border rounded mb-2">
+                        <textarea name="description" placeholder="Task description" class="w-full p-2 border rounded mb-2"></textarea>
+                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Add Task</button>
+                    </form>
+                    <?php if (!empty($tasks)): ?>
+                        <?php foreach ($tasks as $task): ?>
+                            <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                                <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task['title']) ?></h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task['description'] ?? 'No description') ?></p>
+                                <?php if (!empty($task['subtasks'])): ?>
+                                    <ul class="mt-2 space-y-1">
+                                        <?php foreach ($task['subtasks'] as $subtaskId): ?>
+                                            <li class="text-sm text-gray-700 dark:text-gray-300">
+                                                - Subtask ID: <?= htmlspecialchars($subtaskId) ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-gray-500 dark:text-gray-400">No tasks in this column.</p>
+                    <?php endif; ?>
                 </div>
-                <form id="task-form-to-do" class="hidden mb-4">
-                    <input type="text" name="title" placeholder="Task title" class="w-full p-2 border rounded mb-2">
-                    <textarea name="description" placeholder="Task description" class="w-full p-2 border rounded mb-2"></textarea>
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Add Task</button>
-                </form>
-                <?php if (!empty($tasks['to_do'])): ?>
-                    <?php foreach ($tasks['to_do'] as $task): ?>
-                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                            <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task['title']) ?></h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task['description'] ?? 'No description') ?></p>
-                            <?php if (!empty($task['subtasks'])): ?>
-                                <ul class="mt-2 space-y-1">
-                                    <?php foreach ($task['subtasks'] as $subtask): ?>
-                                        <li class="text-sm text-gray-700 dark:text-gray-300">
-                                            - <?= htmlspecialchars($subtask['title']) ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-gray-500 dark:text-gray-400">No tasks in this column.</p>
-                <?php endif; ?>
-            </div>
-
-            <!-- In Progress Column -->
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">In Progress</h3>
-                    <button id="add-task-in-progress" class="text-indigo-600 hover:text-indigo-800 cursor-pointer">[+]</button>
-                </div>
-                <form id="task-form-in-progress" class="hidden mb-4">
-                    <input type="text" name="title" placeholder="Task title" class="w-full p-2 border rounded mb-2">
-                    <textarea name="description" placeholder="Task description" class="w-full p-2 border rounded mb-2"></textarea>
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Add Task</button>
-                </form>
-                <?php if (!empty($tasks['in_progress'])): ?>
-                    <?php foreach ($tasks['in_progress'] as $task): ?>
-                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                            <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task['title']) ?></h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task['description'] ?? 'No description') ?></p>
-                            <?php if (!empty($task['subtasks'])): ?>
-                                <ul class="mt-2 space-y-1">
-                                    <?php foreach ($task['subtasks'] as $subtask): ?>
-                                        <li class="text-sm text-gray-700 dark:text-gray-300">
-                                            - <?= htmlspecialchars($subtask['title']) ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-gray-500 dark:text-gray-400">No tasks in this column.</p>
-                <?php endif; ?>
-            </div>
-
-            <!-- Done Column -->
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Done</h3>
-                    <button id="add-task-done" class="text-indigo-600 hover:text-indigo-800 cursor-pointer">[+]</button>
-                </div>
-                <form id="task-form-done" class="hidden mb-4">
-                    <input type="text" name="title" placeholder="Task title" class="w-full p-2 border rounded mb-2">
-                    <textarea name="description" placeholder="Task description" class="w-full p-2 border rounded mb-2"></textarea>
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Add Task</button>
-                </form>
-                <?php if (!empty($tasks['done'])): ?>
-                    <?php foreach ($tasks['done'] as $task): ?>
-                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                            <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task['title']) ?></h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task['description'] ?? 'No description') ?></p>
-                            <?php if (!empty($task['subtasks'])): ?>
-                                <ul class="mt-2 space-y-1">
-                                    <?php foreach ($task['subtasks'] as $subtask): ?>
-                                        <li class="text-sm text-gray-700 dark:text-gray-300">
-                                            - <?= htmlspecialchars($subtask['title']) ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="text-gray-500 dark:text-gray-400">No tasks in this column.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-6 flex justify-between gap-4">
-            <a href="/edit_project?id=<?= htmlspecialchars($project->id) ?>" class="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
+            <?php endforeach; ?>
         </div>
     </main>
 
@@ -153,19 +111,12 @@ if (!isset($_SESSION['user_id'])) {
 
     <script>
         // Toggle task forms
-        document.getElementById('add-task-to-do').addEventListener('click', () => {
-            const form = document.getElementById('task-form-to-do');
-            form.classList.toggle('hidden');
-        });
-
-        document.getElementById('add-task-in-progress').addEventListener('click', () => {
-            const form = document.getElementById('task-form-in-progress');
-            form.classList.toggle('hidden');
-        });
-
-        document.getElementById('add-task-done').addEventListener('click', () => {
-            const form = document.getElementById('task-form-done');
-            form.classList.toggle('hidden');
+        document.querySelectorAll('[id^="add-task-"]').forEach(button => {
+            button.addEventListener('click', () => {
+                const status = button.id.split('-')[2];
+                const form = document.getElementById(`task-form-${status}`);
+                form.classList.toggle('hidden');
+            });
         });
 
         // Handle form submissions

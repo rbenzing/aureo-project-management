@@ -21,6 +21,9 @@
 }
 
 @layer base {
+    html {
+        height: 100%;
+    }
     /* Default light mode styles */
     input, textarea, select, button {
         @apply bg-white text-gray-900;

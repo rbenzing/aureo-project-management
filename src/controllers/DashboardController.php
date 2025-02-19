@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Middleware\AuthMiddleware;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Task;
@@ -10,6 +11,9 @@ class DashboardController {
      * Display the dashboard page.
      */
     public function index() {
+        $middleware = new AuthMiddleware();
+        $middleware->hasPermission('view_dashboard');
+
         // Ensure the user is logged in
         if (!isset($_SESSION['user_id'])) {
             header('Location: /login');

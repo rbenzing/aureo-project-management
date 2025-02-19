@@ -75,7 +75,7 @@ class AuthController {
     }
 
     public function register($data = null) {
-        if (isset($data)) {
+        if (!empty($data)) {
             // Validate input data
             $validator = new Validator($data, [
                 'first_name' => 'required|string|max:100',
@@ -197,7 +197,7 @@ class AuthController {
      * Process the "Forgot Password" form submission.
      */
     public function forgotPassword($data = null) {
-        if (isset($data)) {
+        if (!empty($data)) {
             // Validate CSRF token
             if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
                 $_SESSION['error'] = 'Invalid CSRF token.';
