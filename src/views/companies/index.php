@@ -1,16 +1,11 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
-
-// Fetch the list of companies
-require_once __DIR__ . '/../../Controllers/CompanyController.php';
-$controller = new \App\Controllers\CompanyController();
-$companies = (new \App\Models\Company())->getAllPaginated(10); // Fetch first page, 10 items per page
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -1,26 +1,11 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
-}
-
-// Fetch the project details
-require_once __DIR__ . '/../../Controllers/ProjectController.php';
-$controller = new \App\Controllers\ProjectController();
-$project = (new \App\Models\Project())->find($_GET['id']);
-if (!$project) {
-    $_SESSION['error'] = 'Project not found.';
-    header('Location: /projects');
-    exit;
-}
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_editproject'])) {
-    $controller->update($_POST);
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_editproject'])
             <h1 class="text-2xl font-bold mb-6">Edit Project</h1>
 
             <!-- Edit Project Form -->
-            <form method="POST" action="/update_project" class="space-y-4 max-w-md">
+            <form method="POST" action="/projects/update" class="space-y-4 max-w-md">
                 <!-- CSRF Token -->
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -91,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_editproject'])
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" name="submit_editproject"
+                <button type="submit"
                     class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Update Project
                 </button>

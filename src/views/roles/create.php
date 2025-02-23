@@ -1,16 +1,8 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
-}
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../../Controllers/RoleController.php';
-    $controller = new \App\Controllers\RoleController();
-    $controller->create($_POST);
 }
 ?>
 

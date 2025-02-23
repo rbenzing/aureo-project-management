@@ -1,11 +1,11 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,7 +44,7 @@ if (!isset($_SESSION['user_id'])) {
                         <?php foreach ($users as $user): ?>
                             <tr class="border-b border-gray-300 dark:border-gray-600">
                                 <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">
-                                    <a href="/view_user?id=<?= htmlspecialchars($user->id) ?>" class="text-indigo-600 hover:text-indigo-900">
+                                    <a href="/users/view/<?= htmlspecialchars($user->id) ?>" class="text-indigo-600 hover:text-indigo-900">
                                         <?= htmlspecialchars($user->first_name) ?> <?= htmlspecialchars($user->last_name) ?>
                                     </a>
                                 </td>
@@ -53,8 +53,8 @@ if (!isset($_SESSION['user_id'])) {
                                 <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($user->phone ?? '') ?></td>
                                 <td class="py-4 px-6 text-sm text-gray-700 dark:text-gray-300"><?= htmlspecialchars($user->created_at ?? '') ?></td>
                                 <td class="py-4 px-6 text-center text-sm">
-                                    <a href="/edit_user?id=<?= htmlspecialchars($user->id) ?>" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
-                                    <a href="/delete_user?id=<?= htmlspecialchars($user->id) ?>" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+                                    <a href="/users/edit/<?= htmlspecialchars($user->id) ?>" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
+                                    <a href="/users/delete/<?= htmlspecialchars($user->id) ?>" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -70,17 +70,17 @@ if (!isset($_SESSION['user_id'])) {
             <?php if (isset($pagination)): ?>
                 <nav class="flex justify-between items-center">
                     <?php if ($pagination['prev_page']): ?>
-                        <a href="?page=<?php echo $pagination['prev_page']; ?>" class="text-indigo-600 hover:text-indigo-900">&laquo; Previous</a>
+                        <a href="/users/page/<?php echo $pagination['prev_page']; ?>" class="text-indigo-600 hover:text-indigo-900">&laquo; Previous</a>
                     <?php endif; ?>
                     <?php if ($pagination['next_page']): ?>
-                        <a href="?page=<?php echo $pagination['next_page']; ?>" class="text-indigo-600 hover:text-indigo-900">Next &raquo;</a>
+                        <a href="/users/page/<?php echo $pagination['next_page']; ?>" class="text-indigo-600 hover:text-indigo-900">Next &raquo;</a>
                     <?php endif; ?>
                 </nav>
             <?php endif; ?>
         </div>
 
         <!-- Create Button -->
-        <a href="/create_user" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
+        <a href="/users/create" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
     </main>
 
     <!-- Footer -->

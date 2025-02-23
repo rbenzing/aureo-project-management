@@ -1,11 +1,11 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +24,7 @@ if (!isset($_SESSION['user_id'])) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($user->name) ?></h1>
+        <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name)?></h1>
 
         <!-- User Details -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">

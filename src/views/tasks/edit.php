@@ -1,24 +1,8 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
-}
-
-// Fetch the task details
-require_once __DIR__ . '/../../Controllers/TaskController.php';
-$controller = new \App\Controllers\TaskController();
-$task = (new \App\Models\Task())->find($_GET['id']);
-if (!$task) {
-    $_SESSION['error'] = 'Task not found.';
-    header('Location: /tasks');
-    exit;
-}
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller->update($_POST, $_GET['id']);
 }
 ?>
 

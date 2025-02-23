@@ -1,31 +1,27 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roles</title>
+    <title>Role Details</title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-
     <!-- Header -->
     <?php include __DIR__ . '/../layouts/header.php'; ?>
-
     <!-- Sidebar -->
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
-
     <!-- Main Content -->
     <main class="container mx-auto p-6">
         <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($role->name) ?></h1>
-
         <!-- Role Details -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
             <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Role Details</h2>
@@ -44,18 +40,15 @@ if (!isset($_SESSION['user_id'])) {
                 </li>
             </ul>
         </div>
-
         <!-- Actions -->
         <div class="mt-6 flex gap-4">
             <a href="/roles" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Back to Roles</a>
-            <a href="/edit_role?id=<?= htmlspecialchars($role->id) ?>" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
-            <a href="/delete_role?id=<?= htmlspecialchars($role->id) ?>" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            <a href="/roles/edit/<?= htmlspecialchars($role->id) ?>" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
+            <a href="/roles/delete/<?= htmlspecialchars($role->id) ?>" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                onclick="return confirm('Are you sure you want to delete this role?')">Delete Role</a>
         </div>
     </main>
-
     <!-- Footer -->
     <?php include __DIR__ . '/../layouts/footer.php'; ?>
-
 </body>
 </html>

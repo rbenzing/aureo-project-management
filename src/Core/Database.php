@@ -2,16 +2,20 @@
 namespace App\Core;
 
 use Dotenv\Dotenv;
+use PDO;
+use PDOException;
+use Exception;
 
-class Database {
+class Database
+{
     private static $instance = null;
     private $pdo;
 
-    private function __construct() {
-        // Load environment variables if not already loaded
-        if (!isset($_ENV['DB_HOST'])) {
-            throw new Exception('Missing database configuration.');
-        }
+    private function __construct()
+    {
+        // Load environment variables
+        $dotenv = Dotenv::createImmutable(BASE_PATH . '/../');
+        $dotenv->load();
 
         // Retrieve database credentials from environment variables
         $host = $_ENV['DB_HOST'] ?? 'localhost';
@@ -25,17 +29,50 @@ class Database {
         }
 
         try {
-            $this->pdo = new \PDO("mysql:host=$host;dbname=$dbname;charset=$charset", $username, $password);
-            $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        } catch (\PDOException $e) {
+            $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ];
+            $this->pdo = new PDO($dsn, $username, $password, $options);
+        } catch (PDOException $e) {
             throw new Exception('Database connection failed: ' . $e->getMessage());
         }
     }
 
-    public static function getInstance() {
+    public function __clone() {}
+    public function __wakeup() {}
+
+    public static function getInstance(): Database
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
-        return self::$instance->pdo;
+        return self::$instance;
+    }
+
+    /**
+     * Execute a prepared statement with optional parameters.
+     *
+     * @param string $sql
+     * @param array $params
+     * @return PDOStatement
+     */
+    public function executeQuery(string $sql, array $params = [])
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt;
+    }
+
+    /**
+     * Get the PDO instance.
+     *
+     * @return PDO
+     */
+    public function getPdo(): PDO
+    {
+        return $this->pdo;
     }
 }

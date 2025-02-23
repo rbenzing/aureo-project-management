@@ -6,24 +6,31 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\Task;
 
-class DashboardController {
+class DashboardController
+{
+    private $authMiddleware;
+
+    public function __construct()
+    {
+        // Ensure the user has the required permission
+        $this->authMiddleware = new AuthMiddleware();
+        $this->authMiddleware->isAuthenticated();
+        $this->authMiddleware->hasPermission('view_dashboard'); // Default permission for all actions
+    }
+
     /**
      * Display the dashboard page.
      */
-    public function index() {
-        $middleware = new AuthMiddleware();
-        $middleware->hasPermission('view_dashboard');
-
-        // Ensure the user is logged in
-        if (!isset($_SESSION['user_id'])) {
+    public function index($requestMethod, $data)
+    {
+        $userId = $_SESSION['user']['profile']['id'];
+        $user = (new User())->findById($userId);
+        if (!$user) {
+            $_SESSION['error'] = 'User not found.';
             header('Location: /login');
             exit;
         }
 
-        // Fetch the logged-in user's details
-        $userId = $_SESSION['user_id'];
-        $user = (new User())->findById($userId);
-        
         // Fetch recent projects for the user
         $projects = (new Project())->getRecentProjectsByUserId($userId);
 
@@ -31,6 +38,6 @@ class DashboardController {
         $tasks = (new Task())->getRecentTasksByUserId($userId);
 
         // Include the dashboard view
-        include __DIR__ . '/../views/dashboard/index.php';
+        include __DIR__ . '/../Views/Dashboard/index.php';
     }
 }

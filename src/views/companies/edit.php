@@ -1,24 +1,8 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
-}
-
-// Fetch the company details
-require_once __DIR__ . '/../../Controllers/CompanyController.php';
-$controller = new \App\Controllers\CompanyController();
-$company = (new \App\Models\Company())->find($_GET['id']);
-if (!$company) {
-    $_SESSION['error'] = 'Company not found.';
-    header('Location: /companies');
-    exit;
-}
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller->update($_POST, $_GET['id']);
 }
 ?>
 

@@ -1,21 +1,35 @@
 <?php
 namespace App\Controllers;
 
-use App\Config\Config;
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\CsrfMiddleware;
 use App\Models\User;
 use App\Utils\Email;
 use App\Utils\Validator;
 
-class AuthController {
-    public function login($data = null) {
-        if (!empty($data)) {
+class AuthController
+{
+    private $authMiddleware;
+    private $csrfMiddleware;
+
+    public function __construct()
+    {
+        $this->authMiddleware = new AuthMiddleware();
+        $this->csrfMiddleware = new CsrfMiddleware();
+    }
+
+    /**
+     * Login
+     */
+    public function login($requestMethod, $data)
+    {
+        if ($requestMethod === 'POST') {
             // Validate input data
             $validator = new Validator($data, [
                 'email' => 'required|email',
                 'password' => 'required|string',
             ]);
-
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
                 header('Location: /login');
@@ -30,7 +44,6 @@ class AuthController {
                 header('Location: /login');
                 exit;
             }
-
             if (!$user->is_active) {
                 $_SESSION['error'] = 'Your account is not active. Please check your email for activation instructions.';
                 header('Location: /login');
@@ -38,11 +51,12 @@ class AuthController {
             }
 
             // Fetch roles and permissions
-            $rolesAndPermissions = (new User())->getRolesAndPermissions($user->id);
+            $rolesAndPermissions = $user->getRolesAndPermissions($user->id);
 
             // Save session data
             \App\Middleware\SessionMiddleware::saveSession($user->id, [
                 'profile' => [
+                    'id' => $user->id,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'email' => $user->email,
@@ -58,14 +72,16 @@ class AuthController {
             header('Location: /dashboard');
             exit;
         }
+
         // Display the login form
-        include_once __DIR__ . '/../views/auth/login.php';
+        include_once __DIR__ . '/../Views/Auth/login.php';
     }
 
     /**
      * Log out the user.
      */
-    public function logout() {
+    public function logout($requestMethod, $data)
+    {
         // Destroy the session
         \App\Middleware\SessionMiddleware::destroySession();
 
@@ -74,8 +90,12 @@ class AuthController {
         exit;
     }
 
-    public function register($data = null) {
-        if (!empty($data)) {
+    /**
+     * Register a new user.
+     */
+    public function register($requestMethod, $data)
+    {
+        if ($requestMethod === 'POST') {
             // Validate input data
             $validator = new Validator($data, [
                 'first_name' => 'required|string|max:100',
@@ -84,7 +104,6 @@ class AuthController {
                 'password' => 'required|string|min:8',
                 'confirm_password' => 'required|string|same:password',
             ]);
-
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
                 header('Location: /register');
@@ -97,23 +116,25 @@ class AuthController {
             $userModel->last_name = htmlspecialchars($data['last_name']);
             $userModel->email = htmlspecialchars($data['email']);
             $userModel->password_hash = password_hash($data['password'], PASSWORD_ARGON2ID);
-            
             $userModel->generateActivationToken();
             $userModel->save();
 
             // Send activation email
             Email::sendActivationEmail($userModel);
-
             $_SESSION['success'] = 'Registration successful. Please check your email to activate your account.';
             header('Location: /login');
             exit;
         }
 
         // Display the register form
-        include_once __DIR__ . '/../views/auth/register.php';
+        include_once __DIR__ . '/../Views/Auth/register.php';
     }
 
-    public function resetPassword($data = null) {
+    /**
+     * Reset the user's password.
+     */
+    public function resetPassword($requestMethod, $data)
+    {
         $token = $data['token'] ?? null;
         if (!$token) {
             $_SESSION['error'] = 'Invalid or missing token.';
@@ -129,23 +150,22 @@ class AuthController {
             exit;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($requestMethod === 'POST') {
             // Validate input data
             $validator = new Validator($data, [
                 'password' => 'required|string|min:8',
                 'confirm_password' => 'required|string|same:password',
                 'token' => 'required|string',
             ]);
-
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /reset-password');
+                header('Location: /reset-password/' . htmlspecialchars($token));
                 exit;
             }
 
             // Update the user's password
             $user->password_hash = password_hash($data['password'], PASSWORD_ARGON2ID);
-            $user->reset_password_token = null;
+            $user->clearPasswordResetToken();
             $user->save();
 
             $_SESSION['success'] = 'Your password has been reset successfully.';
@@ -154,19 +174,19 @@ class AuthController {
         }
 
         // Display the reset password form
-        include_once __DIR__ . '/../views/auth/reset-password.php';
+        include_once __DIR__ . '/../Views/Auth/reset-password.php';
     }
 
     /**
-     * Activate the users account
+     * Activate the user's account.
      */
-    public function activate() {
-        if (isset($_GET['token'])) {
+    public function activate($requestMethod, $data)
+    {
+        if ($requestMethod === 'GET' && isset($data['token'])) {
             // Validate input data
-            $validator = new Validator($_GET, [
+            $validator = new Validator($data, [
                 'token' => 'required|string',
             ]);
-
             if ($validator->fails()) {
                 $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
                 header('Location: /login');
@@ -174,7 +194,8 @@ class AuthController {
             }
 
             // Find the user with a valid activation token
-            $user = (new User())->findByActivationToken($_GET['token']);
+            $userModel = new User();
+            $user = $userModel->findByActivationToken($data['token']);
             if (!$user || strtotime($user->activation_token_expires_at) < time()) {
                 $_SESSION['error'] = 'Invalid or expired activation token.';
                 header('Location: /login');
@@ -183,30 +204,43 @@ class AuthController {
 
             // Activate the account
             $user->is_active = true;
-            $user->activation_token = null; // Clear the activation token
+            $user->clearActivationToken();
             $user->save();
-        
+
+            // Fetch roles and permissions
+            $rolesAndPermissions = $user->getRolesAndPermissions($user->id);
+
+            // Save session data
+            \App\Middleware\SessionMiddleware::saveSession($user->id, [
+                'profile' => [
+                    'id' => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'company_id' => $user->company_id,
+                    'is_active' => $user->is_active
+                ],
+                'roles' => $rolesAndPermissions['roles'],
+                'permissions' => $rolesAndPermissions['permissions'],
+                'config' => Config::$app
+            ]);
+
             $_SESSION['success'] = 'Account activated successfully. You can now log in.';
         }
 
         // Display the login form
-        include_once __DIR__ . '/../views/auth/login.php';
+        include_once __DIR__ . '/../Views/Auth/login.php';
     }
 
     /**
      * Process the "Forgot Password" form submission.
      */
-    public function forgotPassword($data = null) {
-        if (!empty($data)) {
-            // Validate CSRF token
-            if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-                $_SESSION['error'] = 'Invalid CSRF token.';
-                header('Location: /forgot-password');
-                exit;
-            }
-
+    public function forgotPassword($requestMethod, $data)
+    {
+        if ($requestMethod === 'POST') {
             // Validate input data
-            $validator = new Validator($_POST, [
+            $validator = new Validator($data, [
                 'email' => 'required|email',
             ]);
             if ($validator->fails()) {
@@ -216,7 +250,8 @@ class AuthController {
             }
 
             // Check if the user exists
-            $user = (new User())->findByEmail($_POST['email']);
+            $userModel = new User();
+            $user = $userModel->findByEmail($data['email']);
             if (!$user) {
                 $_SESSION['error'] = 'No account found with that email address.';
                 header('Location: /forgot-password');
@@ -224,7 +259,7 @@ class AuthController {
             }
 
             // Generate a password reset token
-            $user->generateActivationToken();
+            $user->generatePasswordResetToken();
             $user->save();
 
             // Send the password reset email
@@ -236,6 +271,6 @@ class AuthController {
         }
 
         // Display the forgot password form
-        include_once __DIR__ . '/../views/auth/forgot-password.php';
+        include_once __DIR__ . '/../Views/Auth/forgot-password.php';
     }
 }

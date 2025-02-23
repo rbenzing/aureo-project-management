@@ -1,29 +1,37 @@
 <?php
 namespace App\Middleware;
 
+use App\Core\Database;
 use Exception;
 
-class CsrfMiddleware {
+class CsrfMiddleware
+{
     private $db;
 
-    public function __construct($db) {
-        $this->db = $db; // Database connection passed from the application
+    public function __construct()
+    {
+        // Use the singleton instance of Database
+        $this->db = Database::getInstance();
     }
 
     /**
      * Generate a CSRF token and store it in the database.
      */
-    public function generateToken() {
+    public function generateToken($user_id = null)
+    {
         // Generate a secure random token
         $token = bin2hex(random_bytes(32));
-
         // Set expiration time (e.g., 1 hour from now)
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
         // Store the token in the csrf_tokens table
-        $this->db->query(
-            "INSERT INTO csrf_tokens (token, user_id, expires_at) VALUES (?, ?, ?)",
-            [$token, $_SESSION['user_id'], $expiresAt]
+        $this->db->executeQuery(
+            "INSERT INTO csrf_tokens (token, session_id, expires_at) VALUES (:token, :session_id, :expires_at)",
+            [
+                ':token' => $token,
+                ':session_id' => session_id(),
+                ':expires_at' => $expiresAt
+            ]
         );
 
         // Store the token in the session for easy access
@@ -33,16 +41,19 @@ class CsrfMiddleware {
     /**
      * Validate the CSRF token from the request.
      */
-    public function validateToken($requestToken) {
+    public function validateToken($requestToken)
+    {
         if (!isset($_SESSION['csrf_token'])) {
             throw new Exception('CSRF token is missing.');
         }
 
         // Fetch the stored token from the database
-        $storedToken = $this->db->query(
-            "SELECT * FROM csrf_tokens WHERE token = ? AND expires_at > NOW()",
-            [$requestToken]
-        )->fetch();
+        $stmt = $this->db->executeQuery(
+            "SELECT * FROM csrf_tokens WHERE token = :token AND expires_at > NOW()",
+            [':token' => $requestToken]
+        );
+
+        $storedToken = $stmt->fetch();
 
         if (!$storedToken) {
             throw new Exception('Invalid or expired CSRF token.');
@@ -57,7 +68,8 @@ class CsrfMiddleware {
     /**
      * Middleware to handle CSRF protection for POST requests.
      */
-    public function handle() {
+    public function handleToken()
+    {
         // Generate a CSRF token if it doesn't already exist
         if (!isset($_SESSION['csrf_token'])) {
             $this->generateToken();
@@ -77,7 +89,7 @@ class CsrfMiddleware {
                 // Log the error and redirect to an error page
                 error_log($e->getMessage());
                 $_SESSION['error'] = 'CSRF validation failed. Please try again.';
-                header('Location: /error');
+                header('Location: /login');
                 exit;
             }
         }
@@ -86,7 +98,8 @@ class CsrfMiddleware {
     /**
      * Clear expired CSRF tokens from the database.
      */
-    public function cleanupExpiredTokens() {
-        $this->db->query("DELETE FROM csrf_tokens WHERE expires_at < NOW()");
+    public function cleanupExpiredTokens()
+    {
+        $this->db->executeQuery("DELETE FROM csrf_tokens WHERE expires_at < NOW()");
     }
 }

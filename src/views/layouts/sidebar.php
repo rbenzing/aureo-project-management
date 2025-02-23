@@ -1,3 +1,23 @@
+<?php
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
+    exit;
+}
+
+// Define menu items as an array for scalability
+$menuItems = [
+    ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => '🏠'],
+    ['label' => 'Companies', 'path' => '/companies', 'icon' => '🏢'],
+    ['label' => 'Milestones', 'path' => '/milestones', 'icon' => '📍'],
+    ['label' => 'Projects', 'path' => '/projects', 'icon' => '📋'],
+    ['label' => 'Roles', 'path' => '/roles', 'icon' => '🔑'],
+    ['label' => 'Users', 'path' => '/users', 'icon' => '👥'],
+];
+
+// Get the current path
+$currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+?>
 <aside class="bg-gray-800 text-white w-64 min-h-screen shadow-lg fixed top-0 left-0 z-20 transition-transform duration-300 ease-in-out transform -translate-x-full" id="sidebar" aria-label="Sidebar">
     <div class="p-4">
         <div class="flex flex-row justify-between">
@@ -11,23 +31,11 @@
         </div>
         <ul class="space-y-2">
             <?php
-            // Define menu items as an array for scalability
-            $menuItems = [
-                ['label' => 'Dashboard', 'path' => '/dashboard', 'icon' => '🏠'],
-                ['label' => 'Projects', 'path' => '/projects', 'icon' => '📋'],
-                ['label' => 'Users', 'path' => '/users', 'icon' => '👥'],
-                ['label' => 'Roles', 'path' => '/roles', 'icon' => '🔑'],
-                ['label' => 'Companies', 'path' => '/companies', 'icon' => '🏢'],
-            ];
-
-            // Get the current path
-            $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
             foreach ($menuItems as $item) {
                 $isActive = $currentPath === $item['path'] ? 'bg-gray-700' : '';
                 echo '<li>';
                 echo '<a href="' . htmlspecialchars($item['path']) . '" class="block hover:bg-gray-700 rounded flex items-center gap-2 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                echo '<span class="p-2">' . $item['icon'] . '</span>';
+                echo '<span class="p-2">' . htmlspecialchars($item['icon']) . '</span>';
                 echo '<span>' . htmlspecialchars($item['label']) . '</span>';
                 echo '</a>';
                 echo '</li>';

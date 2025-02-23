@@ -1,8 +1,7 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
 ?>
@@ -25,7 +24,7 @@ if (!isset($_SESSION['user_id'])) {
     <main class="container mx-auto p-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold"><?= htmlspecialchars($project['name']) ?></h1>
-            <a href="/edit_project?id=<?= htmlspecialchars($project['id']) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
+            <a href="/projects/edit/<?= htmlspecialchars($project['id']) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
         </div>
 
         <!-- Project Details -->
@@ -50,7 +49,7 @@ if (!isset($_SESSION['user_id'])) {
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6 mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Milestones</h2>
-                <a href="/create_milestone?project_id=<?= htmlspecialchars($project['id']) ?>" class="text-indigo-600 hover:text-indigo-900">[+]</a>
+                <a href="/milestones/create?id=<?= htmlspecialchars($project['id']) ?>" class="text-indigo-600 hover:text-indigo-900">[+]</a>
             </div>
             <?php if (!empty($milestones)): ?>
                 <ul class="space-y-2">

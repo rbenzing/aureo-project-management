@@ -1,18 +1,11 @@
 <?php
-// Ensure the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['error'] = 'You must be logged in to access this page.';
-    header('Location: /login');
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
     exit;
 }
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_createcompany'])) {
-    require_once __DIR__ . '/../../Controllers/CompanyController.php';
-    $controller = new \App\Controllers\CompanyController();
-    $controller->create($_POST);
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

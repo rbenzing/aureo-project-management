@@ -1,0 +1,83 @@
+public/
+    assets/
+        css/
+            style.css
+    .htaccess
+    index.php
+src/
+    .htaccess
+    Controllers/
+        AuthController.php
+        CompanyController.php
+        DashboardController.php
+        ProjectController.php
+        RoleController.php
+        TimeTrackingController.php
+        MilestonesController.php
+        TaskController.php
+        UserController.php
+    Core/
+        Config.php
+        Database.php
+        Router.php
+    Css/
+        input.css
+    Middleware/
+        AuthMiddleware.php
+        CsrfMiddleware.php
+        SessionMiddleware.php
+    Models/
+        Company.php
+        Project.php
+        Role.php
+        Task.php
+        User.php
+        Permission.php
+        Milestone.php
+    Utils/
+        Email.php
+        Validator.php
+    Views/
+        Auth/
+            forgot_password.php
+            login.php
+            registe.php
+            reset_password.php
+        Companies/
+            create.php
+            edit.php
+            index.php
+            view.php
+        Dashboard/
+            index.php
+        Layouts/
+            footer.php
+            header.php
+            sidebar.php
+        Projects/
+            create.php
+            edit.php
+            index.php
+            view.php
+        Roles/
+            create.php
+            edit.php
+            index.php
+            view.php
+        Tasks/
+            create.php
+            edit.php
+            index.php
+            view.php
+        Users/
+            create.php
+            edit.php
+            index.php
+            view.php
+    Tests/
+package.json
+tailwind.config.js
+composer.json
+postcss.config.js
+.env
+.gitignore
