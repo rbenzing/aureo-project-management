@@ -73,11 +73,15 @@ class CsrfMiddleware
                 ':session_id' => session_id()
             ]
         );
-
         $storedToken = $stmt->fetch();
 
-        if (!$storedToken || !hash_equals($_SESSION['csrf_token'], $requestToken)) {
-            throw new Exception('Invalid or expired CSRF token');
+        if(!$storedToken) {
+            $this->generateToken();
+            throw new Exception('Missing or expired CSRF token');
+        }
+
+        if (!hash_equals($_SESSION['csrf_token'], $requestToken)) {
+            throw new Exception('Invalid CSRF token');
         }
 
         return true;
@@ -110,13 +114,13 @@ class CsrfMiddleware
      */
     public function cleanupExpiredTokens(): void
     {
-        /*try {
+        try {
             $this->db->executeQuery(
                 "DELETE FROM csrf_tokens WHERE expires_at < NOW()"
             );
         } catch (Exception $e) {
             error_log("Failed to cleanup expired CSRF tokens: " . $e->getMessage());
-        }*/
+        }
     }
 
     /**

@@ -52,8 +52,7 @@ class SessionMiddleware
             );
         } else {
             // Clear the session if invalid or expired
-            session_destroy();
-            $_SESSION = [];
+            self::destroySession();
         }
     }
 
