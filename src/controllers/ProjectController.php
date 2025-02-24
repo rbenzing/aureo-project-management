@@ -1,254 +1,329 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Company;
 use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class ProjectController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Project $projectModel;
+    private Task $taskModel;
+    private Company $companyModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('view_projects'); // Default permission for all actions
+        $this->projectModel = new Project();
+        $this->taskModel = new Task();
+        $this->companyModel = new Company();
     }
 
     /**
-     * Display a list of projects (paginated).
+     * Display paginated list of projects
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function index($requestMethod, $data)
+    public function index(string $requestMethod, array $data): void
     {
-        // Fetch all projects from the database (paginated)
-        $limit = 10; // Number of projects per page
-        $page = isset($data['page']) ? intval($data['page']) : 1;
-        $projects = (new Project())->getAllPaginated($limit, $page);
-
-        // Prepare pagination data
-        $totalProjects = (new Project())->countAll();
-        $totalPages = ceil($totalProjects / $limit);
-        $prevPage = $page > 1 ? $page - 1 : null;
-        $nextPage = $page < $totalPages ? $page + 1 : null;
-
-        $pagination = [
-            'prev_page' => $prevPage,
-            'next_page' => $nextPage,
-        ];
-
-        include __DIR__ . '/../Views/Projects/index.php';
+        try {
+            $this->authMiddleware->hasPermission('view_projects');
+            
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = Config::get('max_pages', 10);
+            
+            $projects = $this->projectModel->getAllWithDetails($limit, $page);
+            $totalProjects = $this->projectModel->count(['is_deleted' => 0]);
+            $totalPages = ceil($totalProjects / $limit);
+            
+            include __DIR__ . '/../Views/Projects/index.php';
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching projects.';
+            header('Location: /dashboard');
+            exit;
+        }
     }
 
     /**
-     * View details of a specific project.
+     * View project details
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function view($requestMethod, $data)
+    public function view(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid project ID.';
+        try {
+            $this->authMiddleware->hasPermission('view_projects');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid project ID');
+            }
+
+            $project = $this->projectModel->findWithDetails($id);
+            if (!$project || $project->is_deleted) {
+                throw new InvalidArgumentException('Project not found');
+            }
+
+            $tasksByStatus = $this->taskModel->getByProjectId($id);
+            
+            include __DIR__ . '/../Views/Projects/view.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /projects');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::view: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching project details.';
             header('Location: /projects');
             exit;
         }
+    }
 
-        // Fetch a single project by ID
-        $project = (new Project())->find($id);
-        if (!$project) {
-            $_SESSION['error'] = 'Project not found.';
+    /**
+     * Display project creation form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function createForm(string $requestMethod, array $data): void
+    {
+        try {
+            $this->authMiddleware->hasPermission('create_projects');
+            
+            $companies = $this->companyModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->projectModel->getAllStatuses();
+            
+            include __DIR__ . '/../Views/Projects/create.php';
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::createForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /projects');
             exit;
         }
-
-        // Fetch tasks associated with the project
-        $tasksByStatus = (new Task())->getByProjectId($id);
-
-        include __DIR__ . '/../Views/Projects/view.php';
     }
 
     /**
-     * Show the form to create a new project.
+     * Create new project
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function createForm($requestMethod, $data)
+    public function create(string $requestMethod, array $data): void
     {
-        $this->authMiddleware->hasPermission('create_projects');
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
 
-        // Fetch all projects and statuses for the form
-        $statuses = (new Project())->getAllStatuses();
-        $companies = (new Company())->getAll();
-
-        include __DIR__ . '/../Views/Projects/create.php';
-    }
-
-    /**
-     * Create a new project.
-     */
-    public function create($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
+        try {
             $this->authMiddleware->hasPermission('create_projects');
 
-            // Validate input data
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:500',
-                'status_id' => 'required|integer',
-                'company_id' => 'required|integer',
+                'status_id' => 'required|integer|exists:project_statuses,id',
+                'company_id' => 'required|integer|exists:companies,id',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after:start_date'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /projects/create');
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Create the project
-            $project = new Project();
-            $project->name = htmlspecialchars($data['name']);
-            $project->description = htmlspecialchars($data['description'] ?? null);
-            $project->status_id = intval($data['status_id']);
-            $project->company_id = intval($data['company_id']);
-            $project->save();
+            $projectData = [
+                'name' => htmlspecialchars($data['name']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'company_id' => filter_var($data['company_id'], FILTER_VALIDATE_INT),
+                'owner_id' => $_SESSION['user']['id'],
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null
+            ];
+
+            $projectId = $this->projectModel->create($projectData);
 
             $_SESSION['success'] = 'Project created successfully.';
-            header('Location: /projects');
+            header('Location: /projects/view/' . $projectId);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header('Location: /projects/create');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::create: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while creating the project.';
+            header('Location: /projects/create');
             exit;
         }
-
-        // Render the create form
-        $this->createForm($requestMethod, $data);
     }
 
     /**
-     * Show the form to edit an existing project.
+     * Display project edit form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function editForm($requestMethod, $data)
+    public function editForm(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid project ID.';
-            header('Location: /projects');
-            exit;
-        }
-
-        $this->authMiddleware->hasPermission('edit_projects');
-
-        // Fetch the project
-        $project = (new Project())->find($id);
-        if (!$project) {
-            $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects');
-            exit;
-        }
-
-        // Fetch all projects and statuses for the form
-        $statuses = (new Project())->getAllStatuses();
-        $companies = (new Company())->getAll();
-
-        include __DIR__ . '/../Views/Projects/edit.php';
-    }
-
-    /**
-     * Update an existing project.
-     */
-    public function update($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid project ID.';
-                header('Location: /projects');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('edit_projects');
 
-            // Validate input data
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid project ID');
+            }
+
+            $project = $this->projectModel->findWithDetails($id);
+            if (!$project || $project->is_deleted) {
+                throw new InvalidArgumentException('Project not found');
+            }
+
+            $companies = $this->companyModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->projectModel->getAllStatuses();
+
+            include __DIR__ . '/../Views/Projects/edit.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /projects');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::editForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the edit form.';
+            header('Location: /projects');
+            exit;
+        }
+    }
+
+    /**
+     * Update existing project
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function update(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $this->editForm($requestMethod, $data);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_projects');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid project ID');
+            }
+
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:500',
-                'status_id' => 'required|integer',
-                'company_id' => 'required|integer',
+                'status_id' => 'required|integer|exists:project_statuses,id',
+                'company_id' => 'required|integer|exists:companies,id',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after:start_date'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header("Location: /projects/edit/$id");
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Update the project
-            $project = (new Project())->find($id);
-            if (!$project) {
-                $_SESSION['error'] = 'Project not found.';
-                header('Location: /projects');
-                exit;
-            }
+            $projectData = [
+                'id' => $id,
+                'name' => htmlspecialchars($data['name']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'company_id' => filter_var($data['company_id'], FILTER_VALIDATE_INT),
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null
+            ];
 
-            $project->name = htmlspecialchars($data['name']);
-            $project->description = htmlspecialchars($data['description'] ?? null);
-            $project->status_id = intval($data['status_id']);
-            $project->company_id = intval($data['company_id']);
-            $project->save();
+            $this->projectModel->update($projectData);
 
             $_SESSION['success'] = 'Project updated successfully.';
+            header('Location: /projects/view/' . $id);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header("Location: /projects/edit/{$id}");
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::update: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while updating the project.';
+            header("Location: /projects/edit/{$id}");
+            exit;
+        }
+    }
+
+    /**
+     * Delete project (soft delete)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function delete(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
             header('Location: /projects');
             exit;
         }
 
-        // Fetch the project for the edit form
-        $this->editForm($requestMethod, $data);
-    }
-
-    /**
-     * Delete a project (soft delete).
-     */
-    public function delete($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid project ID.';
-                header('Location: /projects');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('delete_projects');
 
-            // Soft delete the project
-            $project = (new Project())->find($id);
-            if (!$project) {
-                $_SESSION['error'] = 'Project not found.';
-                header('Location: /projects');
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid project ID');
             }
 
-            $project->is_deleted = true;
-            $project->save();
+            $project = $this->projectModel->find($id);
+            if (!$project || $project->is_deleted) {
+                throw new InvalidArgumentException('Project not found');
+            }
+
+            // Check if project has active tasks
+            if ($this->taskModel->count(['project_id' => $id, 'is_deleted' => 0]) > 0) {
+                throw new InvalidArgumentException('Cannot delete project with active tasks');
+            }
+
+            $this->projectModel->update([
+                'id' => $id,
+                'is_deleted' => true
+            ]);
 
             $_SESSION['success'] = 'Project deleted successfully.';
             header('Location: /projects');
             exit;
-        }
 
-        // Fetch the project for the delete confirmation form
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid project ID.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /projects');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in ProjectController::delete: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while deleting the project.';
             header('Location: /projects');
             exit;
         }
-
-        $project = (new Project())->find($id);
-        if (!$project) {
-            $_SESSION['error'] = 'Project not found.';
-            header('Location: /projects');
-            exit;
-        }
-
-        include __DIR__ . '/../Views/Projects/delete.php';
     }
 }

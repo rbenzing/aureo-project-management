@@ -83,6 +83,7 @@ class SessionMiddleware
         $serializedData = json_encode($data);
         
         $_SESSION['user'] = $data;
+        $_SESSION['last_activity'] = time();
 
         // Insert or update the session in the database
         self::$db->executeQuery(

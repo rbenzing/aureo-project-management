@@ -1,346 +1,367 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
 use App\Models\Task;
 use App\Models\Project;
-use App\Models\TimeTracking;
 use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class TaskController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Task $taskModel;
+    private Project $projectModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('view_tasks'); // Default permission for all actions
+        $this->taskModel = new Task();
+        $this->projectModel = new Project();
     }
 
     /**
-     * Display a list of tasks assigned to the logged-in user.
+     * Display paginated list of tasks
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function index($requestMethod, $data)
+    public function index(string $requestMethod, array $data): void
     {
-        // Fetch all tasks assigned to the logged-in user (paginated)
-        $limit = 10; // Number of tasks per page
-        $page = isset($data['page']) ? intval($data['page']) : 1;
-        $tasks = (new Task())->getByUserIdPaginated($_SESSION['user_id'], $limit, $page);
+        try {
+            $this->authMiddleware->hasPermission('view_tasks');
+            
+            $userId = $_SESSION['user']['id'] ?? null;
+            if (!$userId) {
+                throw new RuntimeException('User session not found');
+            }
 
-        // Prepare pagination data
-        $totalTasks = (new Task())->countByUserId($_SESSION['user_id']);
-        $totalPages = ceil($totalTasks / $limit);
-        $prevPage = $page > 1 ? $page - 1 : null;
-        $nextPage = $page < $totalPages ? $page + 1 : null;
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = 10;
+            
+            $tasks = $this->taskModel->getByUserId($userId, $limit, $page);
+            $totalTasks = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
+            $totalPages = ceil($totalTasks / $limit);
 
-        $pagination = [
-            'prev_page' => $prevPage,
-            'next_page' => $nextPage,
-        ];
-
-        include __DIR__ . '/../Views/Tasks/index.php';
+            include __DIR__ . '/../Views/Tasks/index.php';
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching tasks.';
+            header('Location: /dashboard');
+            exit;
+        }
     }
 
     /**
-     * View details of a specific task.
+     * View task details
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function view($requestMethod, $data)
+    public function view(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid task ID.';
+        try {
+            $this->authMiddleware->hasPermission('view_tasks');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid task ID');
+            }
+
+            $task = $this->taskModel->findWithDetails($id);
+            if (!$task || $task->is_deleted) {
+                throw new InvalidArgumentException('Task not found');
+            }
+
+            // Check permissions
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+                throw new InvalidArgumentException('You do not have permission to view this task');
+            }
+
+            $project = $this->projectModel->findWithDetails($task->project_id);
+            $subtasks = $this->taskModel->getSubtasks($id);
+            $activeTimer = $_SESSION['active_timer'] ?? null;
+
+            include __DIR__ . '/../Views/Tasks/view.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::view: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching task details.';
             header('Location: /tasks');
             exit;
         }
+    }
 
-        // Fetch a single task by ID
-        $task = (new Task())->find($id);
-        if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-            $_SESSION['error'] = 'Task not found or you do not have permission to view it.';
+    /**
+     * Display task creation form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function createForm(string $requestMethod, array $data): void
+    {
+        try {
+            $this->authMiddleware->hasPermission('create_tasks');
+            
+            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->taskModel->getTaskStatuses();
+            
+            include __DIR__ . '/../Views/Tasks/create.php';
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::createForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /tasks');
             exit;
         }
-
-        $project = (new Project())->find($task->project_id);
-        // Fetch related subtasks
-        $subtasks = (new Task())->getSubtasks($task->id);
-        // Fetch time tracking entries
-        $timeEntries = (new TimeTracking())->getByTaskId($task->id);
-
-        include __DIR__ . '/../Views/Tasks/view.php';
     }
 
     /**
-     * Show the form to create a new task.
+     * Create new task
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function createForm($requestMethod, $data)
+    public function create(string $requestMethod, array $data): void
     {
-        $this->authMiddleware->hasPermission('create_tasks');
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
 
-        // Fetch all projects and statuses for the form
-        $statuses = (new Task())->getTaskStatuses();
-        $projects = (new Project())->getAll();
-
-        include __DIR__ . '/../Views/Tasks/create.php';
-    }
-
-    /**
-     * Create a new task.
-     */
-    public function create($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
+        try {
             $this->authMiddleware->hasPermission('create_tasks');
 
-            // Validate input data
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
-                'description' => 'nullable|string|max:500',
+                'description' => 'nullable|string',
                 'priority' => 'required|in:none,low,medium,high',
-                'status_id' => 'required|integer',
-                'project_id' => 'required|integer',
+                'status_id' => 'required|integer|exists:task_statuses,id',
+                'project_id' => 'required|integer|exists:projects,id',
                 'due_date' => 'nullable|date',
+                'estimated_time' => 'nullable|integer|min:0',
+                'hourly_rate' => 'nullable|integer|min:0',
+                'is_hourly' => 'boolean',
+                'parent_task_id' => 'nullable|integer|exists:tasks,id'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /tasks/create');
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Create the task
-            $task = new Task();
-            $task->title = htmlspecialchars($data['title']);
-            $task->description = htmlspecialchars($data['description'] ?? null);
-            $task->priority = $data['priority'];
-            $task->status_id = intval($data['status_id']);
-            $task->project_id = intval($data['project_id']);
-            $task->assigned_to = $_SESSION['user_id']; // Assign to the logged-in user
-            $task->due_date = $data['due_date'] ?? null;
-            $task->save();
+            $taskData = [
+                'title' => htmlspecialchars($data['title']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'priority' => $data['priority'],
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
+                'assigned_to' => $_SESSION['user']['id'],
+                'due_date' => $data['due_date'] ?? null,
+                'estimated_time' => isset($data['estimated_time']) ? 
+                    filter_var($data['estimated_time'], FILTER_VALIDATE_INT) : null,
+                'hourly_rate' => isset($data['hourly_rate']) ? 
+                    filter_var($data['hourly_rate'], FILTER_VALIDATE_INT) : null,
+                'is_hourly' => isset($data['is_hourly']) ? 
+                    filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN) : false,
+                'parent_task_id' => isset($data['parent_task_id']) ? 
+                    filter_var($data['parent_task_id'], FILTER_VALIDATE_INT) : null,
+                'is_subtask' => isset($data['parent_task_id'])
+            ];
+
+            $taskId = $this->taskModel->create($taskData);
 
             $_SESSION['success'] = 'Task created successfully.';
-            header('Location: /tasks');
+            header('Location: /tasks/view/' . $taskId);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header('Location: /tasks/create');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::create: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while creating the task.';
+            header('Location: /tasks/create');
             exit;
         }
-
-        // Render the create form
-        $this->createForm($requestMethod, $data);
     }
 
     /**
-     * Show the form to edit an existing task.
+     * Display task edit form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function editForm($requestMethod, $data)
+    public function editForm(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid task ID.';
-            header('Location: /tasks');
-            exit;
-        }
-
-        $this->authMiddleware->hasPermission('edit_tasks');
-
-        // Fetch the task
-        $task = (new Task())->find($id);
-        if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-            $_SESSION['error'] = 'Task not found or you do not have permission to edit it.';
-            header('Location: /tasks');
-            exit;
-        }
-
-        // Fetch all projects and statuses for the form
-        $statuses = (new Task())->getTaskStatuses();
-        $projects = (new Project())->getAll();
-
-        include __DIR__ . '/../Views/Tasks/edit.php';
-    }
-
-    /**
-     * Update an existing task.
-     */
-    public function update($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid task ID.';
-                header('Location: /tasks');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('edit_tasks');
 
-            // Validate input data
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid task ID');
+            }
+
+            $task = $this->taskModel->findWithDetails($id);
+            if (!$task || $task->is_deleted) {
+                throw new InvalidArgumentException('Task not found');
+            }
+
+            // Check permissions
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+                throw new InvalidArgumentException('You do not have permission to edit this task');
+            }
+
+            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->taskModel->getTaskStatuses();
+
+            include __DIR__ . '/../Views/Tasks/edit.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::editForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the edit form.';
+            header('Location: /tasks');
+            exit;
+        }
+    }
+
+    /**
+     * Update existing task
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function update(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $this->editForm($requestMethod, $data);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_tasks');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid task ID');
+            }
+
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
-                'description' => 'nullable|string|max:500',
+                'description' => 'nullable|string',
                 'priority' => 'required|in:none,low,medium,high',
-                'status_id' => 'required|integer',
-                'project_id' => 'required|integer',
+                'status_id' => 'required|integer|exists:task_statuses,id',
+                'project_id' => 'required|integer|exists:projects,id',
                 'due_date' => 'nullable|date',
+                'estimated_time' => 'nullable|integer|min:0',
+                'hourly_rate' => 'nullable|integer|min:0',
+                'is_hourly' => 'boolean'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header("Location: /tasks/edit/$id");
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Update the task
-            $task = (new Task())->find($id);
-            if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-                $_SESSION['error'] = 'Task not found or you do not have permission to edit it.';
-                header('Location: /tasks');
-                exit;
-            }
+            $taskData = [
+                'id' => $id,
+                'title' => htmlspecialchars($data['title']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'priority' => $data['priority'],
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
+                'due_date' => $data['due_date'] ?? null,
+                'estimated_time' => isset($data['estimated_time']) ? 
+                    filter_var($data['estimated_time'], FILTER_VALIDATE_INT) : null,
+                'hourly_rate' => isset($data['hourly_rate']) ? 
+                    filter_var($data['hourly_rate'], FILTER_VALIDATE_INT) : null,
+                'is_hourly' => isset($data['is_hourly']) ? 
+                    filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN) : false
+            ];
 
-            $task->title = htmlspecialchars($data['title']);
-            $task->description = htmlspecialchars($data['description'] ?? null);
-            $task->priority = $data['priority'];
-            $task->status_id = intval($data['status_id']);
-            $task->project_id = intval($data['project_id']);
-            $task->due_date = $data['due_date'] ?? null;
-            $task->save();
+            $this->taskModel->update($taskData);
 
             $_SESSION['success'] = 'Task updated successfully.';
+            header('Location: /tasks/view/' . $id);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header("Location: /tasks/edit/{$id}");
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::update: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while updating the task.';
+            header("Location: /tasks/edit/{$id}");
+            exit;
+        }
+    }
+
+    /**
+     * Delete task (soft delete)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function delete(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
             header('Location: /tasks');
             exit;
         }
 
-        // Fetch the task for the edit form
-        $this->editForm($requestMethod, $data);
-    }
-
-    /**
-     * Delete a task (soft delete).
-     */
-    public function delete($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid task ID.';
-                header('Location: /tasks');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('delete_tasks');
 
-            // Soft delete the task
-            $task = (new Task())->find($id);
-            if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-                $_SESSION['error'] = 'Task not found or you do not have permission to delete it.';
-                header('Location: /tasks');
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid task ID');
             }
 
-            $task->is_deleted = true;
-            $task->save();
+            $task = $this->taskModel->find($id);
+            if (!$task || $task->is_deleted) {
+                throw new InvalidArgumentException('Task not found');
+            }
+
+            // Check permissions
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+                throw new InvalidArgumentException('You do not have permission to delete this task');
+            }
+
+            $this->taskModel->update([
+                'id' => $id,
+                'is_deleted' => true
+            ]);
 
             $_SESSION['success'] = 'Task deleted successfully.';
             header('Location: /tasks');
             exit;
-        }
 
-        // Fetch the task for the delete confirmation form
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid task ID.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::delete: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while deleting the task.';
             header('Location: /tasks');
             exit;
         }
-
-        $task = (new Task())->find($id);
-        if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-            $_SESSION['error'] = 'Task not found or you do not have permission to delete it.';
-            header('Location: /tasks');
-            exit;
-        }
-
-        include __DIR__ . '/../Views/Tasks/delete.php';
-    }
-
-    /**
-     * Start a timer for a task.
-     */
-    public function startTimer($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            // Ensure the user has the 'edit_tasks' permission
-            $this->authMiddleware->hasPermission('edit_tasks');
-
-            $taskId = $data['task_id'] ?? null;
-            if (!$taskId) {
-                $_SESSION['error'] = 'Invalid task ID.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            // Start the timer
-            $timeEntry = new TimeTracking();
-            $timeEntry->user_id = $_SESSION['user_id'];
-            $timeEntry->task_id = $taskId;
-            $timeEntry->start_time = date('Y-m-d H:i:s');
-            $timeEntry->save();
-
-            $_SESSION['success'] = 'Timer started successfully.';
-            header("Location: /tasks/view/$taskId");
-            exit;
-        }
-
-        // Render the start timer form if needed
-        include __DIR__ . '/../Views/Tasks/start_timer.php';
-    }
-
-    /**
-     * Stop a timer for a task.
-     */
-    public function stopTimer($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            // Ensure the user has the 'edit_tasks' permission
-            $this->authMiddleware->hasPermission('edit_tasks');
-
-            $timeEntryId = $data['time_entry_id'] ?? null;
-            if (!$timeEntryId) {
-                $_SESSION['error'] = 'Invalid time entry ID.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            // Stop the timer
-            $timeEntry = (new TimeTracking())->find($timeEntryId);
-            if (!$timeEntry || $timeEntry->user_id !== $_SESSION['user_id']) {
-                $_SESSION['error'] = 'Time entry not found or you do not have permission to modify it.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            $timeEntry->end_time = date('Y-m-d H:i:s');
-            $timeEntry->duration = strtotime($timeEntry->end_time) - strtotime($timeEntry->start_time);
-            $timeEntry->save();
-
-            // Update the task's total time spent
-            $task = (new Task())->find($timeEntry->task_id);
-            if (!$task) {
-                $_SESSION['error'] = 'Task not found.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            $task->time_spent += $timeEntry->duration; // Add the duration of this entry
-            $task->save();
-
-            $_SESSION['success'] = 'Timer stopped successfully.';
-            header("Location: /tasks/view/{$timeEntry->task_id}");
-            exit;
-        }
-
-        // Render the stop timer form if needed
-        include __DIR__ . '/../Views/Tasks/stop_timer.php';
     }
 }

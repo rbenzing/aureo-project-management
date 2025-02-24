@@ -1,50 +1,54 @@
 <?php
 namespace App\Core;
 
-use Dotenv\Dotenv;
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
+    exit;
+}
+
 use PDO;
 use PDOException;
-use Exception;
+use RuntimeException;
+use InvalidArgumentException;
 
 class Database
 {
-    private static $instance = null;
-    private $pdo;
+    private static ?Database $instance = null;
+    private ?PDO $pdo = null;
+    private array $options;
+    private array $credentials;
+    private static array $queryLog = [];
+    private static bool $logQueries = false;
 
+    /**
+     * Private constructor to prevent direct instantiation
+     * @throws RuntimeException
+     */
     private function __construct()
     {
-        // Load environment variables
-        $dotenv = Dotenv::createImmutable(BASE_PATH . '/../');
-        $dotenv->load();
-
-        // Retrieve database credentials from environment variables
-        $host = $_ENV['DB_HOST'] ?? 'localhost';
-        $dbname = $_ENV['DB_NAME'] ?? 'database_name';
-        $username = $_ENV['DB_USERNAME'] ?? 'root';
-        $password = $_ENV['DB_PASSWORD'] ?? '';
-        $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
-
-        if (!isset($host) || !isset($dbname) || !isset($username) || !isset($password)) {
-            throw new Exception('Invalid database credentials.');
-        }
-
-        try {
-            $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
-            $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ];
-            $this->pdo = new PDO($dsn, $username, $password, $options);
-        } catch (PDOException $e) {
-            throw new Exception('Database connection failed: ' . $e->getMessage());
-        }
+        $this->loadConfiguration();
+        $this->setDefaultOptions();
     }
 
-    public function __clone() {}
-    public function __wakeup() {}
+    /**
+     * Prevent cloning of the instance
+     */
+    private function __clone() {}
 
-    public static function getInstance(): Database
+    /**
+     * Prevent unserializing of the instance
+     */
+    public function __wakeup()
+    {
+        throw new RuntimeException('Cannot unserialize singleton');
+    }
+
+    /**
+     * Get Database instance
+     * @return self
+     */
+    public static function getInstance(): self
     {
         if (self::$instance === null) {
             self::$instance = new self();
@@ -53,26 +57,227 @@ class Database
     }
 
     /**
-     * Execute a prepared statement with optional parameters.
-     *
-     * @param string $sql
-     * @param array $params
-     * @return PDOStatement
+     * Load database configuration from environment
+     * @throws RuntimeException
      */
-    public function executeQuery(string $sql, array $params = [])
+    private function loadConfiguration(): void
     {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt;
+        try {
+            $this->credentials = [
+                'host' => $_ENV['DB_HOST'] ?? 'localhost',
+                'dbname' => $_ENV['DB_NAME'] ?? null,
+                'username' => $_ENV['DB_USERNAME'] ?? null,
+                'password' => $_ENV['DB_PASSWORD'] ?? null,
+                'charset' => $_ENV['DB_CHARSET'] ?? 'utf8mb4'
+            ];
+
+            $this->validateCredentials();
+        } catch (\Exception $e) {
+            throw new RuntimeException('Failed to load database configuration: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Get the PDO instance.
-     *
-     * @return PDO
+     * Set default PDO options
      */
-    public function getPdo(): PDO
+    private function setDefaultOptions(): void
     {
+        $this->options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_PERSISTENT         => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+        ];
+    }
+
+    /**
+     * Validate database credentials
+     * @throws RuntimeException
+     */
+    private function validateCredentials(): void
+    {
+        $required = ['dbname', 'username']; // todo: when prod add 'password'
+        foreach ($required as $field) {
+            if (empty($this->credentials[$field])) {
+                throw new RuntimeException("Missing required database credential: {$field}");
+            }
+        }
+    }
+
+    /**
+     * Get PDO connection
+     * @return PDO
+     * @throws RuntimeException
+     */
+    public function getConnection(): PDO
+    {
+        if ($this->pdo === null) {
+            $this->connect();
+        }
         return $this->pdo;
+    }
+
+    /**
+     * Establish database connection
+     * @throws RuntimeException
+     */
+    private function connect(): void
+    {
+        try {
+            $dsn = sprintf(
+                "mysql:host=%s;dbname=%s;charset=%s",
+                $this->credentials['host'],
+                $this->credentials['dbname'],
+                $this->credentials['charset']
+            );
+
+            $this->pdo = new PDO(
+                $dsn,
+                $this->credentials['username'],
+                $this->credentials['password'],
+                $this->options
+            );
+        } catch (PDOException $e) {
+            throw new RuntimeException('Database connection failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Execute a prepared statement
+     * @param string $sql SQL query
+     * @param array $params Query parameters
+     * @param string $fetchMode PDO fetch mode
+     * @return \PDOStatement
+     * @throws RuntimeException
+     */
+    public function executeQuery(string $sql, array $params = [], int $fetchMode = PDO::FETCH_ASSOC): \PDOStatement
+    {
+        try {
+            $startTime = microtime(true);
+            
+            $stmt = $this->getConnection()->prepare($sql);
+            $stmt->setFetchMode($fetchMode);
+            $success = $stmt->execute($params);
+
+            if (self::$logQueries) {
+                $this->logQuery($sql, $params, microtime(true) - $startTime);
+            }
+
+            if (!$success) {
+                throw new RuntimeException('Query execution failed');
+            }
+
+            return $stmt;
+        } catch (PDOException $e) {
+            throw new RuntimeException('Query execution failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Execute a prepared statement
+     * @param string $sql SQL query
+     * @param array $params Query parameters
+     * @return bool
+     * @throws RuntimeException
+     */
+    public function executeInsertUpdate(string $sql, array $params = []): bool
+    {
+        try {
+            $startTime = microtime(true);
+            
+            $stmt = $this->getConnection()->prepare($sql);
+            $success = $stmt->execute($params);
+
+            if (self::$logQueries) {
+                $this->logQuery($sql, $params, microtime(true) - $startTime);
+            }
+
+            return $success;
+        } catch (PDOException $e) {
+            throw new RuntimeException('Insert/Update execution failed: ' . $e->getMessage());
+        }
+    }
+
+    public function lastInsertId(): int
+    {
+        return $this->getConnection()->lastInsertId();
+    }
+
+    /**
+     * Begin a transaction
+     * @return bool
+     */
+    public function beginTransaction(): bool
+    {
+        return $this->getConnection()->beginTransaction();
+    }
+
+    /**
+     * Commit a transaction
+     * @return bool
+     */
+    public function commit(): bool
+    {
+        return $this->getConnection()->commit();
+    }
+
+    /**
+     * Rollback a transaction
+     * @return bool
+     */
+    public function rollBack(): bool
+    {
+        return $this->getConnection()->rollBack();
+    }
+
+    /**
+     * Enable or disable query logging
+     * @param bool $enable
+     */
+    public static function enableQueryLog(bool $enable = true): void
+    {
+        self::$logQueries = $enable;
+    }
+
+    /**
+     * Get query log
+     * @return array
+     */
+    public static function getQueryLog(): array
+    {
+        return self::$queryLog;
+    }
+
+    /**
+     * Log a query
+     * @param string $sql
+     * @param array $params
+     * @param float $executionTime
+     */
+    private function logQuery(string $sql, array $params, float $executionTime): void
+    {
+        self::$queryLog[] = [
+            'query' => $sql,
+            'params' => $params,
+            'execution_time' => round($executionTime * 1000, 2) . 'ms',
+            'time' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    /**
+     * Close the database connection
+     */
+    public function close(): void
+    {
+        $this->pdo = null;
+    }
+
+    /**
+     * Destructor to ensure connection is closed
+     */
+    public function __destruct()
+    {
+        $this->close();
     }
 }

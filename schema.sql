@@ -6,9 +6,8 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
-
 CREATE TABLE companies (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   user_id int(11) DEFAULT NULL,
   address varchar(500) DEFAULT NULL,
@@ -17,72 +16,107 @@ CREATE TABLE companies (
   website varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  is_deleted tinyint(1) NOT NULL DEFAULT 0
+  is_deleted tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY email (email),
+  KEY user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE csrf_tokens (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   token varchar(255) NOT NULL,
-  user_id int(11) NOT NULL,
-  expires_at datetime NOT NULL,
-  created_at timestamp NULL DEFAULT current_timestamp()
+  session_id varchar(255) NOT NULL,
+  expires_at timestamp NOT NULL,
+  created_at timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (id),
+  KEY idx_csrf_tokens_session_id (session_id)
+  CONSTRAINT csrf_tokens_ibfk_1 FOREIGN KEY (user_id) REFERENCES `users` (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE milestones (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   title varchar(255) NOT NULL,
   description varchar(255) DEFAULT NULL,
+  milestone_type ENUM('epic','milestone') NOT NULL DEFAULT 'milestone',
+  start_date date DEFAULT NULL,
   due_date date DEFAULT NULL,
   complete_date date DEFAULT NULL,
+  epic_id int(11) DEFAULT NULL,
+  project_id int(11) DEFAULT NULL,
   status_id int(11) NOT NULL,
-  project_id int(11) NOT NULL,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  is_deleted tinyint(1) DEFAULT 0
+  is_deleted tinyint(1) DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY project_id (project_id),
+  KEY status_id (status_id),
+  KEY epic_id (epic_id),
+  CONSTRAINT fk_epic FOREIGN KEY (epic_id) REFERENCES milestones(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE milestone_statuses (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   description varchar(255) DEFAULT NULL,
   is_deleted tinyint(1) NOT NULL DEFAULT 0,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
-  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (id),
+  UNIQUE KEY name (name) USING HASH
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO milestone_statuses (id, name, description, is_deleted, created_at, updated_at) VALUES
-(1, 'Not Started', 'The milestone has not yet been started.', 0, '2025-02-18 02:54:57', '2025-02-18 02:54:57'),
-(2, 'In Progress', 'The milestone is currently being worked on.', 0, '2025-02-18 02:54:57', '2025-02-18 02:54:57'),
-(3, 'Completed', 'The milestone has been successfully completed.', 0, '2025-02-18 02:54:57', '2025-02-18 02:54:57');
+INSERT INTO milestone_statuses (name, description) VALUES
+('not_started', 'Not Started'),
+('in_progress', 'In Progress'),
+('completed', 'Completed');
+('on_hold', 'On Hold'),
+('delayed', 'Delayed'),
+('cancelled', 'Cancelled');
 
 CREATE TABLE permissions (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(100) NOT NULL,
   description varchar(500) DEFAULT NULL,
   created_at timestamp NULL DEFAULT current_timestamp(),
-  updated_at timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  updated_at timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO permissions (id, name, description, created_at, updated_at) VALUES
-(1, 'view_projects', 'Allows viewing projects', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(2, 'create_projects', 'Allows creating new projects', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(3, 'edit_projects', 'Allows editing existing projects', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(4, 'delete_projects', 'Allows deleting projects', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(5, 'view_tasks', 'Allows viewing tasks', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(6, 'create_tasks', 'Allows creating new tasks', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(7, 'edit_tasks', 'Allows editing tasks', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(8, 'delete_tasks', 'Allows deleting tasks', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(9, 'manage_users', 'Allows managing users', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(10, 'manage_roles', 'Allows managing roles and permissions', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(11, 'manage_companies', 'Allows managing companies', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(12, 'view_dashboard', 'Allows viewing the dashboard', '2025-02-15 23:26:59', '2025-02-15 23:26:59'),
-(13, 'view_users', 'Allows viewing users', '2025-02-19 01:10:52', '2025-02-19 01:12:14'),
-(14, 'create_users', 'Allows creating new users', '2025-02-19 01:11:00', '2025-02-19 01:12:24'),
-(15, 'delete_users', 'Allows deleting users', '2025-02-19 01:11:08', '2025-02-19 01:12:30'),
-(16, 'edit_users', 'Allows editing users', '2025-02-19 01:11:47', '2025-02-19 01:12:41');
+INSERT INTO permissions (name, description) VALUES
+('manage_projects', 'Allows managing projects'),
+('view_projects', 'Allows viewing projects'),
+('create_projects', 'Allows creating new projects'),
+('edit_projects', 'Allows editing existing projects'),
+('delete_projects', 'Allows deleting projects'),
+('manage_tasks', 'Allows managing tasks'),
+('view_tasks', 'Allows viewing tasks'),
+('create_tasks', 'Allows creating new tasks'),
+('edit_tasks', 'Allows editing tasks'),
+('delete_tasks', 'Allows deleting tasks'),
+('manage_users', 'Allows managing users'),
+('view_users', 'Allows viewing users'),
+('create_users', 'Allows creating new users'),
+('delete_users', 'Allows deleting users'),
+('edit_users', 'Allows editing users'),
+('manage_roles', 'Allows managing roles and permissions'),
+('view_roles', 'Allows viewing roles'),
+('create_roles', 'Allows creating new roles'),
+('delete_roles', 'Allows deleting roles'),
+('edit_roles', 'Allows editing roles'),
+('manage_companies', 'Allows managing companies'),
+('view_companies', 'Allows viewing companies'),
+('create_companies', 'Allows creating new companies'),
+('delete_companies', 'Allows deleting companies'),
+('edit_companies', 'Allows editing companies'),
+('manage_milestones', 'Allows managing milestones'),
+('view_milestones', 'Allows viewing milestones'),
+('create_milestones', 'Allows creating new milestones'),
+('delete_milestones', 'Allows deleting milestones'),
+('edit_milestones', 'Allows editing milestones'),
+('view_dashboard', 'Allows viewing the dashboard');
 
 CREATE TABLE projects (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   company_id int(11) NOT NULL,
   owner_id int(11) NOT NULL,
   name varchar(255) NOT NULL,
@@ -92,36 +126,51 @@ CREATE TABLE projects (
   status_id tinyint(4) NOT NULL DEFAULT 1,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  is_deleted tinyint(1) NOT NULL DEFAULT 0
+  is_deleted tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY status_id (status_id),
+  KEY idx_projects_company_id (company_id),
+  KEY owner_id (owner_id),
+  CONSTRAINT projects_ibfk_1 FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+  CONSTRAINT projects_ibfk_2 FOREIGN KEY (status_id) REFERENCES project_statuses (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE project_statuses (
-  id tinyint(4) NOT NULL,
+  id tinyint(4) NOT NULL AUTO_INCREMENT,
   name varchar(50) NOT NULL,
   description varchar(255) DEFAULT NULL,
   is_deleted tinyint(1) NOT NULL DEFAULT 0,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
-  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (id),
+  UNIQUE KEY name (name) USING HASH
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO project_statuses (id, name, description, is_deleted, created_at, updated_at) VALUES
-(1, 'ready', '', 0, '2025-02-18 02:09:24', '2025-02-18 02:09:24'),
-(2, 'in_progress', '', 0, '2025-02-18 02:09:24', '2025-02-18 02:09:24'),
-(3, 'completed', '', 0, '2025-02-18 02:09:24', '2025-02-18 02:09:24'),
-(4, 'on_hold', '', 0, '2025-02-18 02:09:24', '2025-02-18 02:09:24');
+INSERT INTO project_statuses (name, description) VALUES
+('ready', 'Ready'),
+('in_progress', 'In Progress'),
+('completed', 'Completed'),
+('on_hold', 'On Hold'),
+('delayed', 'Delayed'),
+('cancelled', 'Cancelled');
 
 CREATE TABLE roles (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(100) NOT NULL,
   description varchar(500) DEFAULT NULL,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  is_deleted tinyint(1) NOT NULL DEFAULT 0
+  is_deleted tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE role_permissions (
   role_id int(11) NOT NULL,
-  permission_id int(11) NOT NULL
+  permission_id int(11) NOT NULL,
+  PRIMARY KEY (role_id,permission_id),
+  KEY permission_id (permission_id),
+  CONSTRAINT role_permissions_ibfk_1 FOREIGN KEY (role_id) REFERENCES `roles` (id) ON DELETE CASCADE,
+  CONSTRAINT role_permissions_ibfk_2 FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO role_permissions (role_id, permission_id) VALUES
@@ -140,21 +189,39 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 (1, 13),
 (1, 14),
 (1, 15),
-(1, 16);
+(1, 16),
+(1, 17),
+(1, 18),
+(1, 19),
+(1, 20),
+(1, 21),
+(1, 22),
+(1, 23),
+(1, 24),
+(1, 25),
+(1, 26),
+(1, 27),
+(1, 28),
+(1, 29),
+(1, 30),
+(1, 31);
 
 CREATE TABLE sessions (
-  id varchar(255) NOT NULL,
+  id varchar(255) NOT NULL AUTO_INCREMENT,
   user_id int(11) NOT NULL,
   data text NOT NULL,
   ip_address varchar(45) DEFAULT NULL,
   user_agent varchar(1024) DEFAULT NULL,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   expires_at timestamp NULL DEFAULT NULL,
-  last_accessed_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  last_accessed_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (id),
+  KEY idx_sessions_user_id (user_id),
+  CONSTRAINT sessions_ibfk_1 FOREIGN KEY (user_id) REFERENCES `users` (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE tasks (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   project_id int(11) NOT NULL,
   assigned_to int(11) DEFAULT NULL,
   title varchar(255) NOT NULL,
@@ -173,28 +240,38 @@ CREATE TABLE tasks (
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   is_subtask tinyint(1) NOT NULL DEFAULT 0,
-  parent_task_id int(11) DEFAULT NULL
+  parent_task_id int(11) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY assigned_to (assigned_to),
+  KEY idx_tasks_project_id (project_id),
+  KEY fk_parent_task (parent_task_id),
+  CONSTRAINT fk_parent_task FOREIGN KEY (parent_task_id) REFERENCES tasks (id) ON DELETE SET NULL,
+  CONSTRAINT tasks_ibfk_1 FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE SET NULL,
+  CONSTRAINT tasks_ibfk_2 FOREIGN KEY (assigned_to) REFERENCES `users` (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE task_statuses (
-  id tinyint(4) NOT NULL,
+  id tinyint(4) NOT NULL AUTO_INCREMENT,
   name varchar(50) NOT NULL,
   description varchar(255) DEFAULT NULL,
   is_deleted tinyint(1) NOT NULL DEFAULT 0,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
-  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (id),
+  UNIQUE KEY name (name) USING HASH
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO task_statuses (id, name, description, is_deleted, created_at, updated_at) VALUES
-(1, 'open', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29'),
-(2, 'in_progress', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29'),
-(3, 'on_hold', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29'),
-(4, 'in_review', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29'),
-(5, 'closed', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29'),
-(6, 'completed', NULL, 0, '2025-02-18 02:10:29', '2025-02-18 02:10:29');
+INSERT INTO task_statuses (name, description) VALUES
+('open', 'Open'),
+('in_progress', 'In Progress'),
+('on_hold', 'On Hold'),
+('in_review', 'In Review'),
+('closed', 'Closed'),
+('completed', 'Completed'),
+('cancelled', 'Cancelled');
 
 CREATE TABLE users (
-  id int(11) NOT NULL,
+  id int(11) NOT NULL AUTO_INCREMENT,
   company_id int(11) DEFAULT NULL,
   role_id int(11) NOT NULL,
   first_name varchar(100) NOT NULL,
@@ -209,7 +286,16 @@ CREATE TABLE users (
   reset_password_token_expires_at datetime DEFAULT NULL,
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
   updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  is_deleted tinyint(1) NOT NULL DEFAULT 0
+  is_deleted tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY email (email),
+  KEY idx_users_company_id (company_id),
+  KEY idx_users_role_id (role_id),
+  KEY idx_users_email (email),
+  KEY activation_token (activation_token),
+  KEY reset_password_token (reset_password_token),
+  CONSTRAINT users_ibfk_1 FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE SET NULL,
+  CONSTRAINT users_ibfk_2 FOREIGN KEY (role_id) REFERENCES `roles` (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE activity_logs (
@@ -230,126 +316,53 @@ CREATE TABLE activity_logs (
     KEY idx_session_id (session_id),
     KEY idx_event_type (event_type),
     KEY idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;  
+
+CREATE TABLE sprint_statuses (
+    id tinyint(4) NOT NULL AUTO_INCREMENT,
+    name varchar(50) NOT NULL,
+    description varchar(255) DEFAULT NULL,
+    is_deleted tinyint(1) NOT NULL DEFAULT 0,
+    created_at timestamp NOT NULL DEFAULT current_timestamp(),
+    updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (id),
+    UNIQUE KEY name (name) USING HASH
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE companies
-  ADD PRIMARY KEY (id),
-  ADD UNIQUE KEY email (email),
-  ADD KEY user_id (user_id);
+INSERT INTO sprint_statuses (name, description) VALUES
+('planning', 'Sprint is in planning phase'),
+('active', 'Sprint is currently active'),
+('delayed', 'Sprint has been delayed'),
+('completed', 'Sprint has been completed'),
+('cancelled', 'Sprint was cancelled');
 
-ALTER TABLE csrf_tokens
-  ADD PRIMARY KEY (id),
-  ADD KEY idx_csrf_tokens_user_id (user_id);
+CREATE TABLE sprints (
+    id int(11) NOT NULL AUTO_INCREMENT,
+    project_id int(11) NOT NULL,
+    name varchar(255) NOT NULL,
+    description text DEFAULT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    status_id tinyint(4) NOT NULL DEFAULT 1,
+    created_at timestamp NOT NULL DEFAULT current_timestamp(),
+    updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    is_deleted tinyint(1) NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    KEY idx_sprints_project_id (project_id),
+    KEY idx_sprints_status_id (status_id),
+    CONSTRAINT fk_sprints_project FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+    CONSTRAINT fk_sprints_status FOREIGN KEY (status_id) REFERENCES sprint_statuses (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-ALTER TABLE milestones
-  ADD PRIMARY KEY (id),
-  ADD KEY project_id (project_id),
-  ADD KEY status_id (status_id);
-
-ALTER TABLE milestone_statuses
-  ADD PRIMARY KEY (id),
-  ADD UNIQUE KEY name (name) USING HASH;
-
-ALTER TABLE permissions
-  ADD PRIMARY KEY (id);
-
-ALTER TABLE projects
-  ADD PRIMARY KEY (id),
-  ADD KEY status_id (status_id),
-  ADD KEY idx_projects_company_id (company_id),
-  ADD KEY owner_id (owner_id);
-
-ALTER TABLE project_statuses
-  ADD PRIMARY KEY (id),
-  ADD UNIQUE KEY name (name) USING BTREE;
-
-ALTER TABLE roles
-  ADD PRIMARY KEY (id);
-
-ALTER TABLE role_permissions
-  ADD PRIMARY KEY (role_id,permission_id),
-  ADD KEY permission_id (permission_id);
-
-ALTER TABLE sessions
-  ADD PRIMARY KEY (id),
-  ADD KEY idx_sessions_user_id (user_id);
-
-ALTER TABLE tasks
-  ADD PRIMARY KEY (id),
-  ADD KEY assigned_to (assigned_to),
-  ADD KEY idx_tasks_project_id (project_id),
-  ADD KEY fk_parent_task (parent_task_id);
-
-ALTER TABLE task_statuses
-  ADD PRIMARY KEY (id),
-  ADD UNIQUE KEY name (name) USING BTREE;
-
-ALTER TABLE users
-  ADD PRIMARY KEY (id),
-  ADD UNIQUE KEY email (email),
-  ADD KEY idx_users_company_id (company_id),
-  ADD KEY idx_users_role_id (role_id),
-  ADD KEY idx_users_email (email),
-  ADD KEY activation_token (activation_token),
-  ADD KEY reset_password_token (reset_password_token);
-
-
-ALTER TABLE companies
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE csrf_tokens
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE milestones
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE milestone_statuses
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE permissions
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE projects
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE project_statuses
-  MODIFY id tinyint(4) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE roles
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE tasks
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE task_statuses
-  MODIFY id tinyint(4) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE users
-  MODIFY id int(11) NOT NULL AUTO_INCREMENT;
-
-
-ALTER TABLE csrf_tokens
-  ADD CONSTRAINT csrf_tokens_ibfk_1 FOREIGN KEY (user_id) REFERENCES `users` (id) ON DELETE CASCADE;
-
-ALTER TABLE projects
-  ADD CONSTRAINT projects_ibfk_1 FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
-  ADD CONSTRAINT projects_ibfk_2 FOREIGN KEY (status_id) REFERENCES project_statuses (id);
-
-ALTER TABLE role_permissions
-  ADD CONSTRAINT role_permissions_ibfk_1 FOREIGN KEY (role_id) REFERENCES `roles` (id) ON DELETE CASCADE,
-  ADD CONSTRAINT role_permissions_ibfk_2 FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE;
-
-ALTER TABLE sessions
-  ADD CONSTRAINT sessions_ibfk_1 FOREIGN KEY (user_id) REFERENCES `users` (id) ON DELETE CASCADE;
-
-ALTER TABLE tasks
-  ADD CONSTRAINT fk_parent_task FOREIGN KEY (parent_task_id) REFERENCES tasks (id) ON DELETE CASCADE,
-  ADD CONSTRAINT tasks_ibfk_1 FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
-  ADD CONSTRAINT tasks_ibfk_2 FOREIGN KEY (assigned_to) REFERENCES `users` (id) ON DELETE SET NULL;
-
-ALTER TABLE users
-  ADD CONSTRAINT users_ibfk_1 FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
-  ADD CONSTRAINT users_ibfk_2 FOREIGN KEY (role_id) REFERENCES `roles` (id) ON DELETE CASCADE;
+CREATE TABLE sprint_tasks (
+    sprint_id int(11) NOT NULL,
+    task_id int(11) NOT NULL,
+    added_at timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (sprint_id, task_id),
+    KEY idx_sprint_tasks_task_id (task_id),
+    CONSTRAINT fk_sprint_tasks_sprint FOREIGN KEY (sprint_id) REFERENCES sprints (id) ON DELETE CASCADE,
+    CONSTRAINT fk_sprint_tasks_task FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

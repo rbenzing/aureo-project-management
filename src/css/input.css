@@ -1,34 +1,24 @@
 /* File Path: /src/css/input.css */
 
-/* Include Tailwind's base styles */
+/* Include Tailwind's core styles */
 @tailwind base;
-
-/* Include Tailwind's component styles */
 @tailwind components;
-
-/* Include Tailwind's utility styles */
 @tailwind utilities;
 
-/* Extend Tailwind's configuration with custom styles if needed */
-@layer components {
-    .btn-secondary {
-        @apply px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500;
-    }
-
-    .btn-outline {
-        @apply px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
-    }
-}
-
+/* Base Layer Styles
+-------------------------------------------------- */
 @layer base {
+    /* Document Level Styles */
     html {
         height: 100%;
     }
-    /* Default light mode styles */
+
+    /* Form Elements - Light Mode */
     input, textarea, select, button {
         @apply bg-white text-gray-900;
     }
 
+    /* Button Reset */
     button,
     [type='button'],
     [type='reset'],
@@ -38,8 +28,49 @@
         background-image: none;
     }
 
-    /* Dark mode styles */
-    .dark input, .dark textarea, .dark select, .dark button {
-        @apply bg-gray-900 text-gray-200 border border-gray-600 focus:ring-indigo-500 focus:border-indigo-500;
+    /* Dark Mode Overrides */
+    .dark {
+        input, textarea, select, button {
+            @apply bg-gray-900 text-gray-200 
+                   border border-gray-600 
+                   focus:ring-indigo-500 
+                   focus:border-indigo-500;
+        }
     }
+}
+
+/* Component Layer Styles 
+-------------------------------------------------- */
+@layer components {
+    /* Button Variants */
+    .btn-secondary {
+        @apply px-4 py-2 
+               bg-gray-600 text-white 
+               rounded-md 
+               hover:bg-gray-700 
+               focus:outline-none 
+               focus:ring-2 
+               focus:ring-offset-2 
+               focus:ring-gray-500;
+    }
+
+    .btn-outline {
+        @apply px-4 py-2 
+               border border-indigo-600 
+               text-indigo-600 
+               rounded-md 
+               hover:bg-indigo-100 
+               focus:outline-none 
+               focus:ring-2 
+               focus:ring-offset-2 
+               focus:ring-indigo-500;
+    }
+
+    /* Add other component classes here */
+}
+
+/* Utility Layer Styles (if needed)
+-------------------------------------------------- */
+@layer utilities {
+    /* Add custom utilities here */
 }

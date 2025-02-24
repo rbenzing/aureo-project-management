@@ -1,258 +1,353 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class MilestoneController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Milestone $milestoneModel;
+    private Project $projectModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('view_milestones'); // Default permission for all actions
+        $this->milestoneModel = new Milestone();
+        $this->projectModel = new Project();
     }
 
     /**
-     * Display a list of milestones (paginated).
+     * Display paginated list of milestones
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function index($requestMethod, $data)
+    public function index(string $requestMethod, array $data): void
     {
-        // Fetch all milestones from the database (paginated)
-        $limit = 10; // Number of milestones per page
-        $page = isset($data['page']) ? intval($data['page']) : 1;
-        $milestones = (new Milestone())->getAllPaginated($limit, $page);
-
-        // Prepare pagination data
-        $totalMilestones = (new Milestone())->countAll();
-        $totalPages = ceil($totalMilestones / $limit);
-        $prevPage = $page > 1 ? $page - 1 : null;
-        $nextPage = $page < $totalPages ? $page + 1 : null;
-
-        $pagination = [
-            'prev_page' => $prevPage,
-            'next_page' => $nextPage,
-        ];
-
-        include __DIR__ . '/../Views/Milestones/index.php';
+        try {
+            $this->authMiddleware->hasPermission('view_milestones');
+            
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = Config::get('max_pages', 10);
+            
+            $milestones = $this->milestoneModel->getAllWithProgress($limit, $page);
+            $totalMilestones = $this->milestoneModel->count(['is_deleted' => 0]);
+            $totalPages = ceil($totalMilestones / $limit);
+            
+            include __DIR__ . '/../Views/Milestones/index.php';
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching milestones.';
+            header('Location: /dashboard');
+            exit;
+        }
     }
 
     /**
-     * View details of a specific milestone.
+     * View milestone details
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function view($requestMethod, $data)
+    public function view(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid milestone ID.';
+        try {
+            $this->authMiddleware->hasPermission('view_milestones');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid milestone ID');
+            }
+
+            $milestone = $this->milestoneModel->find($id);
+            if (!$milestone || $milestone->is_deleted) {
+                throw new InvalidArgumentException('Milestone not found');
+            }
+
+            $project = $this->projectModel->findWithDetails($milestone->project_id);
+            if (!$project) {
+                throw new RuntimeException('Associated project not found');
+            }
+
+            if ($milestone->epic_id) {
+                $epic = $this->milestoneModel->find($milestone->epic_id);
+                $relatedMilestones = $this->milestoneModel->getEpicMilestones($milestone->epic_id);
+            }
+            
+            include __DIR__ . '/../Views/Milestones/view.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /milestones');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::view: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching milestone details.';
             header('Location: /milestones');
             exit;
         }
+    }
 
-        // Fetch a single milestone by ID
-        $milestone = (new Milestone())->find($id);
-        if (!$milestone) {
-            $_SESSION['error'] = 'Milestone not found.';
+    /**
+     * Display milestone creation form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function createForm(string $requestMethod, array $data): void
+    {
+        try {
+            $this->authMiddleware->hasPermission('create_milestones');
+            
+            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->milestoneModel->getMilestoneStatuses();
+            $epics = $this->milestoneModel->getProjectEpics($data['project_id'] ?? 0);
+            
+            include __DIR__ . '/../Views/Milestones/create.php';
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::createForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /milestones');
             exit;
         }
-
-        $project = (new Project())->find($milestone->project_id);
-
-        // Render the view
-        include __DIR__ . '/../Views/Milestones/view.php';
     }
 
     /**
-     * Show the form to create a new milestone.
+     * Create new milestone
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function createForm($requestMethod, $data)
+    public function create(string $requestMethod, array $data): void
     {
-        $this->authMiddleware->hasPermission('create_milestones');
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
 
-        // Fetch all projects and statuses for the form
-        $projects = (new Project())->getAll();
-        $statuses = (new Milestone())->getMilestoneStatuses();
-
-        include __DIR__ . '/../Views/Milestones/create.php';
-    }
-
-    /**
-     * Create a new milestone.
-     */
-    public function create($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
+        try {
             $this->authMiddleware->hasPermission('create_milestones');
 
-            // Validate input data
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
-                'description' => 'nullable|string|max:500',
-                'due_date' => 'nullable|date',
-                'status_id' => 'required|integer',
-                'project_id' => 'required|integer',
+                'description' => 'nullable|string',
+                'milestone_type' => 'required|in:epic,milestone',
+                'start_date' => 'nullable|date',
+                'due_date' => 'nullable|date|after:start_date',
+                'status_id' => 'required|integer|exists:milestone_statuses,id',
+                'project_id' => 'required|integer|exists:projects,id',
+                'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /milestones/create');
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Create the milestone
-            $milestone = new Milestone();
-            $milestone->title = htmlspecialchars($data['title']);
-            $milestone->description = htmlspecialchars($data['description'] ?? null);
-            $milestone->due_date = $data['due_date'] ?? null;
-            $milestone->status_id = intval($data['status_id']);
-            $milestone->project_id = intval($data['project_id']);
-            $milestone->save();
+            $milestoneData = [
+                'title' => htmlspecialchars($data['title']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'milestone_type' => $data['milestone_type'],
+                'start_date' => $data['start_date'] ?? null,
+                'due_date' => $data['due_date'] ?? null,
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
+                'epic_id' => isset($data['epic_id']) ? 
+                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
+            ];
+
+            $milestoneId = $this->milestoneModel->create($milestoneData);
 
             $_SESSION['success'] = 'Milestone created successfully.';
-            header('Location: /milestones');
+            header('Location: /milestones/view/' . $milestoneId);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header('Location: /milestones/create');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::create: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while creating the milestone.';
+            header('Location: /milestones/create');
             exit;
         }
-
-        // Render the create form
-        $this->createForm($requestMethod, $data);
     }
 
     /**
-     * Show the form to edit an existing milestone.
+     * Display milestone edit form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function editForm($requestMethod, $data)
+    public function editForm(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid milestone ID.';
-            header('Location: /milestones');
-            exit;
-        }
-
-        $this->authMiddleware->hasPermission('edit_milestones');
-
-        // Fetch the milestone
-        $milestone = (new Milestone())->find($id);
-        if (!$milestone) {
-            $_SESSION['error'] = 'Milestone not found.';
-            header('Location: /milestones');
-            exit;
-        }
-
-        // Fetch all projects and statuses for the form
-        $projects = (new Project())->getAll();
-        $statuses = (new Milestone())->getMilestoneStatuses();
-
-        include __DIR__ . '/../Views/Milestones/edit.php';
-    }
-
-    /**
-     * Update an existing milestone.
-     */
-    public function update($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid milestone ID.';
-                header('Location: /milestones');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('edit_milestones');
 
-            // Validate input data
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid milestone ID');
+            }
+
+            $milestone = $this->milestoneModel->find($id);
+            if (!$milestone || $milestone->is_deleted) {
+                throw new InvalidArgumentException('Milestone not found');
+            }
+
+            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $statuses = $this->milestoneModel->getMilestoneStatuses();
+            $epics = $this->milestoneModel->getProjectEpics($milestone->project_id);
+
+            include __DIR__ . '/../Views/Milestones/edit.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /milestones');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::editForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the edit form.';
+            header('Location: /milestones');
+            exit;
+        }
+    }
+
+    /**
+     * Update existing milestone
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function update(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $this->editForm($requestMethod, $data);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_milestones');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid milestone ID');
+            }
+
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
-                'description' => 'nullable|string|max:500',
-                'due_date' => 'nullable|date',
-                'status_id' => 'required|integer',
-                'project_id' => 'required|integer',
+                'description' => 'nullable|string',
+                'milestone_type' => 'required|in:epic,milestone',
+                'start_date' => 'nullable|date',
+                'due_date' => 'nullable|date|after:start_date',
+                'status_id' => 'required|integer|exists:milestone_statuses,id',
+                'project_id' => 'required|integer|exists:projects,id',
+                'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header("Location: /milestones/edit/$id");
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Update the milestone
-            $milestone = (new Milestone())->find($id);
-            if (!$milestone) {
-                $_SESSION['error'] = 'Milestone not found.';
-                header('Location: /milestones');
-                exit;
+            $milestoneData = [
+                'id' => $id,
+                'title' => htmlspecialchars($data['title']),
+                'description' => isset($data['description']) ? 
+                    htmlspecialchars($data['description']) : null,
+                'milestone_type' => $data['milestone_type'],
+                'start_date' => $data['start_date'] ?? null,
+                'due_date' => $data['due_date'] ?? null,
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
+                'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
+                'epic_id' => isset($data['epic_id']) ? 
+                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
+            ];
+
+            // Update completion date if status is completed
+            if ($data['status_id'] == 3) { // Assuming 3 is 'completed' status
+                $milestoneData['complete_date'] = date('Y-m-d');
             }
 
-            $milestone->title = htmlspecialchars($data['title']);
-            $milestone->description = htmlspecialchars($data['description'] ?? null);
-            $milestone->due_date = $data['due_date'] ?? null;
-            $milestone->status_id = intval($data['status_id']);
-            $milestone->project_id = intval($data['project_id']);
-            $milestone->save();
+            $this->milestoneModel->update($milestoneData);
 
             $_SESSION['success'] = 'Milestone updated successfully.';
+            header('Location: /milestones/view/' . $id);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header("Location: /milestones/edit/{$id}");
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::update: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while updating the milestone.';
+            header("Location: /milestones/edit/{$id}");
+            exit;
+        }
+    }
+
+    /**
+     * Delete milestone (soft delete)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function delete(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
             header('Location: /milestones');
             exit;
         }
 
-        // Fetch the milestone for the edit form
-        $this->editForm($requestMethod, $data);
-    }
-
-    /**
-     * Delete a milestone (soft delete).
-     */
-    public function delete($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid milestone ID.';
-                header('Location: /milestones');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('delete_milestones');
 
-            // Soft delete the milestone
-            $milestone = (new Milestone())->find($id);
-            if (!$milestone) {
-                $_SESSION['error'] = 'Milestone not found.';
-                header('Location: /milestones');
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid milestone ID');
             }
 
-            $milestone->is_deleted = true;
-            $milestone->save();
+            $milestone = $this->milestoneModel->find($id);
+            if (!$milestone || $milestone->is_deleted) {
+                throw new InvalidArgumentException('Milestone not found');
+            }
+
+            // Check if milestone is an epic with active milestones
+            if ($milestone->milestone_type === 'epic') {
+                $activeMilestones = $this->milestoneModel->getEpicMilestones($id);
+                if (!empty($activeMilestones)) {
+                    throw new InvalidArgumentException('Cannot delete epic with active milestones');
+                }
+            }
+
+            $this->milestoneModel->update([
+                'id' => $id,
+                'is_deleted' => true
+            ]);
 
             $_SESSION['success'] = 'Milestone deleted successfully.';
             header('Location: /milestones');
             exit;
-        }
 
-        // Fetch the milestone for the delete confirmation form
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid milestone ID.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /milestones');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in MilestoneController::delete: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while deleting the milestone.';
             header('Location: /milestones');
             exit;
         }
-
-        $milestone = (new Milestone())->find($id);
-        if (!$milestone) {
-            $_SESSION['error'] = 'Milestone not found.';
-            header('Location: /milestones');
-            exit;
-        }
-
-        // Render the delete confirmation form
-        include __DIR__ . '/../Views/Milestones/delete.php';
     }
 }

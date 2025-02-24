@@ -1,271 +1,340 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class RoleController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Role $roleModel;
+    private Permission $permissionModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('manage_roles'); // Default permission for all actions
+        $this->roleModel = new Role();
+        $this->permissionModel = new Permission();
     }
 
     /**
-     * Display a list of roles (paginated).
+     * Display paginated list of roles
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function index($requestMethod, $data)
+    public function index(string $requestMethod, array $data): void
     {
-        // Fetch all roles from the database (paginated)
-        $limit = 10; // Number of roles per page
-        $page = isset($data['page']) ? intval($data['page']) : 1;
-        $roles = (new Role())->getAllPaginated($limit, $page);
-
-        // Prepare pagination data
-        $totalRoles = (new Role())->countAll();
-        $totalPages = ceil($totalRoles / $limit);
-        $prevPage = $page > 1 ? $page - 1 : null;
-        $nextPage = $page < $totalPages ? $page + 1 : null;
-
-        $pagination = [
-            'prev_page' => $prevPage,
-            'next_page' => $nextPage,
-        ];
-
-        include __DIR__ . '/../Views/Roles/index.php';
+        try {
+            $this->authMiddleware->hasPermission('view_roles');
+            
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = 10;
+            
+            $roles = $this->roleModel->getRolesWithStats($limit, $page);
+            $totalRoles = $this->roleModel->count(['is_deleted' => 0]);
+            $totalPages = ceil($totalRoles / $limit);
+            
+            include __DIR__ . '/../Views/Roles/index.php';
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching roles.';
+            header('Location: /dashboard');
+            exit;
+        }
     }
 
     /**
-     * View details of a specific role.
+     * View role details
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function view($requestMethod, $data)
+    public function view(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid role ID.';
+        try {
+            $this->authMiddleware->hasPermission('view_roles');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid role ID');
+            }
+
+            $role = $this->roleModel->findWithPermissions($id);
+            if (!$role || $role->is_deleted) {
+                throw new InvalidArgumentException('Role not found');
+            }
+
+            include __DIR__ . '/../Views/Roles/view.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /roles');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::view: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching role details.';
             header('Location: /roles');
             exit;
         }
+    }
 
-        // Fetch a single role by ID
-        $role = (new Role())->find($id);
-        if (!$role) {
-            $_SESSION['error'] = 'Role not found.';
+    /**
+     * Display role creation form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function createForm(string $requestMethod, array $data): void
+    {
+        try {
+            $this->authMiddleware->hasPermission('create_roles');
+            
+            $permissions = $this->permissionModel->getGroupedPermissions();
+            
+            include __DIR__ . '/../Views/Roles/create.php';
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::createForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /roles');
             exit;
         }
-
-        // Fetch permissions associated with the role
-        $permissions = (new Permission())->getByRoleId($id);
-        $role->permissions = $permissions;
-
-        // Render the view
-        include __DIR__ . '/../Views/Roles/view.php';
     }
 
     /**
-     * Show the form to create a new role.
+     * Create new role
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function createForm($requestMethod, $data)
+    public function create(string $requestMethod, array $data): void
     {
-        $this->authMiddleware->hasPermission('create_roles');
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
 
-        // Fetch all permissions for the form
-        $permissions = (new Permission())->getAll();
-        include __DIR__ . '/../Views/Roles/create.php';
-    }
-
-    /**
-     * Create a new role.
-     */
-    public function create($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
+        try {
             $this->authMiddleware->hasPermission('create_roles');
 
-            // Validate CSRF token
-            $this->csrfMiddleware->handleToken();
-
-            // Validate input data
             $validator = new Validator($data, [
                 'name' => 'required|string|max:100|unique:roles,name',
                 'description' => 'nullable|string|max:500',
+                'permissions' => 'array'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /roles/create');
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Create the role
-            $role = new Role();
-            $role->name = htmlspecialchars($data['name']);
-            $role->description = htmlspecialchars($data['description'] ?? null);
-            $role->save();
+            // Begin transaction
+            $this->roleModel->beginTransaction();
 
-            // Assign permissions to the role
-            if (isset($data['permissions']) && is_array($data['permissions'])) {
-                foreach ($data['permissions'] as $permissionId) {
-                    $role->assignPermission((int)$permissionId);
+            try {
+                $roleData = [
+                    'name' => htmlspecialchars($data['name']),
+                    'description' => isset($data['description']) ? 
+                        htmlspecialchars($data['description']) : null
+                ];
+
+                $roleId = $this->roleModel->create($roleData);
+
+                // Assign permissions if any
+                if (!empty($data['permissions'])) {
+                    $permissions = array_map('intval', $data['permissions']);
+                    $this->permissionModel->assignToRole($roleId, $permissions);
                 }
-            }
 
-            $_SESSION['success'] = 'Role created successfully.';
-            header('Location: /roles');
-            exit;
-        }
+                $this->roleModel->commit();
 
-        // Render the create form
-        $this->createForm($requestMethod, $data);
-    }
-
-    /**
-     * Show the form to edit an existing role.
-     */
-    public function editForm($requestMethod, $data)
-    {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid role ID.';
-            header('Location: /roles');
-            exit;
-        }
-
-        $this->authMiddleware->hasPermission('edit_roles');
-
-        // Fetch the role
-        $role = (new Role())->find($id);
-        if (!$role) {
-            $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles');
-            exit;
-        }
-
-        // Fetch all permissions and the role's current permissions
-        $allPermissions = (new Permission())->getAll();
-        $rolePermissions = $role->getPermissions();
-        $role->permissions = $rolePermissions;
-
-        // Render the edit form
-        include __DIR__ . '/../Views/Roles/edit.php';
-    }
-
-    /**
-     * Update an existing role.
-     */
-    public function update($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid role ID.';
+                $_SESSION['success'] = 'Role created successfully.';
                 header('Location: /roles');
                 exit;
+
+            } catch (\Exception $e) {
+                $this->roleModel->rollBack();
+                throw $e;
             }
 
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header('Location: /roles/create');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::create: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while creating the role.';
+            header('Location: /roles/create');
+            exit;
+        }
+    }
+
+    /**
+     * Display role edit form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function editForm(string $requestMethod, array $data): void
+    {
+        try {
             $this->authMiddleware->hasPermission('edit_roles');
 
-            // Validate CSRF token
-            $this->csrfMiddleware->handleToken();
-
-            // Validate input data
-            $validator = new Validator($data, [
-                'name' => 'required|string|max:100|unique:roles,name,' . $id,
-                'description' => 'nullable|string|max:500',
-            ]);
-            if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header("Location: /roles/edit/$id");
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid role ID');
             }
 
-            // Update the role
-            $role = (new Role())->find($id);
-            if (!$role) {
-                $_SESSION['error'] = 'Role not found.';
+            $role = $this->roleModel->findWithPermissions($id);
+            if (!$role || $role->is_deleted) {
+                throw new InvalidArgumentException('Role not found');
+            }
+
+            $permissions = $this->permissionModel->getGroupedPermissions();
+
+            include __DIR__ . '/../Views/Roles/edit.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /roles');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::editForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the edit form.';
+            header('Location: /roles');
+            exit;
+        }
+    }
+
+    /**
+     * Update existing role
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function update(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $this->editForm($requestMethod, $data);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_roles');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid role ID');
+            }
+
+            $validator = new Validator($data, [
+                'name' => "required|string|max:100|unique:roles,name,{$id}",
+                'description' => 'nullable|string|max:500',
+                'permissions' => 'array'
+            ]);
+
+            if ($validator->fails()) {
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
+            }
+
+            // Begin transaction
+            $this->roleModel->beginTransaction();
+
+            try {
+                $roleData = [
+                    'id' => $id,
+                    'name' => htmlspecialchars($data['name']),
+                    'description' => isset($data['description']) ? 
+                        htmlspecialchars($data['description']) : null
+                ];
+
+                $this->roleModel->update($roleData);
+
+                // Sync permissions
+                $permissions = !empty($data['permissions']) ? 
+                    array_map('intval', $data['permissions']) : [];
+                $this->roleModel->syncPermissions($id, $permissions);
+
+                $this->roleModel->commit();
+
+                $_SESSION['success'] = 'Role updated successfully.';
                 header('Location: /roles');
                 exit;
+
+            } catch (\Exception $e) {
+                $this->roleModel->rollBack();
+                throw $e;
             }
 
-            $role->name = htmlspecialchars($data['name']);
-            $role->description = htmlspecialchars($data['description'] ?? null);
-            $role->save();
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header("Location: /roles/edit/{$id}");
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::update: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while updating the role.';
+            header("Location: /roles/edit/{$id}");
+            exit;
+        }
+    }
 
-            // Update role permissions
-            if (isset($data['permissions']) && is_array($data['permissions'])) {
-                $role->syncPermissions(array_map('intval', $data['permissions']));
-            } else {
-                $role->syncPermissions([]);
-            }
-
-            $_SESSION['success'] = 'Role updated successfully.';
+    /**
+     * Delete role (soft delete)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function delete(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
             header('Location: /roles');
             exit;
         }
 
-        // Fetch the role for the edit form
-        $this->editForm($requestMethod, $data);
-    }
-
-    /**
-     * Delete a role (soft delete).
-     */
-    public function delete($requestMethod, $data)
-    {
-        if ($requestMethod === 'POST') {
-            $id = $data['id'] ?? null;
-            if (!$id) {
-                $_SESSION['error'] = 'Invalid role ID.';
-                header('Location: /roles');
-                exit;
-            }
-
+        try {
             $this->authMiddleware->hasPermission('delete_roles');
 
-            // Validate CSRF token
-            $this->csrfMiddleware->handleToken();
-
-            // Soft delete the role
-            $role = (new Role())->find($id);
-            if (!$role) {
-                $_SESSION['error'] = 'Role not found.';
-                header('Location: /roles');
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid role ID');
             }
 
-            $role->is_deleted = true;
-            $role->save();
+            // Check if role exists and is not already deleted
+            $role = $this->roleModel->find($id);
+            if (!$role || $role->is_deleted) {
+                throw new InvalidArgumentException('Role not found');
+            }
+
+            // Check if role is in use
+            if ($this->roleModel->isInUse($id)) {
+                throw new InvalidArgumentException('Cannot delete role as it is currently assigned to users');
+            }
+
+            $this->roleModel->update([
+                'id' => $id,
+                'is_deleted' => true
+            ]);
 
             $_SESSION['success'] = 'Role deleted successfully.';
             header('Location: /roles');
             exit;
-        }
 
-        // Fetch the role for the delete confirmation form
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid role ID.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /roles');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in RoleController::delete: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while deleting the role.';
             header('Location: /roles');
             exit;
         }
-
-        $role = (new Role())->find($id);
-        if (!$role) {
-            $_SESSION['error'] = 'Role not found.';
-            header('Location: /roles');
-            exit;
-        }
-
-        // Render the delete confirmation form
-        include __DIR__ . '/../Views/Roles/delete.php';
     }
 }

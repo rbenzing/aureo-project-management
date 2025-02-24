@@ -1,249 +1,327 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
 use App\Models\Company;
 use App\Models\Project;
+use App\Models\User;
 use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class CompanyController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Company $companyModel;
+    private Project $projectModel;
+    private User $userModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('manage_companies'); // Default permission for all actions
+        $this->companyModel = new Company();
+        $this->projectModel = new Project();
+        $this->userModel = new User();
     }
 
     /**
-     * Display a list of companies (paginated).
+     * Display paginated list of companies
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function index($requestMethod, $data)
+    public function index(string $requestMethod, array $data): void
     {
-        // Fetch all companies from the database (paginated)
-        $limit = 10; // Number of companies per page
-        $page = isset($data['page']) ? intval($data['page']) : 1;
-        $companies = (new Company())->getAllPaginated($limit, $page);
-
-        // Prepare pagination data
-        $totalCompanies = (new Company())->countAll();
-        $totalPages = ceil($totalCompanies / $limit);
-        $prevPage = $page > 1 ? $page - 1 : null;
-        $nextPage = $page < $totalPages ? $page + 1 : null;
-
-        $pagination = [
-            'prev_page' => $prevPage,
-            'next_page' => $nextPage,
-        ];
-
-        include __DIR__ . '/../Views/Companies/index.php';
+        try {
+            $this->authMiddleware->hasPermission('view_companies');
+            
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = 10;
+            
+            $companies = $this->companyModel->getAllWithDetails($limit, $page);
+            $totalCompanies = $this->companyModel->count(['is_deleted' => 0]);
+            $totalPages = ceil($totalCompanies / $limit);
+            
+            include __DIR__ . '/../Views/Companies/index.php';
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching companies.';
+            header('Location: /dashboard');
+            exit;
+        }
     }
 
     /**
-     * View details of a specific company.
+     * View company details
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function view($requestMethod, $data)
+    public function view(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid company ID.';
+        try {
+            $this->authMiddleware->hasPermission('view_companies');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid company ID');
+            }
+
+            $company = $this->companyModel->find($id);
+            if (!$company || $company->is_deleted) {
+                throw new InvalidArgumentException('Company not found');
+            }
+
+            // Get company related data
+            $projects = $this->companyModel->getProjects($id);
+            $users = $this->companyModel->getUsers($id);
+            
+            include __DIR__ . '/../Views/Companies/view.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /companies');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::view: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching company details.';
             header('Location: /companies');
             exit;
         }
+    }
 
-        // Fetch a single company by ID
-        $company = (new Company())->find($id);
-        if (!$company) {
-            $_SESSION['error'] = 'Company not found.';
+    /**
+     * Display company creation form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function createForm(string $requestMethod, array $data): void
+    {
+        try {
+            $this->authMiddleware->hasPermission('create_companies');
+            include __DIR__ . '/../Views/Companies/create.php';
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::createForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /companies');
             exit;
         }
-
-        // Fetch related projects for the company
-        $projects = (new Project())->getByCompanyId($id);
-
-        // Render the view
-        include __DIR__ . '/../Views/Companies/view.php';
     }
 
     /**
-     * Show the form to create a new company.
+     * Create new company
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function createForm($requestMethod, $data)
+    public function create(string $requestMethod, array $data): void
     {
-        $this->authMiddleware->hasPermission('create_companies');
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
 
-        // Render the create form
-        include __DIR__ . '/../Views/Companies/create.php';
-    }
+        try {
+            $this->authMiddleware->hasPermission('create_companies');
 
-    /**
-     * Create a new company.
-     */
-    public function create($requestMethod, $data)
-    {
-        $this->authMiddleware->hasPermission('create_companies');
-
-        if ($requestMethod === 'POST') {
-            // Validate input data
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
-                'phone' => 'nullable|string|max:20',
-                'email' => 'nullable|email|unique:companies,email',
+                'phone' => 'nullable|string|max:25|regex:/^[+]?[0-9()-\s]{10,}$/',
+                'email' => 'required|email|unique:companies,email',
+                'website' => 'nullable|url|max:255'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header('Location: /companies/create');
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Create the company
-            $company = new Company();
-            $company->name = htmlspecialchars($data['name']);
-            $company->address = htmlspecialchars($data['address'] ?? '');
-            $company->phone = htmlspecialchars($data['phone'] ?? '');
-            $company->email = htmlspecialchars($data['email'] ?? '');
-            $company->save();
+            $companyData = [
+                'name' => htmlspecialchars($data['name']),
+                'address' => isset($data['address']) ? 
+                    htmlspecialchars($data['address']) : null,
+                'phone' => isset($data['phone']) ? 
+                    htmlspecialchars($data['phone']) : null,
+                'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
+                'website' => isset($data['website']) ? 
+                    filter_var($data['website'], FILTER_SANITIZE_URL) : null,
+                'user_id' => $_SESSION['user']['id']
+            ];
 
-            $_SESSION['success'] = "Company '$company->name' was created successfully.";
-            header('Location: /companies');
+            $companyId = $this->companyModel->create($companyData);
+
+            $_SESSION['success'] = 'Company created successfully.';
+            header('Location: /companies/view/' . $companyId);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header('Location: /companies/create');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::create: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while creating the company.';
+            header('Location: /companies/create');
             exit;
         }
-
-        // Render the create form
-        $this->createForm($requestMethod, $data);
     }
 
     /**
-     * Show the form to edit an existing company.
+     * Display company edit form
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function editForm($requestMethod, $data)
+    public function editForm(string $requestMethod, array $data): void
     {
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid company ID.';
+        try {
+            $this->authMiddleware->hasPermission('edit_companies');
+
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid company ID');
+            }
+
+            $company = $this->companyModel->find($id);
+            if (!$company || $company->is_deleted) {
+                throw new InvalidArgumentException('Company not found');
+            }
+
+            include __DIR__ . '/../Views/Companies/edit.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /companies');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::editForm: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /companies');
             exit;
         }
-
-        $this->authMiddleware->hasPermission('edit_companies');
-
-        // Fetch the company
-        $company = (new Company())->find($id);
-        if (!$company) {
-            $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies');
-            exit;
-        }
-
-        // Render the edit form
-        include __DIR__ . '/../Views/Companies/edit.php';
     }
 
     /**
-     * Update an existing company.
+     * Update existing company
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function update($requestMethod, $data)
+    public function update(string $requestMethod, array $data): void
     {
-        $id = intval($data['id'] ?? 0);
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid company ID.';
-            header('Location: /companies');
-            exit;
+        if ($requestMethod !== 'POST') {
+            $this->editForm($requestMethod, $data);
+            return;
         }
 
-        $this->authMiddleware->hasPermission('edit_companies');
+        try {
+            $this->authMiddleware->hasPermission('edit_companies');
 
-        if ($requestMethod === 'POST') {
-            // Validate input data
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid company ID');
+            }
+
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
-                'phone' => 'nullable|string|max:20',
-                'email' => 'nullable|email|unique:companies,email,' . $id,
+                'phone' => 'nullable|string|max:25|regex:/^[+]?[0-9()-\s]{10,}$/',
+                'email' => "required|email|unique:companies,email,{$id}",
+                'website' => 'nullable|url|max:255'
             ]);
+
             if ($validator->fails()) {
-                $_SESSION['error'] = 'Validation failed: ' . implode(', ', $validator->errors());
-                header("Location: /companies/edit/$id");
-                exit;
+                throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
-            // Update the company
-            $company = (new Company())->find($id);
-            if (!$company) {
-                $_SESSION['error'] = 'Company not found.';
-                header('Location: /companies');
-                exit;
-            }
+            $companyData = [
+                'id' => $id,
+                'name' => htmlspecialchars($data['name']),
+                'address' => isset($data['address']) ? 
+                    htmlspecialchars($data['address']) : null,
+                'phone' => isset($data['phone']) ? 
+                    htmlspecialchars($data['phone']) : null,
+                'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
+                'website' => isset($data['website']) ? 
+                    filter_var($data['website'], FILTER_SANITIZE_URL) : null
+            ];
 
-            $company->name = htmlspecialchars($data['name']);
-            $company->address = htmlspecialchars($data['address'] ?? null);
-            $company->phone = htmlspecialchars($data['phone'] ?? null);
-            $company->email = htmlspecialchars($data['email'] ?? null);
-            $company->save();
+            $this->companyModel->update($companyData);
 
             $_SESSION['success'] = 'Company updated successfully.';
-            header('Location: /companies');
+            header('Location: /companies/view/' . $id);
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['form_data'] = $data;
+            header("Location: /companies/edit/{$id}");
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::update: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while updating the company.';
+            header("Location: /companies/edit/{$id}");
             exit;
         }
-
-        // Fetch the company for the edit form
-        $this->editForm($requestMethod, $data);
     }
 
     /**
-     * Delete a company (soft delete).
+     * Delete company (soft delete)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function delete($requestMethod, $data)
+    public function delete(string $requestMethod, array $data): void
     {
-        $id = intval($data['id'] ?? 0);
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid company ID.';
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
             header('Location: /companies');
             exit;
         }
 
-        $this->authMiddleware->hasPermission('delete_companies');
+        try {
+            $this->authMiddleware->hasPermission('delete_companies');
 
-        if ($requestMethod === 'POST') {
-            // Soft delete the company
-            $company = (new Company())->find($id);
-            if (!$company) {
-                $_SESSION['error'] = 'Company not found.';
-                header('Location: /companies');
-                exit;
+            $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$id) {
+                throw new InvalidArgumentException('Invalid company ID');
             }
 
-            $company->is_deleted = true;
-            $company->save();
+            $company = $this->companyModel->find($id);
+            if (!$company || $company->is_deleted) {
+                throw new InvalidArgumentException('Company not found');
+            }
+
+            // Check if company has active projects or users
+            if ($this->projectModel->count(['company_id' => $id, 'is_deleted' => 0]) > 0) {
+                throw new InvalidArgumentException('Cannot delete company with active projects');
+            }
+
+            if ($this->userModel->count(['company_id' => $id, 'is_deleted' => 0]) > 0) {
+                throw new InvalidArgumentException('Cannot delete company with active users');
+            }
+
+            $this->companyModel->update([
+                'id' => $id,
+                'is_deleted' => true
+            ]);
 
             $_SESSION['success'] = 'Company deleted successfully.';
             header('Location: /companies');
             exit;
-        }
 
-        // Fetch the company for the delete confirmation form
-        $id = $data['id'] ?? null;
-        if (!$id) {
-            $_SESSION['error'] = 'Invalid company ID.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /companies');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in CompanyController::delete: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while deleting the company.';
             header('Location: /companies');
             exit;
         }
-
-        $company = (new Company())->find($id);
-        if (!$company) {
-            $_SESSION['error'] = 'Company not found.';
-            header('Location: /companies');
-            exit;
-        }
-
-        // Render the delete confirmation form
-        include __DIR__ . '/../Views/Companies/delete.php';
     }
 }

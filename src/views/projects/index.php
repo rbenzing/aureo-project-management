@@ -64,10 +64,10 @@ if (!defined('BASE_PATH')) {
         <div class="space-y-8">
         <?php foreach ($projects as $project): ?>
             <div class="text-white shadow border-b border-gray-200">
-                <div class="px-6 py-4">
+                <div class="py-4">
                     <div class="flex items-center">
-                        <div class="w-1 h-8 bg-gray-600 rounded-full mr-4"></div>
-                        <h2 class="text-lg font-medium"><?= htmlspecialchars($project['name']) ?></h2>
+                        <div class="w-1 h-6 bg-gray-600 rounded-full mr-4"></div>
+                        <h2 class="text-lg font-medium"><?= htmlspecialchars($project->name) ?></h2>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -77,7 +77,7 @@ if (!defined('BASE_PATH')) {
                                 <th class="px-6 py-3 font-medium"></th>
                                 <th class="px-6 py-3 font-medium">Task</th>
                                 <th class="px-6 py-3 font-medium">Owner</th>
-                                <th class="px-6 py-3 font-medium">Client email</th>
+                                <th class="px-6 py-3 font-medium">Client</th>
                                 <th class="px-6 py-3 font-medium">Priority</th>
                                 <th class="px-6 py-3 font-medium">Status</th>
                                 <th class="px-6 py-3 font-medium">Timeline</th>
@@ -88,42 +88,42 @@ if (!defined('BASE_PATH')) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-600">
-                            <?php foreach ($project['tasks'] as $task): ?>
+                            <?php foreach ($project->tasks as $task): ?>
                             <tr>
                                 <td class="px-6 py-4">
                                     <div class="w-1 h-6 bg-purple-500 rounded-full"></div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="#" class="text-white"><?= htmlspecialchars($task['title']) ?></a>
+                                    <a href="#" class="text-white"><?= htmlspecialchars($task->title) ?></a>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex -space-x-2">
                                         <img class="inline-block size-4 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1491528323818-fdd1faba62cc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-white"><?= htmlspecialchars($project['company_name']) ?></td>
+                                <td class="px-6 py-4 text-white"><?= htmlspecialchars($project->company_name) ?></td>
                                 <td class="px-6 py-4">
                                     <div class="flex text-yellow-400">
                                         <?php for ($i = 0; $i < 5; $i++): ?>
-                                            <svg class="w-5 h-5" fill="<?= $i < $task['priority'] ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-5 h-5" fill="<?= $i < $task->priority ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                                             </svg>
                                         <?php endfor; ?>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="px-3 py-1 text-sm <?= $task['status'] === 'Done' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' ?> rounded-full">
-                                        <?= htmlspecialchars($task['status']) ?>
+                                    <span class="px-3 py-1 text-sm <?= $task->status === 'Done' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' ?> rounded-full">
+                                        <?= htmlspecialchars($task->status) ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="px-3 py-1 text-sm <?= isset($task['complete_date']) && $task['complete_date'] < $task['due_date'] ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' ?> rounded-full">
-                                        <?= htmlspecialchars($task['start_date'] ?? 'Not Started') ?>
+                                    <span class="px-3 py-1 text-sm <?= isset($task->complete_date) && $task->complete_date < $task->due_date ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' ?> rounded-full">
+                                        <?= htmlspecialchars($task->start_date ?? 'Not Started') ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-white"><?= htmlspecialchars($task['time_spent']) ?></td>
-                                <td class="px-6 py-4 text-white">$<?= htmlspecialchars($task['hourly_rate'] ?? '0') ?></td>
-                                <td class="px-6 py-4 text-white">$<?= htmlspecialchars(number_format($task['billable_time'] ?? '0', 2)) ?></td>
+                                <td class="px-6 py-4 text-white"><?= htmlspecialchars($task->time_spent) ?></td>
+                                <td class="px-6 py-4 text-white">$<?= htmlspecialchars($task->hourly_rate ?? '0') ?></td>
+                                <td class="px-6 py-4 text-white">$<?= htmlspecialchars(number_format($task->billable_time ?? '0', 2)) ?></td>
                                 <td class="px-6 py-4">
                                     <svg class="w-5 h-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
@@ -133,13 +133,13 @@ if (!defined('BASE_PATH')) {
                             <?php endforeach; ?>
 
                             <tr class="bg-gray-500">
-                                <td colspan="7" class="px-6 py-4 text-white">0 / 0</td>
-                                <td class="px-6 py-4 text-white">0</td>
-                                <td class="px-6 py-4 text-white">$0</td>
-                                <td class="px-6 py-4 text-white">$0</td>
-                                <td class="px-6 py-4">
+                                <td colspan="7" class="px-6 py-1 text-white">0 / 0</td>
+                                <td class="px-6 py-1 text-white">0</td>
+                                <td class="px-6 py-1 text-white">$0</td>
+                                <td class="px-6 py-1 text-white">$0</td>
+                                <td class="px-6 py-1">
                                     <div class="flex items-center">
-                                        <span class="bg-gray-200 rounded-full px-2 py-1 text-blue-800 text-xs">+3</span>
+                                        <span class="bg-gray-200 rounded-full px-2 py-1 text-blue-800 text-xs">0</span>
                                     </div>
                                 </td>
                             </tr>

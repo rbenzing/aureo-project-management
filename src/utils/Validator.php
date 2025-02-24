@@ -1,204 +1,331 @@
 <?php
 namespace App\Utils;
 
-use App\Core\Database;
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
+    exit;
+}
 
-class Validator {
-    private $data;
-    private $rules;
-    private $errors = [];
-    private $db; // Database connection
+use App\Core\Database;
+use InvalidArgumentException;
+use PDOException;
+
+class Validator
+{
+    private Database $db;
+    private array $data;
+    private array $rules;
+    private array $errors = [];
+    private array $sanitizedData = [];
 
     /**
-     * Constructor to initialize the data, validation rules, and database connection.
-     *
-     * @param array $data The input data to validate (e.g., $_POST or $_GET).
-     * @param array $rules The validation rules for each field.
+     * Available validation rules
      */
-    public function __construct($data, $rules) {
+    private const AVAILABLE_RULES = [
+        'required', 'string', 'email', 'unique', 'max', 'min',
+        'integer', 'boolean', 'in', 'date', 'nullable', 'same',
+        'alpha', 'alphanumeric', 'url', 'phone', 'json', 'array'
+    ];
+
+    /**
+     * Custom error messages
+     */
+    private array $customMessages = [
+        'required' => ':field is required.',
+        'string' => ':field must be a string.',
+        'email' => ':field must be a valid email address.',
+        'unique' => ':field already exists.',
+        'max' => ':field must not exceed :param characters.',
+        'min' => ':field must be at least :param characters.',
+        'integer' => ':field must be an integer.',
+        'boolean' => ':field must be a boolean value.',
+        'in' => ':field must be one of: :param.',
+        'date' => ':field must be a valid date.',
+        'same' => ':field must match :param.',
+        'alpha' => ':field must contain only letters.',
+        'alphanumeric' => ':field must contain only letters and numbers.',
+        'url' => ':field must be a valid URL.',
+        'phone' => ':field must be a valid phone number.',
+        'json' => ':field must be valid JSON.',
+        'array' => ':field must be an array.'
+    ];
+
+    public function __construct(array $data, array $rules)
+    {
+        $this->db = Database::getInstance();
         $this->data = $data;
-        $this->rules = $rules;
-        $this->db = Database::getInstance(); // Consistent with models
+        $this->rules = $this->parseRules($rules);
+        $this->sanitizedData = $data;
     }
 
     /**
-     * Validate the input data against the defined rules.
-     *
-     * @return bool Returns true if validation passes, false otherwise.
+     * Parse validation rules into a structured format
      */
-    public function fails() {
-        foreach ($this->rules as $field => $ruleSet) {
-            $rules = explode('|', $ruleSet);
+    private function parseRules(array $rules): array
+    {
+        $parsed = [];
+        foreach ($rules as $field => $ruleSet) {
+            $fieldRules = is_string($ruleSet) ? explode('|', $ruleSet) : $ruleSet;
+            $parsed[$field] = array_map(function ($rule) {
+                $parts = explode(':', $rule);
+                return [
+                    'name' => $parts[0],
+                    'parameters' => isset($parts[1]) ? explode(',', $parts[1]) : []
+                ];
+            }, $fieldRules);
+        }
+        return $parsed;
+    }
+
+    /**
+     * Run validation
+     */
+    public function fails(): bool
+    {
+        $this->errors = [];
+        foreach ($this->rules as $field => $rules) {
             foreach ($rules as $rule) {
-                $this->validateRule($field, $rule);
+                if (!in_array($rule['name'], self::AVAILABLE_RULES)) {
+                    throw new InvalidArgumentException("Unknown validation rule: {$rule['name']}");
+                }
+                $this->validateField($field, $rule);
             }
         }
         return !empty($this->errors);
     }
 
     /**
-     * Get the validation errors.
-     *
-     * @return array An array of error messages.
+     * Get validation errors
      */
-    public function errors() {
+    public function errors(): array
+    {
         return $this->errors;
     }
 
     /**
-     * Validate a single rule for a field.
-     *
-     * @param string $field The field name.
-     * @param string $rule The validation rule (e.g., "required", "string|max:255").
+     * Get sanitized data
      */
-    private function validateRule($field, $rule) {
-        // Extract parameters from the rule (e.g., "max:255" -> ["max", "255"])
-        $params = explode(':', $rule);
-        $ruleName = $params[0];
-    
-        // Retrieve & Sanitize the input value
-        $value = $this->data[$field] ?? null;
-    
-        if (is_string($value)) {
-            $value = trim($value); // Remove unnecessary whitespace
-            $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); // Prevent XSS
-        }
-    
-        // Apply different sanitization methods based on data type
-        switch ($ruleName) {
-            case 'required':
-                if (empty($value)) {
-                    $this->addError($field, "$field is required.");
-                }
-                break;
-    
-            case 'string':
-                if (!is_string($value)) {
-                    $this->addError($field, "$field must be a string.");
-                } elseif (isset($params[1])) { // Check max length
-                    $maxLength = intval($params[1]);
-                    if (strlen($value) > $maxLength) {
-                        $this->addError($field, "$field must not exceed $maxLength characters.");
-                    }
-                }
-                break;
-    
-            case 'email':
-                $value = filter_var($value, FILTER_SANITIZE_EMAIL); // Sanitize email
-                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                    $this->addError($field, "$field must be a valid email address.");
-                }
-                break;
-    
-            case 'unique':
-                list($table, $column) = explode(',', $params[1]);
-                $excludeId = isset($this->data['id']) ? intval($this->data['id']) : null;
-                if (!$this->isUnique($table, $column, $value, $excludeId)) {
-                    $this->addError($field, "$field already exists.");
-                }
-                break;
-    
-            case 'max':
-                if (isset($params[1]) && strlen($value) > intval($params[1])) {
-                    $this->addError($field, "$field must not exceed {$params[1]} characters.");
-                }
-                break;
-    
-            case 'min':
-                if (isset($params[1]) && strlen($value) < intval($params[1])) {
-                    $this->addError($field, "$field must be at least {$params[1]} characters.");
-                }
-                break;
-    
-            case 'integer':
-                $value = filter_var($value, FILTER_SANITIZE_NUMBER_INT); // Sanitize integer input
-                if (!is_numeric($value) || intval($value) != $value) {
-                    $this->addError($field, "$field must be an integer.");
-                } elseif (isset($params[1])) { // Check min/max values
-                    $minMax = explode(',', $params[1]);
-                    if (isset($minMax[0]) && $value < intval($minMax[0])) {
-                        $this->addError($field, "$field must be at least {$minMax[0]}.");
-                    }
-                    if (isset($minMax[1]) && $value > intval($minMax[1])) {
-                        $this->addError($field, "$field must not exceed {$minMax[1]}.");
-                    }
-                }
-                break;
-    
-            case 'boolean':
-                if (!in_array($value, [0, 1, '0', '1', true, false], true)) {
-                    $this->addError($field, "$field must be a boolean value.");
-                }
-                break;
-    
-            case 'in':
-                $allowedValues = explode(',', $params[1]);
-                if (!in_array($value, $allowedValues)) {
-                    $this->addError($field, "$field must be one of: " . implode(', ', $allowedValues));
-                }
-                break;
-    
-            case 'date':
-                if (!strtotime($value)) {
-                    $this->addError($field, "$field must be a valid date.");
-                }
-                break;
-    
-            case 'nullable':
-                // No action needed; nullable fields are ignored if empty.
-                break;
-    
-            case 'same':
-                if (trim($value) !== trim($this->data[$params[1]])) {
-                    $this->addError($field, "$params[1] fields must match.");
-                }
-                break;
-    
-            default:
-                $this->addError($field, "Unknown validation rule: $ruleName.");
-                break;
-        }
-    
-        // Store the sanitized value back to the original data array
-        $this->data[$field] = $value;
-    }    
+    public function sanitized(): array
+    {
+        return $this->sanitizedData;
+    }
 
     /**
-     * Add an error message for a specific field.
-     *
-     * @param string $field The field name.
-     * @param string $message The error message.
+     * Validate a single field
      */
-    private function addError($field, $message) {
+    private function validateField(string $field, array $rule): void
+    {
+        $value = $this->sanitizedData[$field] ?? null;
+        $ruleName = $rule['name'];
+        $parameters = $rule['parameters'];
+
+        // Skip validation for nullable fields if value is empty
+        if ($this->isNullable($field) && $this->isEmpty($value)) {
+            return;
+        }
+
+        try {
+            $methodName = 'validate' . ucfirst($ruleName);
+            if (method_exists($this, $methodName)) {
+                $this->$methodName($field, $value, $parameters);
+            }
+        } catch (PDOException $e) {
+            $this->addError($field, "Database error occurred while validating $field");
+            error_log("Validation database error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a field is nullable
+     */
+    private function isNullable(string $field): bool
+    {
+        foreach ($this->rules[$field] as $rule) {
+            if ($rule['name'] === 'nullable') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if a value is empty
+     */
+    private function isEmpty($value): bool
+    {
+        return $value === null || $value === '' || $value === [];
+    }
+
+    /**
+     * Add an error message
+     */
+    private function addError(string $field, string $rule, array $parameters = []): void
+    {
+        $message = $this->customMessages[$rule] ?? ":field failed $rule validation.";
+        $message = str_replace(':field', ucfirst($field), $message);
+        if (!empty($parameters)) {
+            $message = str_replace(':param', implode(', ', $parameters), $message);
+        }
         $this->errors[] = $message;
     }
 
     /**
-     * Check if a value is unique in the database.
-     *
-     * @param string $table The table name.
-     * @param string $column The column name.
-     * @param mixed $value The value to check.
-     * @param int|null $excludeId The ID to exclude (for updates).
-     * @return bool True if the value is unique, false otherwise.
+     * Validation methods
      */
-    private function isUnique($table, $column, $value, $excludeId = null) {
-        if (empty($value)) {
-            return true; // Skip validation if the value is empty
+    private function validateRequired(string $field, $value): void
+    {
+        if ($this->isEmpty($value)) {
+            $this->addError($field, 'required');
         }
-    
-        $query = "SELECT COUNT(*) FROM $table WHERE $column = :value";
-        $params = [':value' => $value];
-    
-        if ($excludeId) {
-            $query .= " AND id != :id";
-            $params[':id'] = $excludeId;
-        }
-    
-        $stmt = $this->db->prepare($query);
-        $stmt->execute($params);
-        
-        return $stmt->fetchColumn() === 0;
     }
-    
+
+    private function validateString(string $field, $value): void
+    {
+        if (!is_null($value) && !is_string($value)) {
+            $this->addError($field, 'string');
+        }
+        $this->sanitizedData[$field] = is_string($value) ? 
+            htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8') : $value;
+    }
+
+    private function validateEmail(string $field, $value): void
+    {
+        if (!is_null($value)) {
+            $sanitized = filter_var($value, FILTER_SANITIZE_EMAIL);
+            if (!filter_var($sanitized, FILTER_VALIDATE_EMAIL)) {
+                $this->addError($field, 'email');
+            }
+            $this->sanitizedData[$field] = $sanitized;
+        }
+    }
+
+    private function validateUnique(string $field, $value, array $parameters): void
+    {
+        if (empty($value) || empty($parameters)) {
+            return;
+        }
+
+        [$table, $column] = $parameters;
+        $excludeId = $this->data['id'] ?? null;
+
+        try {
+            $query = "SELECT COUNT(*) FROM $table WHERE $column = :value";
+            $params = [':value' => $value];
+
+            if ($excludeId) {
+                $query .= " AND id != :id";
+                $params[':id'] = $excludeId;
+            }
+
+            $stmt = $this->db->executeQuery($query, $params);
+            if ($stmt->fetchColumn() > 0) {
+                $this->addError($field, 'unique');
+            }
+        } catch (PDOException $e) {
+            throw new PDOException("Database error in unique validation: " . $e->getMessage());
+        }
+    }
+
+    private function validateMax(string $field, $value, array $parameters): void
+    {
+        if (!is_null($value) && isset($parameters[0]) && strlen($value) > (int)$parameters[0]) {
+            $this->addError($field, 'max', $parameters);
+        }
+    }
+
+    private function validateMin(string $field, $value, array $parameters): void
+    {
+        if (!is_null($value) && isset($parameters[0]) && strlen($value) < (int)$parameters[0]) {
+            $this->addError($field, 'min', $parameters);
+        }
+    }
+
+    private function validateInteger(string $field, $value): void
+    {
+        if (!is_null($value)) {
+            $sanitized = filter_var($value, FILTER_SANITIZE_NUMBER_INT);
+            if (!filter_var($sanitized, FILTER_VALIDATE_INT)) {
+                $this->addError($field, 'integer');
+            }
+            $this->sanitizedData[$field] = $sanitized;
+        }
+    }
+
+    private function validateBoolean(string $field, $value): void
+    {
+        if (!is_null($value) && !in_array($value, [true, false, 0, 1, '0', '1'], true)) {
+            $this->addError($field, 'boolean');
+        }
+    }
+
+    private function validateIn(string $field, $value, array $parameters): void
+    {
+        if (!is_null($value) && !in_array($value, $parameters)) {
+            $this->addError($field, 'in', $parameters);
+        }
+    }
+
+    private function validateDate(string $field, $value): void
+    {
+        if (!is_null($value) && !strtotime($value)) {
+            $this->addError($field, 'date');
+        }
+    }
+
+    private function validateSame(string $field, $value, array $parameters): void
+    {
+        if (isset($parameters[0]) && $value !== ($this->data[$parameters[0]] ?? null)) {
+            $this->addError($field, 'same', $parameters);
+        }
+    }
+
+    private function validateAlpha(string $field, $value): void
+    {
+        if (!is_null($value) && !ctype_alpha(str_replace(' ', '', $value))) {
+            $this->addError($field, 'alpha');
+        }
+    }
+
+    private function validateAlphanumeric(string $field, $value): void
+    {
+        if (!is_null($value) && !ctype_alnum(str_replace(' ', '', $value))) {
+            $this->addError($field, 'alphanumeric');
+        }
+    }
+
+    private function validateUrl(string $field, $value): void
+    {
+        if (!is_null($value) && !filter_var($value, FILTER_VALIDATE_URL)) {
+            $this->addError($field, 'url');
+        }
+    }
+
+    private function validatePhone(string $field, $value): void
+    {
+        if (!is_null($value)) {
+            $sanitized = preg_replace('/[^0-9+()-]/', '', $value);
+            if (!preg_match('/^[+]?[\d()-]{10,}$/', $sanitized)) {
+                $this->addError($field, 'phone');
+            }
+            $this->sanitizedData[$field] = $sanitized;
+        }
+    }
+
+    private function validateJson(string $field, $value): void
+    {
+        if (!is_null($value)) {
+            json_decode($value);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->addError($field, 'json');
+            }
+        }
+    }
+
+    private function validateArray(string $field, $value): void
+    {
+        if (!is_null($value) && !is_array($value)) {
+            $this->addError($field, 'array');
+        }
+    }
 }

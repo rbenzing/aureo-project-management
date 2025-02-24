@@ -1,105 +1,145 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
-use App\Middleware\CsrfMiddleware;
-use App\Models\TimeTracking;
 use App\Models\Task;
-use App\Utils\Validator;
+use RuntimeException;
+use InvalidArgumentException;
 
 class TimeTrackingController
 {
-    private $authMiddleware;
-    private $csrfMiddleware;
+    private AuthMiddleware $authMiddleware;
+    private Task $taskModel;
 
     public function __construct()
     {
-        // Ensure the user has the required permission
         $this->authMiddleware = new AuthMiddleware();
-        $this->csrfMiddleware = new CsrfMiddleware();
-        $this->authMiddleware->hasPermission('edit_tasks'); // Default permission for all actions
+        $this->taskModel = new Task();
     }
 
     /**
-     * Start a timer for a task.
+     * Start a timer for a task
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function startTimer($requestMethod, $data)
+    public function startTimer(string $requestMethod, array $data): void
     {
-        if ($requestMethod === 'POST') {
-            $taskId = $data['task_id'] ?? null;
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
+            header('Location: /tasks');
+            exit;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_tasks');
+
+            $taskId = filter_var($data['task_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$taskId) {
-                $_SESSION['error'] = 'Invalid task ID.';
-                header('Location: /tasks');
-                exit;
+                throw new InvalidArgumentException('Invalid task ID');
             }
 
-            // Fetch the task
-            $task = (new Task())->find($taskId);
-            if (!$task || ($task->assigned_to !== $_SESSION['user_id'] && !in_array('manage_tasks', $_SESSION['user']['permissions']))) {
-                $_SESSION['error'] = 'Task not found or you do not have permission to start the timer.';
-                header('Location: /tasks');
-                exit;
+            // Fetch and validate task
+            $task = $this->taskModel->find($taskId);
+            if (!$task || $task->is_deleted) {
+                throw new InvalidArgumentException('Task not found');
             }
 
-            // Start the timer
-            $timeEntry = new TimeTracking();
-            $timeEntry->user_id = $_SESSION['user_id'];
-            $timeEntry->task_id = $taskId;
-            $timeEntry->start_time = date('Y-m-d H:i:s');
-            $timeEntry->save();
+            // Check if user has permission to track time on this task
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+                throw new InvalidArgumentException('You do not have permission to track time for this task');
+            }
+
+            // Store timer start in session
+            $_SESSION['active_timer'] = [
+                'task_id' => $taskId,
+                'start_time' => time()
+            ];
 
             $_SESSION['success'] = 'Timer started successfully.';
-            header("Location: /tasks/view/$taskId");
+            header("Location: /tasks/view/{$taskId}");
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TimeTrackingController::startTimer: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while starting the timer.';
+            header('Location: /tasks');
             exit;
         }
-
-        // Render the start timer form if needed
-        include __DIR__ . '/../Views/Tasks/start_timer.php';
     }
 
     /**
-     * Stop a timer for a task.
+     * Stop a timer for a task
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
      */
-    public function stopTimer($requestMethod, $data)
+    public function stopTimer(string $requestMethod, array $data): void
     {
-        if ($requestMethod === 'POST') {
-            $timeEntryId = $data['time_entry_id'] ?? null;
-            if (!$timeEntryId) {
-                $_SESSION['error'] = 'Invalid time entry ID.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            // Fetch the time entry
-            $timeEntry = (new TimeTracking())->find($timeEntryId);
-            if (!$timeEntry || $timeEntry->user_id !== $_SESSION['user_id']) {
-                $_SESSION['error'] = 'Time entry not found or you do not have permission to stop the timer.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            // Stop the timer
-            $timeEntry->end_time = date('Y-m-d H:i:s');
-            $timeEntry->duration = strtotime($timeEntry->end_time) - strtotime($timeEntry->start_time);
-            $timeEntry->save();
-
-            // Update the task's total time spent
-            $task = (new Task())->find($timeEntry->task_id);
-            if (!$task) {
-                $_SESSION['error'] = 'Task not found.';
-                header('Location: /tasks');
-                exit;
-            }
-
-            $task->time_spent += $timeEntry->duration; // Add the duration of this entry
-            $task->save();
-
-            $_SESSION['success'] = 'Timer stopped successfully.';
-            header("Location: /tasks/view/{$timeEntry->task_id}");
+        if ($requestMethod !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method.';
+            header('Location: /tasks');
             exit;
         }
 
-        // Render the stop timer form if needed
-        include __DIR__ . '/../Views/Tasks/stop_timer.php';
+        try {
+            $this->authMiddleware->hasPermission('edit_tasks');
+
+            // Check if there's an active timer
+            if (empty($_SESSION['active_timer'])) {
+                throw new InvalidArgumentException('No active timer found');
+            }
+
+            $activeTimer = $_SESSION['active_timer'];
+            $taskId = $activeTimer['task_id'];
+            $startTime = $activeTimer['start_time'];
+
+            // Fetch and validate task
+            $task = $this->taskModel->find($taskId);
+            if (!$task || $task->is_deleted) {
+                throw new InvalidArgumentException('Task not found');
+            }
+
+            // Calculate duration
+            $duration = time() - $startTime;
+
+            // Update task time
+            $taskUpdate = [
+                'id' => $taskId,
+                'time_spent' => ($task->time_spent ?? 0) + $duration
+            ];
+
+            // If task is billable, update billable time too
+            if ($task->is_hourly) {
+                $taskUpdate['billable_time'] = ($task->billable_time ?? 0) + $duration;
+            }
+
+            $this->taskModel->update($taskUpdate);
+
+            // Clear the active timer
+            unset($_SESSION['active_timer']);
+
+            $_SESSION['success'] = 'Timer stopped successfully.';
+            header("Location: /tasks/view/{$taskId}");
+            exit;
+
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
+        } catch (\Exception $e) {
+            error_log("Error in TimeTrackingController::stopTimer: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while stopping the timer.';
+            header('Location: /tasks');
+            exit;
+        }
     }
 }

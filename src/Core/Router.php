@@ -1,69 +1,174 @@
 <?php
 namespace App\Core;
 
-class Router
-{
-    private $routes = [];
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
+    exit;
+}
 
-    public function add($route, $params)
+class Router 
+{
+    /**
+     * Store routes by HTTP method
+     * @var array
+     */
+    private array $routes = [
+        'GET' => [],
+        'POST' => [],
+        'PUT' => [],
+        'DELETE' => []
+    ];
+
+    /**
+     * Store route patterns
+     * @var array
+     */
+    private array $patterns = [
+        ':id' => '([0-9]+)',
+        ':slug' => '([a-zA-Z0-9-]+)',
+        ':page' => '([0-9]+)',
+        ':any' => '(.*)'
+    ];
+
+    /**
+     * Add a route
+     * @param string $method HTTP method
+     * @param string $route Route pattern
+     * @param array $params Route parameters
+     */
+    public function addRoute(string $method, string $route, array $params): void 
     {
-        $this->routes[$route] = $params;
+        // Normalize route
+        $route = trim($route, '/');
+        if (empty($route)) {
+            $route = 'dashboard';
+        }
+
+        // Convert route patterns to regex
+        $route = $this->convertRouteToRegex($route);
+        
+        // Store route
+        $this->routes[strtoupper($method)][$route] = $params;
     }
 
-    public function dispatch($requestMethod, $urlSegments)
+    /**
+     * Convert route patterns to regex
+     * @param string $route
+     * @return string
+     */
+    private function convertRouteToRegex(string $route): string 
     {
-        $isPost = $_SERVER['REQUEST_METHOD'] === 'POST' ? true : false;
-        $segments = $urlSegments;
-        $data = [];
+        if (strpos($route, ':') !== false) {
+            foreach ($this->patterns as $pattern => $replacement) {
+                $route = str_replace($pattern, $replacement, $route);
+            }
+        }
+        return $route;
+    }
 
-        if (empty($segments[0])) {
-            $segments[0] = 'dashboard';
+    /**
+     * Match current route
+     * @param string $method HTTP method
+     * @param string $uri Current URI
+     * @return array|false
+     */
+    private function matchRoute(string $method, string $uri): array|false 
+    {
+        $uri = trim($uri, '/');
+        if (empty($uri)) {
+            $uri = 'dashboard';
         }
 
-        if (isset($segments[1])) {
-            $actionName = $segments[1];
-            if (isset($segments[2]) && $segments[1] !== 'page') {
-                $data['id'] = $segments[2];
+        foreach ($this->routes[$method] as $route => $params) {
+            if (preg_match('#^' . $route . '$#', $uri, $matches)) {
+                array_shift($matches); // Remove full match
+                return ['params' => $params, 'matches' => $matches];
             }
         }
 
-        if (isset($segments[2]) && $segments[1] === 'page') {
-            $data['page'] = $segments[2];
-        }
+        return false;
+    }
 
-        // Check if the route exists
-        if (!array_key_exists($segments[0], $this->routes)) {
+    /**
+     * Dispatch route
+     * @param string $requestMethod HTTP method
+     * @param array $urlSegments URL segments
+     * @throws \Exception
+     */
+    public function dispatch(string $requestMethod, array $urlSegments): void 
+    {
+        // Build URI from segments
+        $uri = implode('/', $urlSegments);
+        
+        // Match route
+        $match = $this->matchRoute($requestMethod, $uri);
+        
+        if (!$match) {
             throw new \Exception('Page not found', 404);
         }
-        
-        if (isset($segments[2]) && is_numeric($segments[2])) {
-            array_pop($segments);
-            if ($segments[1] === 'page') {
-                $segments[2] = ':page';
-            } else {
-                $segments[2] = ':id';
-            }
-        }
-        
-        $url = implode('/', $segments);
-        $params = $this->routes[$url];
-        
-        $actionName = $params['action'] ?? 'index';
-        $controllerName = ucfirst($params['controller']) . 'Controller';
 
-        // Check if the controller class exists
+        // Extract controller and action
+        $params = $match['params'];
+        $matches = $match['matches'];
+        
+        $controllerName = ucfirst($params['controller']) . 'Controller';
+        $actionName = $params['action'] ?? 'index';
+        
+        // Build controller class name
         $controllerClass = '\\App\\Controllers\\' . $controllerName;
+        
         if (!class_exists($controllerClass)) {
             throw new \Exception('Controller not found', 404);
         }
 
+        // Create controller instance
         $controller = new $controllerClass();
-
-        // Check if the action method exists
+        
         if (!method_exists($controller, $actionName)) {
             throw new \Exception('Action not found', 404);
         }
 
-        call_user_func([$controller, $actionName], $requestMethod, $isPost ? $_POST : $data);
+        // Build request data
+        $requestData = [];
+        if ($requestMethod === 'POST') {
+            $requestData = $_POST;
+        } else {
+            // Map route parameters to names if defined
+            if (isset($params['params']) && !empty($matches)) {
+                $paramNames = explode(',', $params['params']);
+                foreach ($matches as $index => $value) {
+                    if (isset($paramNames[$index])) {
+                        $requestData[$paramNames[$index]] = $value;
+                    }
+                }
+            }
+        }
+
+        // Call controller action
+        call_user_func([$controller, $actionName], $requestMethod, $requestData);
+    }
+
+    /**
+     * Quick methods to add routes
+     */
+    public function get(string $route, array $params): void 
+    {
+        $this->addRoute('GET', $route, $params);
+    }
+
+    public function post(string $route, array $params): void 
+    {
+        $this->addRoute('POST', $route, $params);
+    }
+
+    public function put(string $route, array $params): void 
+    {
+        $this->addRoute('PUT', $route, $params);
+    }
+
+    public function delete(string $route, array $params): void 
+    {
+        $this->addRoute('DELETE', $route, $params);
     }
 }

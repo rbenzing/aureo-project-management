@@ -24,7 +24,11 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
-        <h1 class="text-2xl font-bold mb-6">Users</h1>
+        <div class="flex flex-row justify-between mb-6">
+            <h1 class="text-2xl font-bold">Users</h1>
+            <!-- Create Button -->
+            <a href="/users/create" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
+        </div>
 
         <!-- Table of Users -->
         <?php if (!empty($users)): ?>
@@ -78,9 +82,6 @@ if (!defined('BASE_PATH')) {
                 </nav>
             <?php endif; ?>
         </div>
-
-        <!-- Create Button -->
-        <a href="/users/create" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
     </main>
 
     <!-- Footer -->

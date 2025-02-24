@@ -10,6 +10,8 @@ use \App\Core\Config;
 
 <footer class="bg-gray-800 text-white py-4 mt-auto">
     <div class="container mx-auto px-4 text-center text-sm">
-        &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars(Config::$app['company_name']); ?>, All rights reserved.
+        &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars(Config::get('company_name')); ?>, All rights reserved.
     </div>
 </footer>
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>

@@ -1,295 +1,318 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Core\Database;
 use PDO;
+use RuntimeException;
+use InvalidArgumentException;
 
-class Task
+/**
+ * Task Model
+ * 
+ * Handles all task-related database operations
+ */
+class Task extends BaseModel
 {
-    private Database $db;
-
+    protected string $table = 'tasks';
+    
+    /**
+     * Task properties
+     */
     public ?int $id = null;
     public int $project_id;
     public ?int $assigned_to = null;
     public string $title;
     public ?string $description = null;
-    public string $priority;
+    public string $priority = 'none';
     public int $status_id;
     public ?int $estimated_time = null;
-    public ?int $time_spent = null;
+    public ?int $billable_time = null;
+    public ?int $time_spent = 0;
+    public ?string $start_date = null;
     public ?string $due_date = null;
     public ?string $complete_date = null;
+    public ?int $hourly_rate = null;
+    public bool $is_hourly = false;
     public bool $is_deleted = false;
+    public bool $is_subtask = false;
+    public ?int $parent_task_id = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
 
-    public function __construct()
-    {
-        // Initialize the database connection
-        $this->db = Database::getInstance();
-    }
-
     /**
-     * Find a task by its ID.
+     * Get tasks by user ID
+     * 
+     * @param int $userId
+     * @param int $limit
+     * @param int $page
+     * @return array
      */
-    public function find(int $id): ?object
+    public function getByUserId(int $userId, int $limit = 10, int $page = 1): array
     {
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM tasks WHERE id = :task_id AND is_deleted = 0",
-            [':task_id' => $id]
-        );
+        $sql = "SELECT t.*, 
+                       p.name as project_name,
+                       ts.name as status_name,
+                       u.first_name, 
+                       u.last_name
+                FROM tasks t
+                LEFT JOIN projects p ON t.project_id = p.id
+                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN users u ON t.assigned_to = u.id
+                WHERE t.assigned_to = :user_id 
+                AND t.is_deleted = 0
+                ORDER BY t.due_date ASC, t.priority DESC";
 
-        return $stmt->fetch(PDO::FETCH_OBJ);
+        return $this->paginate($sql, [':user_id' => $userId], $page, $limit);
     }
 
     /**
-     * Get the total of all companies
-     */
-    public function countAll(): int
-    {
-        $stmt = $this->db->executeQuery(
-            "SELECT COUNT(*) as total FROM tasks WHERE is_deleted = 0"
-        );
-        return (int)$stmt->fetchColumn();
-    }
-
-    /**
-     * Fetch all tasks assigned to a specific user (paginated).
-     */
-    public function getByUserIdPaginated(int $userId, int $limit = 10, int $page = 1): array
-    {
-        $offset = ($page - 1) * $limit;
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM tasks 
-             WHERE assigned_to = :user_id AND is_deleted = 0 
-             LIMIT :limit OFFSET :offset",
-            [
-                ':user_id' => $userId,
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]
-        );
-
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
-
-    /**
-     * Fetch tasks and subtasks grouped by status for a project.
-     *
-     * @param int $projectId The project ID.
-     * @return array Tasks grouped by status.
+     * Get tasks by project
+     * 
+     * @param int $projectId
+     * @return array
      */
     public function getByProjectId(int $projectId): array
     {
-        $query = "
-            SELECT 
-                t.id AS task_id,
-                t.title AS task_title,
-                t.description AS task_description,
-                t.is_subtask,
-                t.parent_task_id,
-                ts.name AS task_status,
-                t.due_date AS task_due_date
-            FROM 
-                tasks t
-            LEFT JOIN
-                task_statuses ts ON t.status_id = ts.id AND ts.is_deleted = 0
-            WHERE 
-                t.project_id = :project_id
+        $sql = "SELECT 
+                    t.*,
+                    ts.name AS status_name,
+                    u.first_name,
+                    u.last_name
+                FROM 
+                    tasks t
+                LEFT JOIN
+                    task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN
+                    users u ON t.assigned_to = u.id
+                WHERE 
+                    t.project_id = :project_id
+                    AND t.is_deleted = 0
+                ORDER BY 
+                    t.is_subtask ASC,
+                    t.parent_task_id ASC,
+                    t.priority DESC,
+                    t.due_date ASC";
+
+        $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+        $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        return $this->organizeTasksByStatus($tasks);
+    }
+
+    /**
+     * Get task subtasks
+     * 
+     * @param int $taskId
+     * @return array
+     */
+    public function getSubtasks(int $taskId): array
+    {
+        $sql = "SELECT t.*,
+                       ts.name as status_name,
+                       u.first_name,
+                       u.last_name
+                FROM tasks t
+                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN users u ON t.assigned_to = u.id
+                WHERE t.parent_task_id = :task_id
+                AND t.is_subtask = 1
                 AND t.is_deleted = 0
-            ORDER BY 
-                t.is_subtask ASC,
-                t.parent_task_id ASC,
-                t.id ASC
-        ";
-        $stmt = $this->db->executeQuery($query, [':project_id' => $projectId]);
-        $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                ORDER BY t.priority DESC, t.due_date ASC";
 
-        // Organize tasks and subtasks
-        $tasks = [
-            'on_hold' => [],
-            'open' => [],
-            'in_progress' => [],
-            'completed' => [],
-        ];
-        $subtasksByParent = [];
-
-        // Separate tasks and subtasks
-        foreach ($rawData as $row) {
-            if ($row['is_subtask']) {
-                // Collect subtasks by their parent_task_id
-                $subtasksByParent[$row['parent_task_id']][] = $row['task_id'];
-            } else {
-                // Add parent tasks to their respective status groups
-                $tasks[$row['task_status']][] = [
-                    'id' => $row['task_id'],
-                    'title' => $row['task_title'],
-                    'description' => $row['task_description'],
-                    'status' => $row['task_status'],
-                    'due_date' => $row['task_due_date'],
-                    'subtasks' => [], // Placeholder for subtasks
-                ];
-            }
-        }
-
-        // Assign subtasks to their parent tasks
-        foreach ($tasks as &$statusGroup) {
-            foreach ($statusGroup as &$task) {
-                if (isset($subtasksByParent[$task['id']])) {
-                    $task['subtasks'] = $subtasksByParent[$task['id']];
-                }
-            }
-        }
-
-        return $tasks;
+        $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
-     * Save a new task to the database.
-     */
-    public function save(): bool
-    {
-        $stmt = $this->db->executeQuery(
-            "INSERT INTO tasks (project_id, assigned_to, title, description, priority, status_id, estimated_time, due_date, created_at, updated_at)
-             VALUES (:project_id, :assigned_to, :title, :description, :priority, :status_id, :estimated_time, :due_date, NOW(), NOW())",
-            [
-                ':project_id' => $this->project_id,
-                ':assigned_to' => $this->assigned_to,
-                ':title' => $this->title,
-                ':description' => $this->description,
-                ':priority' => $this->priority,
-                ':status_id' => $this->status_id,
-                ':estimated_time' => $this->estimated_time,
-                ':due_date' => $this->due_date,
-            ]
-        );
-
-        $this->id = $this->db->lastInsertId();
-        return true;
-    }
-
-    /**
-     * Update an existing task in the database.
-     */
-    public function update(): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Task ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "UPDATE tasks
-             SET project_id = :project_id, assigned_to = :assigned_to, title = :title, description = :description,
-                 priority = :priority, status_id = :status_id, estimated_time = :estimated_time, due_date = :due_date,
-                 time_spent = :time_spent, complete_date = :complete_date, updated_at = NOW()
-             WHERE id = :id",
-            [
-                ':id' => $this->id,
-                ':project_id' => $this->project_id,
-                ':assigned_to' => $this->assigned_to,
-                ':title' => $this->title,
-                ':description' => $this->description,
-                ':priority' => $this->priority,
-                ':status_id' => $this->status_id,
-                ':estimated_time' => $this->estimated_time,
-                ':due_date' => $this->due_date,
-                ':time_spent' => $this->time_spent,
-                ':complete_date' => $this->complete_date,
-            ]
-        );
-
-        return true;
-    }
-
-    /**
-     * Soft delete a task by marking it as deleted.
-     */
-    public function delete(): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Task ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "UPDATE tasks SET is_deleted = 1, updated_at = NOW() WHERE id = :id",
-            [':id' => $this->id]
-        );
-
-        return true;
-    }
-
-    /**
-     * Fetch task statuses.
+     * Get task statuses
+     * 
+     * @return array
      */
     public function getTaskStatuses(): array
     {
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM task_statuses WHERE is_deleted = 0"
-        );
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM task_statuses WHERE is_deleted = 0";
+        $stmt = $this->db->executeQuery($sql);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
-     * Fetch subtasks associated with this task.
+     * Get recent tasks by user
+     * 
+     * @param int $userId
+     * @param int $limit
+     * @return array
      */
-    public function getSubtasks(): array
+    public function getRecentByUser(int $userId, int $limit = 5): array
     {
-        if (!$this->id) {
-            throw new Exception("Task ID is not set.");
+        $sql = "SELECT t.*, 
+                       p.name as project_name,
+                       ts.name as status_name
+                FROM tasks t
+                LEFT JOIN projects p ON t.project_id = p.id
+                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                WHERE t.assigned_to = :user_id 
+                AND t.is_deleted = 0
+                ORDER BY t.created_at DESC 
+                LIMIT :limit";
+
+        $stmt = $this->db->executeQuery($sql, [
+            ':user_id' => $userId,
+            ':limit' => $limit
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Get total time spent for a user
+     * 
+     * @param int $userId
+     * @return int Total time spent in seconds
+     */
+    public function getTotalTimeSpent(int $userId): int
+    {
+        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
+                FROM tasks 
+                WHERE assigned_to = :user_id 
+                AND is_deleted = 0";
+
+        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get total billable time for a user
+     * 
+     * @param int $userId
+     * @return int Total billable time in seconds
+     */
+    public function getTotalBillableTime(int $userId): int
+    {
+        $sql = "SELECT COALESCE(SUM(billable_time), 0) 
+                FROM tasks 
+                WHERE assigned_to = :user_id 
+                AND is_hourly = 1 
+                AND is_deleted = 0";
+
+        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get time spent this week for a user
+     * 
+     * @param int $userId
+     * @return int Time spent this week in seconds
+     */
+    public function getWeeklyTimeSpent(int $userId): int
+    {
+        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
+                FROM tasks 
+                WHERE assigned_to = :user_id 
+                AND is_deleted = 0 
+                AND complete_date BETWEEN 
+                    DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) 
+                    AND DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)";
+
+        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get time spent this month for a user
+     * 
+     * @param int $userId
+     * @return int Time spent this month in seconds
+     */
+    public function getMonthlyTimeSpent(int $userId): int
+    {
+        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
+                FROM tasks 
+                WHERE assigned_to = :user_id 
+                AND is_deleted = 0 
+                AND complete_date BETWEEN 
+                    DATE_FORMAT(CURDATE(), '%Y-%m-01') 
+                    AND LAST_DAY(CURDATE())";
+
+        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Organize tasks by status
+     * 
+     * @param array $tasks
+     * @return array
+     */
+    private function organizeTasksByStatus(array $tasks): array
+    {
+        $organized = [
+            'on_hold' => [],
+            'open' => [],
+            'in_progress' => [],
+            'in_review' => [],
+            'completed' => [],
+            'cancelled' => []
+        ];
+
+        foreach ($tasks as $task) {
+            $status = strtolower($task->status_name);
+            if (!isset($organized[$status])) {
+                $organized[$status] = [];
+            }
+            $organized[$status][] = $task;
         }
 
-        $stmt = $this->db->executeQuery(
-            "SELECT 
-                 id,
-                 title,
-                 description,
-                 status_id
-             FROM 
-                 tasks
-             WHERE 
-                 parent_task_id = :task_id
-                 AND is_subtask = 1
-                 AND is_deleted = 0",
-            [':task_id' => $this->id]
-        );
-
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        return $organized;
     }
 
     /**
-     * Fetch time tracking entries for this task.
+     * Validate task data before save
+     * 
+     * @param array $data
+     * @throws InvalidArgumentException
      */
-    public function getTimeEntries(): array
+    protected function beforeSave(array $data): void
     {
-        if (!$this->id) {
-            throw new Exception("Task ID is not set.");
+        if (empty($data['title'])) {
+            throw new InvalidArgumentException('Task title is required');
         }
 
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM time_tracking WHERE task_id = :task_id",
-            [':task_id' => $this->id]
-        );
+        if (empty($data['project_id'])) {
+            throw new InvalidArgumentException('Project ID is required');
+        }
 
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
+        if (empty($data['status_id'])) {
+            throw new InvalidArgumentException('Status ID is required');
+        }
 
-    /**
-     * Get recent tasks for a user.
-     *
-     * @param int $userId The user ID.
-     * @return array An array of task objects.
-     */
-    public function getRecentTasksByUserId(int $userId): array
-    {
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM tasks 
-             WHERE assigned_to = :user_id 
-             ORDER BY created_at DESC 
-             LIMIT 5",
-            [':user_id' => $userId]
-        );
+        if (!empty($data['parent_task_id'])) {
+            // Validate parent task exists and is not a subtask
+            $parent = $this->find($data['parent_task_id']);
+            if (!$parent || $parent->is_subtask) {
+                throw new InvalidArgumentException('Invalid parent task');
+            }
+        }
 
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        if (!empty($data['due_date'])) {
+            if (strtotime($data['due_date']) < strtotime('today')) {
+                throw new InvalidArgumentException('Due date cannot be in the past');
+            }
+        }
+
+        if (!empty($data['time_spent']) && $data['time_spent'] < 0) {
+            throw new InvalidArgumentException('Time spent cannot be negative');
+        }
+
+        if (!empty($data['estimated_time']) && $data['estimated_time'] < 0) {
+            throw new InvalidArgumentException('Estimated time cannot be negative');
+        }
+
+        if (!empty($data['priority']) && !in_array($data['priority'], ['none', 'low', 'medium', 'high'])) {
+            throw new InvalidArgumentException('Invalid priority value');
+        }
     }
 }

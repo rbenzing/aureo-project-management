@@ -6,100 +6,165 @@ use Exception;
 
 class CsrfMiddleware
 {
-    private $db;
+    private Database $db;
+    private const TOKEN_LENGTH = 32;
+    private const TOKEN_EXPIRY = '1 hour';
+    private const CLEANUP_PROBABILITY = 0.01; // 1% chance to run cleanup
 
     public function __construct()
     {
-        // Use the singleton instance of Database
         $this->db = Database::getInstance();
     }
 
     /**
-     * Generate a CSRF token and store it in the database.
+     * Generate and store a new CSRF token
+     * 
+     * @return string Generated token
+     * @throws Exception If token generation fails
      */
-    public function generateToken($user_id = null)
+    public function generateToken(): string
     {
-        // Generate a secure random token
-        $token = bin2hex(random_bytes(32));
-        // Set expiration time (e.g., 1 hour from now)
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-        // Store the token in the csrf_tokens table
-        $this->db->executeQuery(
-            "INSERT INTO csrf_tokens (token, session_id, expires_at) VALUES (:token, :session_id, :expires_at)",
-            [
-                ':token' => $token,
-                ':session_id' => session_id(),
-                ':expires_at' => $expiresAt
-            ]
-        );
-
-        // Store the token in the session for easy access
-        $_SESSION['csrf_token'] = $token;
+        try {
+            $token = bin2hex(random_bytes(self::TOKEN_LENGTH));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::TOKEN_EXPIRY));
+                         
+            $success = $this->db->executeInsertUpdate(
+                "INSERT INTO csrf_tokens (token, session_id, expires_at) 
+                    VALUES (:token, :session_id, :expires_at)", 
+                [
+                    ':token' => $token,
+                    ':session_id' => session_id(),
+                    ':expires_at' => $expiresAt
+                ]        
+            );
+            // set token session value
+            $_SESSION['csrf_token'] = $token;
+            
+            return $token;
+        } catch (Exception $e) {
+            error_log("CSRF token generation failed: " . $e->getMessage());
+            throw new Exception('Failed to generate security token');
+        }
     }
 
     /**
-     * Validate the CSRF token from the request.
+     * Validate a CSRF token
+     * 
+     * @param string $requestToken Token to validate
+     * @return bool True if token is valid
+     * @throws Exception If validation fails
      */
-    public function validateToken($requestToken)
+    public function validateToken(string $requestToken): bool
     {
-        if (!isset($_SESSION['csrf_token'])) {
-            throw new Exception('CSRF token is missing.');
+        if (empty($requestToken) || !isset($_SESSION['csrf_token'])) {
+            throw new Exception('CSRF token is missing');
         }
 
-        // Fetch the stored token from the database
+        if (!$this->isValidTokenFormat($requestToken)) {
+            throw new Exception('Invalid token format');
+        }
+
         $stmt = $this->db->executeQuery(
-            "SELECT * FROM csrf_tokens WHERE token = :token AND expires_at > NOW()",
-            [':token' => $requestToken]
+            "SELECT token, session_id FROM csrf_tokens 
+             WHERE token = :token AND expires_at > NOW() 
+             AND session_id = :session_id",
+            [
+                ':token' => $requestToken,
+                ':session_id' => session_id()
+            ]
         );
 
         $storedToken = $stmt->fetch();
 
-        if (!$storedToken) {
-            throw new Exception('Invalid or expired CSRF token.');
+        if (!$storedToken || !hash_equals($_SESSION['csrf_token'], $requestToken)) {
+            throw new Exception('Invalid or expired CSRF token');
         }
 
-        // Compare the request token with the session token
-        if (!hash_equals($_SESSION['csrf_token'], $requestToken)) {
-            throw new Exception('CSRF token validation failed.');
-        }
+        return true;
     }
 
     /**
-     * Middleware to handle CSRF protection for POST requests.
+     * Handle CSRF protection for requests
+     * 
+     * @throws Exception If CSRF validation fails
      */
-    public function handleToken()
+    public function handleToken(): void
     {
-        // Generate a CSRF token if it doesn't already exist
+        // Random cleanup of expired tokens
+        if (mt_rand() / mt_getrandmax() < self::CLEANUP_PROBABILITY) {
+            $this->cleanupExpiredTokens();
+        }
+
+        // Generate token if it doesn't exist
         if (!isset($_SESSION['csrf_token'])) {
             $this->generateToken();
         }
-
-        // Check if the request method is POST
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Ensure the CSRF token is included in the request
-            if (!isset($_POST['csrf_token'])) {
-                throw new Exception('CSRF token is missing from the request.');
-            }
-
-            // Validate the CSRF token
-            try {
-                $this->validateToken($_POST['csrf_token']);
-            } catch (Exception $e) {
-                // Log the error and redirect to an error page
-                error_log($e->getMessage());
-                $_SESSION['error'] = 'CSRF validation failed. Please try again.';
-                header('Location: /login');
-                exit;
-            }
+            $this->validatePostRequest();
         }
     }
 
     /**
-     * Clear expired CSRF tokens from the database.
+     * Remove expired tokens from the database
      */
-    public function cleanupExpiredTokens()
+    public function cleanupExpiredTokens(): void
     {
-        $this->db->executeQuery("DELETE FROM csrf_tokens WHERE expires_at < NOW()");
+        /*try {
+            $this->db->executeQuery(
+                "DELETE FROM csrf_tokens WHERE expires_at < NOW()"
+            );
+        } catch (Exception $e) {
+            error_log("Failed to cleanup expired CSRF tokens: " . $e->getMessage());
+        }*/
+    }
+
+    /**
+     * Validate POST request CSRF token
+     * 
+     * @throws Exception If validation fails
+     */
+    private function validatePostRequest(): void
+    {
+        try {
+            if (!isset($_POST['csrf_token'])) {
+                throw new Exception('CSRF token is missing from the request');
+            }
+             
+            $this->validateToken($_POST['csrf_token']);
+        } catch (Exception $e) {
+            error_log("CSRF validation failed: " . $e->getMessage());
+            $_SESSION['error'] = 'Security validation failed. Please try again.';
+            
+            header('Location: ' . $this->getSafeRedirectUrl());
+            exit;
+        }
+    }
+
+    /**
+     * Validate token format
+     */
+    private function isValidTokenFormat(string $token): bool
+    {
+        return (bool) preg_match('/^[a-f0-9]{' . (self::TOKEN_LENGTH * 2) . '}$/', $token);
+    }
+
+    /**
+     * Get safe redirect URL after validation failure
+     */
+    private function getSafeRedirectUrl(): string
+    {
+        $safeUrls = ['/login', '/dashboard', '/'];
+        $referrer = $_SERVER['HTTP_REFERER'] ?? '';
+        
+        // Check if referrer is a local URL and is safe
+        if (!empty($referrer)) {
+            $parsedUrl = parse_url($referrer);
+            if (isset($parsedUrl['path']) && in_array($parsedUrl['path'], $safeUrls)) {
+                return $parsedUrl['path'];
+            }
+        }
+        
+        return '/login';
     }
 }

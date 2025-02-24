@@ -1,7 +1,13 @@
 <?php
 namespace App\Utils;
 
-use App\Config\Config;
+// Ensure this view is not directly accessible via the web
+if (!defined('BASE_PATH')) {
+    header("HTTP/1.0 403 Forbidden");
+    exit;
+}
+
+use App\Core\Config;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -103,8 +109,8 @@ class Email {
     public static function sendActivationEmail($user) {
         $email = new self(); // Create an instance of the Email class
 
-        $domain = Config::$app['domain'];
-        $scheme = Config::$app['scheme'];
+        $domain = Config::get('domain');
+        $scheme = Config::get('scheme');
         $activationLink = "$scheme://$domain/activate?token=" . urlencode($user->activation_token);
         
         $subject = "Activate Your Account";
@@ -125,8 +131,8 @@ class Email {
     public static function sendPasswordResetEmail($user) {
         $email = new self(); // Create an instance of the Email class
 
-        $domain = Config::$app['domain'];
-        $scheme = Config::$app['scheme'];
+        $domain = Config::get('domain');
+        $scheme = Config::get('scheme');
         $resetLink = "$scheme://$domain/reset-password?token=" . urlencode($user->reset_password_token);
 
         $subject = "Password Reset Request";

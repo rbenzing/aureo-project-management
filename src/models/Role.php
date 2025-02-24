@@ -1,264 +1,195 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Core\Database;
 use PDO;
+use RuntimeException;
+use InvalidArgumentException;
 
-class Role
+/**
+ * Role Model
+ * 
+ * Handles all role-related database operations
+ */
+class Role extends BaseModel
 {
-    private Database $db;
-
+    protected string $table = 'roles';
+    
+    /**
+     * Role properties
+     */
     public ?int $id = null;
     public string $name;
     public ?string $description = null;
     public bool $is_deleted = false;
-    public array $permissions = [];
     public ?string $created_at = null;
     public ?string $updated_at = null;
 
-    public function __construct()
-    {
-        // Initialize the database connection
-        $this->db = Database::getInstance();
-    }
-
     /**
-     * Hydrate the object with database row data.
+     * Find role with permissions
+     * 
+     * @param int $id
+     * @return object|null
      */
-    private function hydrate(array $data): void
+    public function findWithPermissions(int $id): ?object
     {
-        foreach ($data as $key => $value) {
-            if (property_exists($this, $key)) {
-                $this->$key = $value;
-            }
-        }
-    }
-
-    /**
-     * Find a role by its ID.
-     */
-    public function find(int $id): ?object
-    {
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM roles WHERE id = :id AND is_deleted = 0",
-            [':id' => $id]
-        );
-
-        $roleData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$roleData) {
-            return null;
+        $role = $this->find($id);
+        
+        if ($role) {
+            $role->permissions = $this->getPermissions($id);
         }
 
-        $this->hydrate($roleData);
-        return $this;
+        return $role;
     }
 
     /**
-     * Fetch all roles (paginated).
+     * Get permissions for a role
+     * 
+     * @param int $roleId
+     * @return array
      */
-    public function getAllPaginated(int $limit = 10, int $page = 1): array
+    public function getPermissions(int $roleId): array
     {
-        $offset = ($page - 1) * $limit;
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM roles WHERE is_deleted = 0 LIMIT :limit OFFSET :offset",
-            [
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]
-        );
+        $sql = "SELECT p.* 
+                FROM permissions p
+                INNER JOIN role_permissions rp ON p.id = rp.permission_id
+                WHERE rp.role_id = :role_id
+                AND p.is_deleted = 0";
 
+        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
-     * Fetch all roles without pagination.
+     * Assign permissions to role
+     * 
+     * @param int $roleId
+     * @param array $permissionIds
+     * @return bool
+     * @throws RuntimeException
      */
-    public function getAll(): array
+    public function syncPermissions(int $roleId, array $permissionIds): bool
     {
-        $stmt = $this->db->executeQuery(
-            "SELECT * FROM roles WHERE is_deleted = 0"
-        );
+        try {
+            $this->db->beginTransaction();
 
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
+            // Remove existing permissions
+            $sql = "DELETE FROM role_permissions WHERE role_id = :role_id";
+            $this->db->executeInsertUpdate($sql, [':role_id' => $roleId]);
 
-    /**
-     * Get the total of all roles
-     */
-    public function countAll(): int
-    {
-        $stmt = $this->db->executeQuery(
-            "SELECT COUNT(*) as total FROM roles WHERE is_deleted = 0"
-        );
-        return (int)$stmt->fetchColumn();
-    }
+            // Add new permissions if any
+            if (!empty($permissionIds)) {
+                $values = array_map(function($id) use ($roleId) {
+                    return "($roleId, $id)";
+                }, $permissionIds);
 
-    /**
-     * Save a new role to the database.
-     */
-    public function save(): bool
-    {
-        $stmt = $this->db->executeQuery(
-            "INSERT INTO roles (name, description, created_at, updated_at)
-             VALUES (:name, :description, NOW(), NOW())",
-            [
-                ':name' => $this->name,
-                ':description' => $this->description,
-            ]
-        );
-
-        $this->id = $this->db->lastInsertId();
-        return true;
-    }
-
-    /**
-     * Update an existing role in the database.
-     */
-    public function update(): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "UPDATE roles
-             SET name = :name, description = :description, updated_at = NOW()
-             WHERE id = :id",
-            [
-                ':id' => $this->id,
-                ':name' => $this->name,
-                ':description' => $this->description,
-            ]
-        );
-
-        return true;
-    }
-
-    /**
-     * Soft delete a role by marking it as deleted.
-     */
-    public function delete(): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "UPDATE roles SET is_deleted = 1, updated_at = NOW() WHERE id = :id",
-            [':id' => $this->id]
-        );
-
-        return true;
-    }
-
-    /**
-     * Assign a permission to this role.
-     */
-    public function assignPermission(int $permissionId): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "INSERT INTO role_permissions (role_id, permission_id)
-             VALUES (:role_id, :permission_id)
-             ON DUPLICATE KEY UPDATE role_id = :role_id, permission_id = :permission_id",
-            [
-                ':role_id' => $this->id,
-                ':permission_id' => $permissionId,
-            ]
-        );
-
-        return true;
-    }
-
-    /**
-     * Remove a permission from this role.
-     */
-    public function removePermission(int $permissionId): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
-
-        $stmt = $this->db->executeQuery(
-            "DELETE FROM role_permissions
-             WHERE role_id = :role_id AND permission_id = :permission_id",
-            [
-                ':role_id' => $this->id,
-                ':permission_id' => $permissionId,
-            ]
-        );
-
-        return true;
-    }
-
-    /**
-     * Sync permissions for this role (replace existing permissions with new ones).
-     */
-    public function syncPermissions(array $permissionIds): bool
-    {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
-
-        // Remove all existing permissions for the role
-        $stmt = $this->db->executeQuery("DELETE FROM role_permissions WHERE role_id = :role_id", [':role_id' => $this->id]);
-
-        // Add the new permissions
-        if (!empty($permissionIds)) {
-            $placeholders = implode(',', array_fill(0, count($permissionIds), '(?, ?)'));
-            $query = "INSERT INTO role_permissions (role_id, permission_id) VALUES $placeholders";
-            $stmt = $this->db->executeQuery($query);
-
-            $params = [];
-            foreach ($permissionIds as $permissionId) {
-                $params[] = $this->id;
-                $params[] = $permissionId;
+                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " . 
+                       implode(',', $values);
+                
+                $this->db->executeInsertUpdate($sql);
             }
 
-            $stmt->execute($params);
-        }
+            $this->db->commit();
+            return true;
 
-        return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw new RuntimeException("Failed to sync permissions: " . $e->getMessage());
+        }
     }
 
     /**
-     * Fetch permissions assigned to this role.
+     * Add single permission to role
+     * 
+     * @param int $roleId
+     * @param int $permissionId
+     * @return bool
      */
-    public function getPermissions(): array
+    public function assignPermission(int $roleId, int $permissionId): bool
     {
-        if (!$this->id) {
-            throw new Exception("Role ID is not set.");
-        }
+        $sql = "INSERT INTO role_permissions (role_id, permission_id)
+                VALUES (:role_id, :permission_id)
+                ON DUPLICATE KEY UPDATE role_id = :role_id";
 
-        $stmt = $this->db->executeQuery(
-            "SELECT p.* 
-             FROM permissions p
-             INNER JOIN role_permissions rp ON p.id = rp.permission_id
-             WHERE rp.role_id = :role_id",
-            [':role_id' => $this->id]
-        );
+        return $this->db->executeInsertUpdate($sql, [
+            ':role_id' => $roleId,
+            ':permission_id' => $permissionId
+        ]);
+    }
 
+    /**
+     * Remove single permission from role
+     * 
+     * @param int $roleId
+     * @param int $permissionId
+     * @return bool
+     */
+    public function removePermission(int $roleId, int $permissionId): bool
+    {
+        $sql = "DELETE FROM role_permissions 
+                WHERE role_id = :role_id 
+                AND permission_id = :permission_id";
+
+        return $this->db->executeInsertUpdate($sql, [
+            ':role_id' => $roleId,
+            ':permission_id' => $permissionId
+        ]);
+    }
+
+    /**
+     * Get roles with aggregated data
+     * 
+     * @return array
+     */
+    public function getRolesWithStats(): array
+    {
+        $sql = "SELECT 
+                    r.*,
+                    COUNT(DISTINCT u.id) as user_count,
+                    COUNT(DISTINCT rp.permission_id) as permission_count
+                FROM roles r
+                LEFT JOIN users u ON u.role_id = r.id AND u.is_deleted = 0
+                LEFT JOIN role_permissions rp ON rp.role_id = r.id
+                WHERE r.is_deleted = 0
+                GROUP BY r.id";
+
+        $stmt = $this->db->executeQuery($sql);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
-     * Check if a role with the given name already exists (for validation).
+     * Validate role data before save
+     * 
+     * @param array $data
+     * @throws InvalidArgumentException
      */
-    public static function nameExists(string $name, ?int $excludeId = null): bool
+    protected function beforeSave(array $data): void
     {
-        $query = "SELECT COUNT(*) FROM roles WHERE name = :name AND is_deleted = 0";
-        $params = [':name' => $name];
-
-        if ($excludeId) {
-            $query .= " AND id != :id";
-            $params[':id'] = $excludeId;
+        if (empty($data['name'])) {
+            throw new InvalidArgumentException('Role name is required');
         }
 
-        $stmt = Database::getInstance()->executeQuery($query, $params);
-        return $stmt->fetchColumn() > 0;
+        // Check for unique name
+        $sql = "SELECT COUNT(*) FROM roles 
+                WHERE name = :name 
+                AND id != :id 
+                AND is_deleted = 0";
+
+        $stmt = $this->db->executeQuery($sql, [
+            ':name' => $data['name'],
+            ':id' => $data['id'] ?? 0
+        ]);
+
+        if ($stmt->fetchColumn() > 0) {
+            throw new InvalidArgumentException('Role name must be unique');
+        }
+
+        // Validate role name format
+        if (!preg_match('/^[a-zA-Z0-9_\- ]+$/', $data['name'])) {
+            throw new InvalidArgumentException('Role name can only contain letters, numbers, spaces, underscores and hyphens');
+        }
     }
 }

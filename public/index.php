@@ -10,90 +10,116 @@ define('BASE_PATH', __DIR__);
 // Include Composer's autoloader
 require_once BASE_PATH . '/../vendor/autoload.php';
 
-// Load configuration
-require_once BASE_PATH . '/../src/Core/Config.php';
-
-// Load environment variables
-$dotenv = Dotenv\Dotenv::createImmutable(BASE_PATH . '/../');
-$dotenv->load();
-
-// handle CSRF token
-(new \App\Middleware\CsrfMiddleware())->handleToken();
-
-// handle activity log
-(new \App\Middleware\ActivityMiddleware())->handle();
-
-// Create Router Instance
-$router = new \App\Core\Router();
-
-// Define Routes
-$router->add('', ['controller' => 'Dashboard', 'action' => 'index']);
-$router->add('login', ['controller' => 'Auth', 'action' => 'login']);
-$router->add('logout', ['controller' => 'Auth', 'action' => 'logout']);
-$router->add('register', ['controller' => 'Auth', 'action' => 'register']);
-$router->add('activate/:token', ['controller' => 'Auth', 'action' => 'activate']);
-$router->add('reset-password/:token', ['controller' => 'Auth', 'action' => 'resetPassword']);
-$router->add('forgot-password', ['controller' => 'Auth', 'action' => 'forgotPassword']);
-
-$router->add('dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
-
-$router->add('projects/page/:page', ['controller' => 'Project', 'action' => 'index']);
-$router->add('projects/view/:id', ['controller' => 'Project', 'action' => 'view']);
-$router->add('projects/create', ['controller' => 'Project', 'action' => 'createForm']);
-$router->add('projects/edit/:id', ['controller' => 'Project', 'action' => 'editForm']);
-$router->add('projects/update', ['controller' => 'Project', 'action' => 'update']);
-$router->add('projects/delete/:id', ['controller' => 'Project', 'action' => 'delete']);
-$router->add('projects', ['controller' => 'Project', 'action' => 'index']);
-
-$router->add('tasks/page/:page', ['controller' => 'Task', 'action' => 'index']);
-$router->add('tasks/view/:id', ['controller' => 'Task', 'action' => 'view']);
-$router->add('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
-$router->add('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm']);
-$router->add('tasks/update', ['controller' => 'Task', 'action' => 'update']);
-$router->add('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete']);
-$router->add('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer']);
-$router->add('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer']);
-$router->add('tasks', ['controller' => 'Task', 'action' => 'index']);
-
-$router->add('users/page/:page', ['controller' => 'User', 'action' => 'index']);
-$router->add('users/view/:id', ['controller' => 'User', 'action' => 'view']);
-$router->add('users/create', ['controller' => 'User', 'action' => 'createForm']);
-$router->add('users/edit/:id', ['controller' => 'User', 'action' => 'editForm']);
-$router->add('users/update', ['controller' => 'User', 'action' => 'update']);
-$router->add('users/delete/:id', ['controller' => 'User', 'action' => 'delete']);
-$router->add('users', ['controller' => 'User', 'action' => 'index']);
-
-$router->add('roles/page/:page', ['controller' => 'Role', 'action' => 'index']);
-$router->add('roles/view/:id', ['controller' => 'Role', 'action' => 'view']);
-$router->add('roles/create', ['controller' => 'Role', 'action' => 'createForm']);
-$router->add('roles/edit/:id', ['controller' => 'Role', 'action' => 'editForm']);
-$router->add('roles/update', ['controller' => 'Role', 'action' => 'update']);
-$router->add('roles/delete/:id', ['controller' => 'Role', 'action' => 'delete']);
-$router->add('roles', ['controller' => 'Role', 'action' => 'index']);
-
-$router->add('companies/page/:page', ['controller' => 'Company', 'action' => 'index']);
-$router->add('companies/view/:id', ['controller' => 'Company', 'action' => 'view']);
-$router->add('companies/create', ['controller' => 'Company', 'action' => 'createForm']);
-$router->add('companies/edit/:id', ['controller' => 'Company', 'action' => 'editForm']);
-$router->add('companies/update', ['controller' => 'Company', 'action' => 'update']);
-$router->add('companies/delete/:id', ['controller' => 'Company', 'action' => 'delete']);
-$router->add('companies', ['controller' => 'Company', 'action' => 'index']);
-
-$router->add('milestones/page/:page', ['controller' => 'Milestone', 'action' => 'index']);
-$router->add('milestones/view/:id', ['controller' => 'Milestone', 'action' => 'view']);
-$router->add('milestones/create', ['controller' => 'Milestone', 'action' => 'createForm']);
-$router->add('milestones/edit/:id', ['controller' => 'Milestone', 'action' => 'editForm']);
-$router->add('milestones/update', ['controller' => 'Milestone', 'action' => 'update']);
-$router->add('milestones/delete/:id', ['controller' => 'Milestone', 'action' => 'delete']);
-$router->add('milestones', ['controller' => 'Milestone', 'action' => 'index']);
-
+// Error handling
 try {
-    // Dispatch Request
-    $router->dispatch($_SERVER['REQUEST_METHOD'], explode('/', ltrim($_SERVER['REQUEST_URI'], '/')));
+
+    // Load configuration
+    \App\Core\Config::init();
+
+    // Initialize middleware stack
+    (new \App\Middleware\CsrfMiddleware())->handleToken();
+    (new \App\Middleware\ActivityMiddleware())->handle();
+
+    // Create Router Instance
+    $router = new \App\Core\Router();
+
+    // Define Routes
+    // Auth Routes
+    $router->get('', ['controller' => 'Dashboard', 'action' => 'index']);
+    $router->get('login', ['controller' => 'Auth', 'action' => 'loginForm']);
+    $router->post('login', ['controller' => 'Auth', 'action' => 'login']);
+    $router->get('logout', ['controller' => 'Auth', 'action' => 'logout']);
+    $router->get('register', ['controller' => 'Auth', 'action' => 'registerForm']);
+    $router->post('register', ['controller' => 'Auth', 'action' => 'register']);
+    $router->get('activate/:token', ['controller' => 'Auth', 'action' => 'activate']);
+    $router->get('reset-password/:token', ['controller' => 'Auth', 'action' => 'resetPassword']);
+    $router->post('reset-password/:token', ['controller' => 'Auth', 'action' => 'resetPassword']);
+    $router->get('forgot-password', ['controller' => 'Auth', 'action' => 'forgotPassword']);
+    $router->post('forgot-password', ['controller' => 'Auth', 'action' => 'forgotPassword']);
+
+    // Dashboard Routes
+    $router->get('dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
+
+    // Project Routes
+    $router->get('projects/page/:page', ['controller' => 'Project', 'action' => 'index']);
+    $router->get('projects/view/:id', ['controller' => 'Project', 'action' => 'view']);
+    $router->get('projects/create', ['controller' => 'Project', 'action' => 'createForm']);
+    $router->post('projects/create', ['controller' => 'Project', 'action' => 'create']);
+    $router->get('projects/edit/:id', ['controller' => 'Project', 'action' => 'editForm']);
+    $router->post('projects/update', ['controller' => 'Project', 'action' => 'update']);
+    $router->post('projects/delete/:id', ['controller' => 'Project', 'action' => 'delete']);
+    $router->get('projects', ['controller' => 'Project', 'action' => 'index']);
+
+    // Task Routes
+    $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index']);
+    $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view']);
+    $router->get('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
+    $router->post('tasks/create', ['controller' => 'Task', 'action' => 'create']);
+    $router->get('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm']);
+    $router->post('tasks/update', ['controller' => 'Task', 'action' => 'update']);
+    $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete']);
+    $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer']);
+    $router->post('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer']);
+    $router->get('tasks', ['controller' => 'Task', 'action' => 'index']);
+
+    // User Routes
+    $router->get('users/page/:page', ['controller' => 'User', 'action' => 'index']);
+    $router->get('users/view/:id', ['controller' => 'User', 'action' => 'view']);
+    $router->get('users/create', ['controller' => 'User', 'action' => 'createForm']);
+    $router->post('users/create', ['controller' => 'User', 'action' => 'create']);
+    $router->get('users/edit/:id', ['controller' => 'User', 'action' => 'editForm']);
+    $router->post('users/update', ['controller' => 'User', 'action' => 'update']);
+    $router->post('users/delete/:id', ['controller' => 'User', 'action' => 'delete']);
+    $router->get('users', ['controller' => 'User', 'action' => 'index']);
+
+    // Role Routes
+    $router->get('roles/page/:page', ['controller' => 'Role', 'action' => 'index']);
+    $router->get('roles/view/:id', ['controller' => 'Role', 'action' => 'view']);
+    $router->get('roles/create', ['controller' => 'Role', 'action' => 'createForm']);
+    $router->post('roles/create', ['controller' => 'Role', 'action' => 'create']);
+    $router->get('roles/edit/:id', ['controller' => 'Role', 'action' => 'editForm']);
+    $router->post('roles/update', ['controller' => 'Role', 'action' => 'update']);
+    $router->post('roles/delete/:id', ['controller' => 'Role', 'action' => 'delete']);
+    $router->get('roles', ['controller' => 'Role', 'action' => 'index']);
+
+    // Company Routes
+    $router->get('companies/page/:page', ['controller' => 'Company', 'action' => 'index']);
+    $router->get('companies/view/:id', ['controller' => 'Company', 'action' => 'view']);
+    $router->get('companies/create', ['controller' => 'Company', 'action' => 'createForm']);
+    $router->post('companies/create', ['controller' => 'Company', 'action' => 'create']);
+    $router->get('companies/edit/:id', ['controller' => 'Company', 'action' => 'editForm']);
+    $router->post('companies/update', ['controller' => 'Company', 'action' => 'update']);
+    $router->post('companies/delete/:id', ['controller' => 'Company', 'action' => 'delete']);
+    $router->get('companies', ['controller' => 'Company', 'action' => 'index']);
+
+    // Milestone Routes
+    $router->get('milestones/page/:page', ['controller' => 'Milestone', 'action' => 'index']);
+    $router->get('milestones/view/:id', ['controller' => 'Milestone', 'action' => 'view']);
+    $router->get('milestones/create', ['controller' => 'Milestone', 'action' => 'createForm']);
+    $router->post('milestones/create', ['controller' => 'Milestone', 'action' => 'create']);
+    $router->get('milestones/edit/:id', ['controller' => 'Milestone', 'action' => 'editForm']);
+    $router->post('milestones/update', ['controller' => 'Milestone', 'action' => 'update']);
+    $router->post('milestones/delete/:id', ['controller' => 'Milestone', 'action' => 'delete']);
+    $router->get('milestones', ['controller' => 'Milestone', 'action' => 'index']);
+
+    // Get request URI and method
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $segments = explode('/', ltrim($uri, '/'));
+    
+    // Dispatch Request with proper error handling
+    $router->dispatch(
+        $_SERVER['REQUEST_METHOD'], 
+        $segments
+    );
 } catch(\PDOException $e) {
-    http_response_code(400);
-    echo $e->getMessage();
+    // Database errors
+    error_log($e->getMessage());
+    http_response_code(500);
+    echo "Database error occurred";
 } catch (\Exception $e) {
-    http_response_code($e->getCode());
+    // Other errors
+    error_log($e->getMessage());
+    $code = $e->getCode() ?: 500;
+    http_response_code($code);
     echo $e->getMessage();
 }

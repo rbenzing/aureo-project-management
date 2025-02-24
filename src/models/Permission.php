@@ -1,121 +1,133 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Core\Database;
 use PDO;
+use RuntimeException;
+use InvalidArgumentException;
 
-class Permission
+/**
+ * Permission Model
+ * 
+ * Handles all permission-related database operations
+ */
+class Permission extends BaseModel
 {
-    private $db;
-
+    protected string $table = 'permissions';
+    
+    /**
+     * Permission properties
+     */
     public ?int $id = null;
     public string $name;
     public ?string $description = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
 
-    public function __construct()
-    {
-        // Use the singleton instance of Database
-        $this->db = Database::getInstance();
-    }
-
     /**
-     * Hydrate the object with database row data.
-     */
-    private function hydrate(array $data): void
-    {
-        foreach ($data as $key => $value) {
-            if (property_exists($this, $key)) {
-                $this->$key = $value;
-            }
-        }
-    }
-
-    /**
-     * Fetch all permissions.
-     */
-    public function getAll(): array
-    {
-        $stmt = $this->db->executeQuery("SELECT * FROM permissions WHERE is_deleted = 0");
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
-
-    /**
-     * Find a permission by their ID.
-     */
-    public function find(int $id): ?self
-    {
-        $stmt = $this->db->executeQuery("SELECT * FROM permissions WHERE id = :id AND is_deleted = 0 LIMIT 1", [
-            ':id' => $id,
-        ]);
-        $permissionData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$permissionData) {
-            return null;
-        }
-
-        $this->hydrate($permissionData);
-        return $this;
-    }
-    
-    /**
-     * Fetch permissions associated with a specific role.
+     * Get permissions by role ID
+     * 
+     * @param int $roleId
+     * @return array
+     * @throws RuntimeException
      */
     public function getByRoleId(int $roleId): array
     {
-        $stmt = $this->db->executeQuery("
-            SELECT p.*
-            FROM role_permissions rp
-            JOIN permissions p ON rp.permission_id = p.id
-            WHERE rp.role_id = :role_id AND p.is_deleted = 0
-        ", [
-            ':role_id' => $roleId,
-        ]);
+        $sql = "SELECT p.*
+                FROM role_permissions rp
+                JOIN permissions p ON rp.permission_id = p.id
+                WHERE rp.role_id = :role_id 
+                AND p.is_deleted = 0";
 
+        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
-     * Save or update a permission.
+     * Associate permissions with a role
+     * 
+     * @param int $roleId
+     * @param array $permissionIds
+     * @return bool
+     * @throws RuntimeException
      */
-    public function save(): bool
+    public function assignToRole(int $roleId, array $permissionIds): bool
     {
-        if ($this->id) {
-            $stmt = $this->db->executeQuery("
-                UPDATE permissions
-                SET name = :name, description = :description, updated_at = NOW()
-                WHERE id = :id
-            ", [
-                ':id' => $this->id,
-                ':name' => $this->name,
-                ':description' => $this->description,
-            ]);
-        } else {
-            $stmt = $this->db->executeQuery("
-                INSERT INTO permissions (name, description, created_at, updated_at)
-                VALUES (:name, :description, NOW(), NOW())
-            ", [
-                ':name' => $this->name,
-                ':description' => $this->description,
-            ]);
+        try {
+            $this->db->beginTransaction();
 
-            if (!$this->id) {
-                $this->id = $this->db->getPdo()->lastInsertId();
+            // First, remove existing permissions
+            $sql = "DELETE FROM role_permissions WHERE role_id = :role_id";
+            $this->db->executeInsertUpdate($sql, [':role_id' => $roleId]);
+
+            // Then, add new permissions
+            $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :permission_id)";
+            foreach ($permissionIds as $permissionId) {
+                $this->db->executeInsertUpdate($sql, [
+                    ':role_id' => $roleId,
+                    ':permission_id' => $permissionId
+                ]);
             }
-        }
 
-        return true;
+            $this->db->commit();
+            return true;
+
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw new RuntimeException("Failed to assign permissions: " . $e->getMessage());
+        }
     }
 
     /**
-     * Delete a permission (soft delete).
+     * Get permissions grouped by type
+     * 
+     * @return array
      */
-    public function delete(): bool
+    public function getGroupedPermissions(): array
     {
-        $stmt = $this->db->executeQuery("UPDATE permissions SET is_deleted = 1, updated_at = NOW() WHERE id = :id", [
-            ':id' => $this->id,
+        $permissions = $this->getAll();
+        $grouped = [];
+
+        foreach ($permissions as $permission) {
+            $type = explode('_', $permission->name)[0];
+            if (!isset($grouped[$type])) {
+                $grouped[$type] = [];
+            }
+            $grouped[$type][] = $permission;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Validate permission data before save
+     * 
+     * @param array $data
+     * @throws InvalidArgumentException
+     */
+    protected function beforeSave(array $data): void
+    {
+        if (empty($data['name'])) {
+            throw new InvalidArgumentException('Permission name is required');
+        }
+
+        // Check for unique name
+        $sql = "SELECT COUNT(*) FROM permissions WHERE name = :name AND id != :id AND is_deleted = 0";
+        $stmt = $this->db->executeQuery($sql, [
+            ':name' => $data['name'],
+            ':id' => $data['id'] ?? 0
         ]);
-        return $stmt->execute();
+
+        if ($stmt->fetchColumn() > 0) {
+            throw new InvalidArgumentException('Permission name must be unique');
+        }
+
+        // Validate permission name format
+        if (!preg_match('/^[a-z_]+$/', $data['name'])) {
+            throw new InvalidArgumentException('Permission name must contain only lowercase letters and underscores');
+        }
     }
 }

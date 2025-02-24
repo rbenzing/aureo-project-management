@@ -10,11 +10,11 @@ src/
         AuthController.php
         CompanyController.php
         DashboardController.php
+        MilestonesController.php
         ProjectController.php
         RoleController.php
-        TimeTrackingController.php
-        MilestonesController.php
         TaskController.php
+        TimeTrackingController.php
         UserController.php
     Core/
         Config.php
@@ -23,17 +23,20 @@ src/
     Css/
         input.css
     Middleware/
+        ActivityMiddleware.php
         AuthMiddleware.php
         CsrfMiddleware.php
         SessionMiddleware.php
     Models/
+        BaseModel.php
         Company.php
+        Milestone.php
+        Permission.php
         Project.php
         Role.php
+        Sprint.php
         Task.php
         User.php
-        Permission.php
-        Milestone.php
     Utils/
         Email.php
         Validator.php
