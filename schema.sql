@@ -325,8 +325,8 @@ INSERT INTO task_statuses (name, description) VALUES
 -- Table structure for sessions
 -- ----------------------------
 CREATE TABLE sessions (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  user_id int(11) NOT NULL,
+  id varchar(255) NOT NULL,
+  user_id int(11) DEFAULT NULL,
   data text NOT NULL,
   ip_address varchar(45) DEFAULT NULL,
   user_agent varchar(1024) DEFAULT NULL,

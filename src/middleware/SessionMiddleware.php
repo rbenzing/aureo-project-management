@@ -74,7 +74,7 @@ class SessionMiddleware
         } else {
             $ipAddress = $_SERVER['REMOTE_ADDR'];
         }
-        $userAgent = $_SERVER['HTTP_USER_AGENT'];
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $sessionId = session_id();
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Default expiration: 1 hour
         
@@ -86,13 +86,13 @@ class SessionMiddleware
 
         // Insert or update the session in the database
         self::$db->executeQuery(
-            "INSERT INTO sessions (id, user_id, data, expires_at, last_accessed_at)
-             VALUES (:id, :user_id, :data, :expires_at, NOW())
+            "INSERT INTO sessions (id, user_id, data, ip_address, user_agent, expires_at, last_accessed_at)
+             VALUES (:id, :user_id, :data, :ip_address, :user_agent, :expires_at, NOW())
              ON DUPLICATE KEY UPDATE 
                  user_id = VALUES(user_id), 
                  data = VALUES(data), 
-                 ip_address = :ip_address,
-                 user_agent = :user_agent,
+                 ip_address = VALUES(ip_address),
+                 user_agent = VALUES(user_agent),
                  expires_at = VALUES(expires_at),
                  last_accessed_at = NOW()",
             [
@@ -149,36 +149,30 @@ class SessionMiddleware
         session_regenerate_id(true);
         $newSessionId = session_id();
 
-        // Fetch the old session data
-        $stmt = self::$db->executeQuery(
-            "SELECT id, user_id, data, expires_at FROM sessions WHERE id = :id AND expires_at > NOW()",
-            [':id' => $oldSessionId]
+        // Update the database session ID
+        $success = self::$db->executeQuery(
+            "UPDATE sessions SET id = :new_id WHERE id = :old_id",
+            [
+                ':new_id' => $newSessionId,
+                ':old_id' => $oldSessionId
+            ]
         );
-        $session = $stmt->fetch(\PDO::FETCH_OBJ);
 
-        if ($session) {
-            // Deserialize session data
-            $_SESSION = json_decode($session->data, true);
-
-            // Extend session expiration time and update last_accessed_at
-            $newExpiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Extend by 1 hour
+        // If the update failed (maybe no session in database yet), create a new session
+        if (!$success) {
             self::$db->executeQuery(
-                "UPDATE sessions SET expires_at = :expires_at, last_accessed_at = NOW() WHERE id = :id",
+                "INSERT INTO sessions (id, data, expires_at) VALUES (:id, '{}', :expires_at)",
                 [
-                    ':expires_at' => $newExpiresAt,
                     ':id' => $newSessionId,
+                    ':expires_at' => date('Y-m-d H:i:s', strtotime('+1 hour'))
                 ]
             );
-
-            // Delete the old session
-            self::$db->executeQuery(
-                "DELETE FROM sessions WHERE id = :id",
-                [':id' => $oldSessionId]
-            );
-        } else {
-            // Clear the session if invalid or expired
-            session_destroy();
-            $_SESSION = [];
         }
+
+        // Delete the old session data if still exists
+        self::$db->executeQuery(
+            "DELETE FROM sessions WHERE id = :id",
+            [':id' => $oldSessionId]
+        );
     }
 }

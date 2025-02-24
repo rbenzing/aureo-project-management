@@ -27,13 +27,17 @@ class CsrfMiddleware
         try {
             $token = bin2hex(random_bytes(self::TOKEN_LENGTH));
             $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::TOKEN_EXPIRY));
+
+            // Get user ID from session if available
+            $userId = $_SESSION['user']['id'] ?? null;
                          
             $success = $this->db->executeInsertUpdate(
-                "INSERT INTO csrf_tokens (token, session_id, expires_at) 
-                    VALUES (:token, :session_id, :expires_at)", 
+                "INSERT INTO csrf_tokens (token, session_id, user_id, expires_at) 
+                    VALUES (:token, :session_id, :user_id, :expires_at)", 
                 [
                     ':token' => $token,
                     ':session_id' => session_id(),
+                    ':user_id' => $userId,
                     ':expires_at' => $expiresAt
                 ]        
             );
