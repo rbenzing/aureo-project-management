@@ -46,7 +46,7 @@ class RoleController
             
             include __DIR__ . '/../Views/Roles/index.php';
         } catch (\Exception $e) {
-            error_log("Error in RoleController::index: " . $e->getMessage());
+            error_log("Exception in RoleController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching roles.';
             header('Location: /dashboard');
             exit;
@@ -80,7 +80,7 @@ class RoleController
             header('Location: /roles');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in RoleController::view: " . $e->getMessage());
+            error_log("Exception in RoleController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching role details.';
             header('Location: /roles');
             exit;
@@ -102,7 +102,7 @@ class RoleController
             
             include __DIR__ . '/../Views/Roles/create.php';
         } catch (\Exception $e) {
-            error_log("Error in RoleController::createForm: " . $e->getMessage());
+            error_log("Exception in RoleController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /roles');
             exit;
@@ -170,7 +170,7 @@ class RoleController
             header('Location: /roles/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in RoleController::create: " . $e->getMessage());
+            error_log("Exception in RoleController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the role.';
             header('Location: /roles/create');
             exit;
@@ -206,7 +206,7 @@ class RoleController
             header('Location: /roles');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in RoleController::editForm: " . $e->getMessage());
+            error_log("Exception in RoleController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /roles');
             exit;
@@ -278,7 +278,7 @@ class RoleController
             header("Location: /roles/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in RoleController::update: " . $e->getMessage());
+            error_log("Exception in RoleController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the role.';
             header("Location: /roles/edit/{$id}");
             exit;
@@ -330,7 +330,7 @@ class RoleController
             header('Location: /roles');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in RoleController::delete: " . $e->getMessage());
+            error_log("Exception in RoleController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the role.';
             header('Location: /roles');
             exit;

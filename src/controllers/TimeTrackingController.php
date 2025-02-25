@@ -69,7 +69,7 @@ class TimeTrackingController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TimeTrackingController::startTimer: " . $e->getMessage());
+            error_log("Exception in TimeTrackingController::startTimer: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while starting the timer.';
             header('Location: /tasks');
             exit;
@@ -135,7 +135,7 @@ class TimeTrackingController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TimeTrackingController::stopTimer: " . $e->getMessage());
+            error_log("Exception in TimeTrackingController::stopTimer: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while stopping the timer.';
             header('Location: /tasks');
             exit;

@@ -165,6 +165,8 @@ class Role extends BaseModel
      */
     protected function beforeSave(array $data): void
     {
+        parent::validate($data, $this->id);
+        
         if (empty($data['name'])) {
             throw new InvalidArgumentException('Role name is required');
         }

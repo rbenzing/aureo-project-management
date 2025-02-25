@@ -2,8 +2,6 @@
 namespace App\Middleware;
 
 use App\Models\User;
-use App\Core\Config;
-use RuntimeException;
 
 class AuthMiddleware
 {

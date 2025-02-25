@@ -50,7 +50,7 @@ class UserController
             
             include __DIR__ . '/../Views/Users/index.php';
         } catch (\Exception $e) {
-            error_log("Error in UserController::index: " . $e->getMessage());
+            error_log("Exception in UserController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching users.';
             header('Location: /dashboard');
             exit;
@@ -88,7 +88,7 @@ class UserController
             header('Location: /users');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in UserController::view: " . $e->getMessage());
+            error_log("Exception in UserController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching user details.';
             header('Location: /users');
             exit;
@@ -111,7 +111,7 @@ class UserController
             
             include __DIR__ . '/../Views/Users/create.php';
         } catch (\Exception $e) {
-            error_log("Error in UserController::createForm: " . $e->getMessage());
+            error_log("Exception in UserController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /users');
             exit;
@@ -173,7 +173,7 @@ class UserController
             header('Location: /users/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in UserController::create: " . $e->getMessage());
+            error_log("Exception in UserController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the user.';
             header('Location: /users/create');
             exit;
@@ -210,7 +210,7 @@ class UserController
             header('Location: /users');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in UserController::editForm: " . $e->getMessage());
+            error_log("Exception in UserController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /users');
             exit;
@@ -271,7 +271,7 @@ class UserController
             header("Location: /users/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in UserController::update: " . $e->getMessage());
+            error_log("Exception in UserController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the user.';
             header("Location: /users/edit/{$id}");
             exit;
@@ -322,7 +322,7 @@ class UserController
             header('Location: /users');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in UserController::delete: " . $e->getMessage());
+            error_log("Exception in UserController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the user.';
             header('Location: /users');
             exit;

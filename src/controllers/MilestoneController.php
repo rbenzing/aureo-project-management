@@ -45,7 +45,7 @@ class MilestoneController
             
             include __DIR__ . '/../Views/Milestones/index.php';
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::index: " . $e->getMessage());
+            error_log("Exception in MilestoneController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching milestones.';
             header('Location: /dashboard');
             exit;
@@ -89,7 +89,7 @@ class MilestoneController
             header('Location: /milestones');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::view: " . $e->getMessage());
+            error_log("Exception in MilestoneController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching milestone details.';
             header('Location: /milestones');
             exit;
@@ -113,7 +113,7 @@ class MilestoneController
             
             include __DIR__ . '/../Views/Milestones/create.php';
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::createForm: " . $e->getMessage());
+            error_log("Exception in MilestoneController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /milestones');
             exit;
@@ -176,7 +176,7 @@ class MilestoneController
             header('Location: /milestones/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::create: " . $e->getMessage());
+            error_log("Exception in MilestoneController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the milestone.';
             header('Location: /milestones/create');
             exit;
@@ -214,7 +214,7 @@ class MilestoneController
             header('Location: /milestones');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::editForm: " . $e->getMessage());
+            error_log("Exception in MilestoneController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /milestones');
             exit;
@@ -288,7 +288,7 @@ class MilestoneController
             header("Location: /milestones/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::update: " . $e->getMessage());
+            error_log("Exception in MilestoneController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the milestone.';
             header("Location: /milestones/edit/{$id}");
             exit;
@@ -341,7 +341,7 @@ class MilestoneController
             header('Location: /milestones');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in MilestoneController::delete: " . $e->getMessage());
+            error_log("Exception in MilestoneController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the milestone.';
             header('Location: /milestones');
             exit;

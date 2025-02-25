@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Core\Database;
 use PDO;
-use RuntimeException;
 use InvalidArgumentException;
 
 /**
@@ -134,6 +132,8 @@ class Milestone extends BaseModel
      */
     protected function beforeSave(array $data): void
     {
+        parent::validate($data, $this->id);
+        
         if (empty($data['title'])) {
             throw new InvalidArgumentException('Milestone title is required');
         }

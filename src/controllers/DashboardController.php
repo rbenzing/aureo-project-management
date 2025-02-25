@@ -57,12 +57,11 @@ class DashboardController
             include __DIR__ . '/../Views/Dashboard/index.php';
 
         } catch (RuntimeException $e) {
-            error_log("Error in DashboardController::index: " . $e->getMessage());
             $_SESSION['error'] = 'Session expired. Please log in again.';
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in DashboardController::index: " . $e->getMessage());
+            error_log("Exception in DashboardController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the dashboard.';
             header('Location: /login');
             exit;

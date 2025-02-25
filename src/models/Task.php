@@ -312,6 +312,8 @@ class Task extends BaseModel
      */
     protected function beforeSave(array $data): void
     {
+        parent::validate($data, $this->id);
+        
         if (empty($data['title'])) {
             throw new InvalidArgumentException('Task title is required');
         }

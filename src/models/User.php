@@ -271,6 +271,8 @@ class User extends BaseModel
      */
     protected function beforeSave(array $data): void
     {
+        parent::validate($data, $this->id);
+        
         if (empty($data['first_name'])) {
             throw new InvalidArgumentException('First name is required');
         }

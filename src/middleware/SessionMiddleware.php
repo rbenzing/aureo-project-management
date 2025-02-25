@@ -2,7 +2,6 @@
 namespace App\Middleware;
 
 use App\Core\Database;
-use Exception;
 
 class SessionMiddleware
 {

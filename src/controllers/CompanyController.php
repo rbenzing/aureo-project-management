@@ -49,7 +49,7 @@ class CompanyController
             
             include __DIR__ . '/../Views/Companies/index.php';
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::index: " . $e->getMessage());
+            error_log("Exception in CompanyController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching companies.';
             header('Location: /dashboard');
             exit;
@@ -85,12 +85,11 @@ class CompanyController
             
             include __DIR__ . '/../Views/Companies/view.php';
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in CompanyController::view - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::view - " . $e->getMessage());
+            error_log("Exception in CompanyController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching company details.';
             header('Location: /companies');
             exit;
@@ -109,7 +108,7 @@ class CompanyController
             $this->authMiddleware->hasPermission('create_companies');
             include __DIR__ . '/../Views/Companies/create.php';
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::createForm - " . $e->getMessage());
+            error_log("Exception in CompanyController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /companies');
             exit;
@@ -156,15 +155,13 @@ class CompanyController
             $_SESSION['success'] = 'Company created successfully.';
             header('Location: /companies/view/' . $companyId);
             exit;
-
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in CompanyController::create - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
             header('Location: /companies/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::create -  " . $e->getMessage());
+            error_log("Exception in CompanyController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the company.';
             header('Location: /companies/create');
             exit;
@@ -194,12 +191,11 @@ class CompanyController
 
             include __DIR__ . '/../Views/Companies/edit.php';
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in CompanyController::editForm - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::editForm - " . $e->getMessage());
+            error_log("Error in CompanyController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /companies');
             exit;
@@ -257,13 +253,12 @@ class CompanyController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in CompanyController::update - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
             header("Location: /companies/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::update - " . $e->getMessage());
+            error_log("Exception in CompanyController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the company.';
             header("Location: /companies/edit/{$id}");
             exit;
@@ -313,12 +308,11 @@ class CompanyController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in CompanyController::delete - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::delete - " . $e->getMessage());
+            error_log("Exception in CompanyController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the company.';
             header('Location: /companies');
             exit;

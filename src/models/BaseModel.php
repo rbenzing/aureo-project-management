@@ -355,13 +355,13 @@ abstract class BaseModel
      * 
      * @param array $data Data to validate
      * @param int|null $id Record ID for updates
-     * @throws RuntimeException If validation fails
+     * @throws InvalidArgumentException If validation fails
      */
     protected function validate(array $data, ?int $id = null): void
     {
         foreach ($this->validationRules as $field => $rules) {
             if (!isset($data[$field]) && in_array('required', $rules)) {
-                throw new RuntimeException("The $field field is required");
+                throw new InvalidArgumentException("The $field field is required");
             }
 
             if (isset($data[$field])) {
@@ -371,13 +371,13 @@ abstract class BaseModel
                     switch ($rule) {
                         case 'email':
                             if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                                throw new RuntimeException("Invalid email format for $field");
+                                throw new InvalidArgumentException("Invalid email format for $field");
                             }
                             break;
 
                         case 'url':
                             if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                                throw new RuntimeException("Invalid URL format for $field");
+                                throw new InvalidArgumentException("Invalid URL format for $field");
                             }
                             break;
 
@@ -396,7 +396,7 @@ abstract class BaseModel
 
                             $stmt = $this->db->executeQuery($sql, $params);
                             if ($stmt->fetchColumn() > 0) {
-                                throw new RuntimeException("The $field must be unique");
+                                throw new InvalidArgumentException("The $field must be unique");
                             }
                             break;
                     }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Core\Database;
-use App\Core\Config;
 use PDO;
 use RuntimeException;
 use InvalidArgumentException;
@@ -91,6 +89,8 @@ class Company extends BaseModel
      */
     protected function beforeSave(array $data): void
     {
+        parent::validate($data, $this->id);
+        
         if (empty($data['name'])) {
             throw new InvalidArgumentException('Company name is required');
         }

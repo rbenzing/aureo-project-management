@@ -49,7 +49,7 @@ class TaskController
 
             include __DIR__ . '/../Views/Tasks/index.php';
         } catch (\Exception $e) {
-            error_log("Error in TaskController::index: " . $e->getMessage());
+            error_log("Exception in TaskController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching tasks.';
             header('Location: /dashboard');
             exit;
@@ -93,7 +93,7 @@ class TaskController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TaskController::view: " . $e->getMessage());
+            error_log("Exception in TaskController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching task details.';
             header('Location: /tasks');
             exit;
@@ -116,7 +116,7 @@ class TaskController
             
             include __DIR__ . '/../Views/Tasks/create.php';
         } catch (\Exception $e) {
-            error_log("Error in TaskController::createForm: " . $e->getMessage());
+            error_log("Exception in TaskController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /tasks');
             exit;
@@ -188,7 +188,7 @@ class TaskController
             header('Location: /tasks/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TaskController::create: " . $e->getMessage());
+            error_log("Exception in TaskController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the task.';
             header('Location: /tasks/create');
             exit;
@@ -231,7 +231,7 @@ class TaskController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TaskController::editForm: " . $e->getMessage());
+            error_log("Exception in TaskController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /tasks');
             exit;
@@ -303,7 +303,7 @@ class TaskController
             header("Location: /tasks/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TaskController::update: " . $e->getMessage());
+            error_log("Exception in TaskController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the task.';
             header("Location: /tasks/edit/{$id}");
             exit;
@@ -354,7 +354,7 @@ class TaskController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in TaskController::delete: " . $e->getMessage());
+            error_log("Exception in TaskController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the task.';
             header('Location: /tasks');
             exit;

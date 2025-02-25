@@ -48,7 +48,7 @@ class ProjectController
             
             include __DIR__ . '/../Views/Projects/index.php';
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::index: " . $e->getMessage());
+            error_log("Exception in ProjectController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching projects.';
             header('Location: /dashboard');
             exit;
@@ -80,12 +80,11 @@ class ProjectController
             
             include __DIR__ . '/../Views/Projects/view.php';
         } catch (InvalidArgumentException $e) {
-            error_log("InvalidArgumentException in ProjectController::view - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /projects');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectController::view - " . $e->getMessage());
+            error_log("Exception in ProjectController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching project details.';
             header('Location: /projects');
             exit;
@@ -108,7 +107,7 @@ class ProjectController
             
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
-            error_log("Exception in ProjectController::createForm - " . $e->getMessage());
+            error_log("Exception in ProjectController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /projects');
             exit;
@@ -167,7 +166,7 @@ class ProjectController
             header('Location: /projects/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::create: " . $e->getMessage());
+            error_log("Exception in ProjectController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the project.';
             header('Location: /projects/create');
             exit;
@@ -204,7 +203,7 @@ class ProjectController
             header('Location: /projects');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::editForm: " . $e->getMessage());
+            error_log("Exception in ProjectController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /projects');
             exit;
@@ -267,7 +266,7 @@ class ProjectController
             header("Location: /projects/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::update: " . $e->getMessage());
+            error_log("Exception in ProjectController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the project.';
             header("Location: /projects/edit/{$id}");
             exit;
@@ -317,7 +316,7 @@ class ProjectController
             header('Location: /projects');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::delete: " . $e->getMessage());
+            error_log("Exception in ProjectController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the project.';
             header('Location: /projects');
             exit;
