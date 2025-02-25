@@ -276,7 +276,6 @@ class TaskController
             }
 
             $taskData = [
-                'id' => $id,
                 'title' => htmlspecialchars($data['title']),
                 'description' => isset($data['description']) ? 
                     htmlspecialchars($data['description']) : null,
@@ -292,7 +291,7 @@ class TaskController
                     filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN) : false
             ];
 
-            $this->taskModel->update($taskData);
+            $this->taskModel->update($id, $taskData);
 
             $_SESSION['success'] = 'Task updated successfully.';
             header('Location: /tasks/view/' . $id);
@@ -344,10 +343,7 @@ class TaskController
                 throw new InvalidArgumentException('You do not have permission to delete this task');
             }
 
-            $this->taskModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->taskModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Task deleted successfully.';
             header('Location: /tasks');

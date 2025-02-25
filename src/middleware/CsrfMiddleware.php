@@ -78,9 +78,9 @@ class CsrfMiddleware
             ]
         );
         $storedToken = $stmt->fetch();
-
-        if(!$storedToken) {
-            $this->generateToken();
+        
+        if(empty($storedToken)) {
+            $this->cleanupExpiredTokens();
             throw new Exception('Missing or expired CSRF token');
         }
 
@@ -119,6 +119,7 @@ class CsrfMiddleware
     public function cleanupExpiredTokens(): void
     {
         try {
+            unset($_SESSION['csrf_token']);
             $this->db->executeQuery(
                 "DELETE FROM csrf_tokens WHERE expires_at < NOW()"
             );

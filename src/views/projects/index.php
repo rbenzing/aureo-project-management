@@ -4,6 +4,8 @@ if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
     exit;
 }
+
+use App\Core\Config;
 ?>
 
 <!DOCTYPE html>
@@ -11,7 +13,7 @@ if (!defined('BASE_PATH')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects</title>
+    <title>Projects - <?= htmlspecialchars(Config::get('company_name', 'SlimBooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-white dark:text-gray-100 min-h-screen flex flex-col">
@@ -90,7 +92,7 @@ if (!defined('BASE_PATH')) {
                         <tbody class="divide-y divide-gray-600">
                             <?php foreach ($project->tasks as $task): ?>
                             <tr>
-                                <td class="px-6 py-4">
+                                <td class="pr-6 px-0">
                                     <div class="w-1 h-6 bg-purple-500 rounded-full"></div>
                                 </td>
                                 <td class="px-6 py-4">

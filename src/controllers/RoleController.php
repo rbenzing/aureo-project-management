@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Role;
 use App\Models\Permission;
@@ -36,10 +37,11 @@ class RoleController
             $this->authMiddleware->hasPermission('view_roles');
             
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = 10;
+            $limit = Config::get('max_pages', 10);
             
-            $roles = $this->roleModel->getRolesWithStats($limit, $page);
-            $totalRoles = $this->roleModel->count(['is_deleted' => 0]);
+            $results = $this->roleModel->getAll(['is_deleted' => 0], $page, $limit);
+            $roles = $results['records'];
+            $totalRoles = $results['total'];
             $totalPages = ceil($totalRoles / $limit);
             
             include __DIR__ . '/../Views/Roles/index.php';
@@ -247,13 +249,12 @@ class RoleController
 
             try {
                 $roleData = [
-                    'id' => $id,
                     'name' => htmlspecialchars($data['name']),
                     'description' => isset($data['description']) ? 
                         htmlspecialchars($data['description']) : null
                 ];
 
-                $this->roleModel->update($roleData);
+                $this->roleModel->update($id, $roleData);
 
                 // Sync permissions
                 $permissions = !empty($data['permissions']) ? 
@@ -313,14 +314,12 @@ class RoleController
             }
 
             // Check if role is in use
-            if ($this->roleModel->isInUse($id)) {
-                throw new InvalidArgumentException('Cannot delete role as it is currently assigned to users');
+            $users = $this->roleModel->getUsers($id);
+            if (!empty($users)) {
+                throw new InvalidArgumentException('Cannot delete role as it is currently assigned to one or more users.');
             }
 
-            $this->roleModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->roleModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Role deleted successfully.';
             header('Location: /roles');

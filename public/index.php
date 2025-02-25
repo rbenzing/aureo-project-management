@@ -41,6 +41,7 @@ try {
     $router->get('dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
 
     // Project Routes
+    $router->get('projects', ['controller' => 'Project', 'action' => 'index']);
     $router->get('projects/page/:page', ['controller' => 'Project', 'action' => 'index']);
     $router->get('projects/view/:id', ['controller' => 'Project', 'action' => 'view']);
     $router->get('projects/create', ['controller' => 'Project', 'action' => 'createForm']);
@@ -48,9 +49,9 @@ try {
     $router->get('projects/edit/:id', ['controller' => 'Project', 'action' => 'editForm']);
     $router->post('projects/update', ['controller' => 'Project', 'action' => 'update']);
     $router->post('projects/delete/:id', ['controller' => 'Project', 'action' => 'delete']);
-    $router->get('projects', ['controller' => 'Project', 'action' => 'index']);
 
     // Task Routes
+    $router->get('tasks', ['controller' => 'Task', 'action' => 'index']);
     $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index']);
     $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view']);
     $router->get('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
@@ -60,9 +61,9 @@ try {
     $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete']);
     $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer']);
     $router->post('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer']);
-    $router->get('tasks', ['controller' => 'Task', 'action' => 'index']);
 
     // User Routes
+    $router->get('users', ['controller' => 'User', 'action' => 'index']);
     $router->get('users/page/:page', ['controller' => 'User', 'action' => 'index']);
     $router->get('users/view/:id', ['controller' => 'User', 'action' => 'view']);
     $router->get('users/create', ['controller' => 'User', 'action' => 'createForm']);
@@ -70,9 +71,9 @@ try {
     $router->get('users/edit/:id', ['controller' => 'User', 'action' => 'editForm']);
     $router->post('users/update', ['controller' => 'User', 'action' => 'update']);
     $router->post('users/delete/:id', ['controller' => 'User', 'action' => 'delete']);
-    $router->get('users', ['controller' => 'User', 'action' => 'index']);
 
     // Role Routes
+    $router->get('roles', ['controller' => 'Role', 'action' => 'index']);
     $router->get('roles/page/:page', ['controller' => 'Role', 'action' => 'index']);
     $router->get('roles/view/:id', ['controller' => 'Role', 'action' => 'view']);
     $router->get('roles/create', ['controller' => 'Role', 'action' => 'createForm']);
@@ -80,9 +81,9 @@ try {
     $router->get('roles/edit/:id', ['controller' => 'Role', 'action' => 'editForm']);
     $router->post('roles/update', ['controller' => 'Role', 'action' => 'update']);
     $router->post('roles/delete/:id', ['controller' => 'Role', 'action' => 'delete']);
-    $router->get('roles', ['controller' => 'Role', 'action' => 'index']);
 
     // Company Routes
+    $router->get('companies', ['controller' => 'Company', 'action' => 'index']);
     $router->get('companies/page/:page', ['controller' => 'Company', 'action' => 'index']);
     $router->get('companies/view/:id', ['controller' => 'Company', 'action' => 'view']);
     $router->get('companies/create', ['controller' => 'Company', 'action' => 'createForm']);
@@ -90,9 +91,9 @@ try {
     $router->get('companies/edit/:id', ['controller' => 'Company', 'action' => 'editForm']);
     $router->post('companies/update', ['controller' => 'Company', 'action' => 'update']);
     $router->post('companies/delete/:id', ['controller' => 'Company', 'action' => 'delete']);
-    $router->get('companies', ['controller' => 'Company', 'action' => 'index']);
 
     // Milestone Routes
+    $router->get('milestones', ['controller' => 'Milestone', 'action' => 'index']);
     $router->get('milestones/page/:page', ['controller' => 'Milestone', 'action' => 'index']);
     $router->get('milestones/view/:id', ['controller' => 'Milestone', 'action' => 'view']);
     $router->get('milestones/create', ['controller' => 'Milestone', 'action' => 'createForm']);
@@ -100,7 +101,6 @@ try {
     $router->get('milestones/edit/:id', ['controller' => 'Milestone', 'action' => 'editForm']);
     $router->post('milestones/update', ['controller' => 'Milestone', 'action' => 'update']);
     $router->post('milestones/delete/:id', ['controller' => 'Milestone', 'action' => 'delete']);
-    $router->get('milestones', ['controller' => 'Milestone', 'action' => 'index']);
 
     // Get request URI and method
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

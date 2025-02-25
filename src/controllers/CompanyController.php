@@ -22,6 +22,8 @@ class CompanyController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
+        $this->authMiddleware->hasPermission('manage_companies');
+
         $this->companyModel = new Company();
         $this->projectModel = new Project();
         $this->userModel = new User();
@@ -35,14 +37,14 @@ class CompanyController
      */
     public function index(string $requestMethod, array $data): void
     {
-        try {
-            $this->authMiddleware->hasPermission('view_companies');
-            
+        try {            
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = 10;
             
-            $companies = $this->companyModel->getAllWithDetails($limit, $page);
-            $totalCompanies = $this->companyModel->count(['is_deleted' => 0]);
+            // Use regular getAll method with pagination instead of getAllWithDetails
+            $result = $this->companyModel->getAll(['is_deleted' => 0], $page, $limit);
+            $companies = $result['records'];
+            $totalCompanies = $result['total'];
             $totalPages = ceil($totalCompanies / $limit);
             
             include __DIR__ . '/../Views/Companies/index.php';
@@ -53,6 +55,7 @@ class CompanyController
             exit;
         }
     }
+
 
     /**
      * View company details
@@ -76,16 +79,18 @@ class CompanyController
             }
 
             // Get company related data
-            $projects = $this->companyModel->getProjects($id);
+            $this->companyModel->id = $id; // Set ID on model instance
+            $projects = $this->companyModel->getProjects(); // Now call without parameter
             $users = $this->companyModel->getUsers($id);
             
             include __DIR__ . '/../Views/Companies/view.php';
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in CompanyController::view - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::view: " . $e->getMessage());
+            error_log("Exception in CompanyController::view - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching company details.';
             header('Location: /companies');
             exit;
@@ -104,7 +109,7 @@ class CompanyController
             $this->authMiddleware->hasPermission('create_companies');
             include __DIR__ . '/../Views/Companies/create.php';
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::createForm: " . $e->getMessage());
+            error_log("Exception in CompanyController::createForm - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /companies');
             exit;
@@ -119,11 +124,6 @@ class CompanyController
      */
     public function create(string $requestMethod, array $data): void
     {
-        if ($requestMethod !== 'POST') {
-            $this->createForm($requestMethod, $data);
-            return;
-        }
-
         try {
             $this->authMiddleware->hasPermission('create_companies');
 
@@ -158,12 +158,13 @@ class CompanyController
             exit;
 
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in CompanyController::create - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
             header('Location: /companies/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::create: " . $e->getMessage());
+            error_log("Exception in CompanyController::create -  " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the company.';
             header('Location: /companies/create');
             exit;
@@ -193,11 +194,12 @@ class CompanyController
 
             include __DIR__ . '/../Views/Companies/edit.php';
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in CompanyController::editForm - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::editForm: " . $e->getMessage());
+            error_log("Error in CompanyController::editForm - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
             header('Location: /companies');
             exit;
@@ -238,7 +240,6 @@ class CompanyController
             }
 
             $companyData = [
-                'id' => $id,
                 'name' => htmlspecialchars($data['name']),
                 'address' => isset($data['address']) ? 
                     htmlspecialchars($data['address']) : null,
@@ -249,19 +250,20 @@ class CompanyController
                     filter_var($data['website'], FILTER_SANITIZE_URL) : null
             ];
 
-            $this->companyModel->update($companyData);
+            $this->companyModel->update($id, $companyData);
 
             $_SESSION['success'] = 'Company updated successfully.';
             header('Location: /companies/view/' . $id);
             exit;
 
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in CompanyController::update - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
             header("Location: /companies/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::update: " . $e->getMessage());
+            error_log("Exception in CompanyController::update - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the company.';
             header("Location: /companies/edit/{$id}");
             exit;
@@ -304,21 +306,19 @@ class CompanyController
                 throw new InvalidArgumentException('Cannot delete company with active users');
             }
 
-            $this->companyModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->companyModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Company deleted successfully.';
             header('Location: /companies');
             exit;
 
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in CompanyController::delete - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in CompanyController::delete: " . $e->getMessage());
+            error_log("Exception in CompanyController::delete - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the company.';
             header('Location: /companies');
             exit;

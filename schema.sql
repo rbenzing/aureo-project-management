@@ -211,6 +211,7 @@ CREATE TABLE csrf_tokens (
   user_id int(11) DEFAULT NULL,
   token varchar(255) NOT NULL,
   session_id varchar(255) NOT NULL,
+  user_id int(11) DEFAULT NULL,
   expires_at timestamp NOT NULL,
   created_at timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (id),

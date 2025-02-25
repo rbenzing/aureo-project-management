@@ -113,7 +113,6 @@ class TimeTrackingController
 
             // Update task time
             $taskUpdate = [
-                'id' => $taskId,
                 'time_spent' => ($task->time_spent ?? 0) + $duration
             ];
 
@@ -122,7 +121,7 @@ class TimeTrackingController
                 $taskUpdate['billable_time'] = ($task->billable_time ?? 0) + $duration;
             }
 
-            $this->taskModel->update($taskUpdate);
+            $this->taskModel->update($taskId, $taskUpdate);
 
             // Clear the active timer
             unset($_SESSION['active_timer']);

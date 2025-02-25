@@ -27,6 +27,7 @@ class Role extends BaseModel
     public bool $is_deleted = false;
     public ?string $created_at = null;
     public ?string $updated_at = null;
+    public array $permissions = [];
 
     /**
      * Find role with permissions
@@ -58,6 +59,23 @@ class Role extends BaseModel
                 INNER JOIN role_permissions rp ON p.id = rp.permission_id
                 WHERE rp.role_id = :role_id
                 AND p.is_deleted = 0";
+
+        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Get users for a role
+     * 
+     * @param int $roleId
+     * @return array
+     */
+    public function getUsers(int $roleId): array
+    {
+        $sql = "SELECT * 
+                FROM users 
+                WHERE role_id = :role_id
+                AND is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -137,27 +155,6 @@ class Role extends BaseModel
             ':role_id' => $roleId,
             ':permission_id' => $permissionId
         ]);
-    }
-
-    /**
-     * Get roles with aggregated data
-     * 
-     * @return array
-     */
-    public function getRolesWithStats(): array
-    {
-        $sql = "SELECT 
-                    r.*,
-                    COUNT(DISTINCT u.id) as user_count,
-                    COUNT(DISTINCT rp.permission_id) as permission_count
-                FROM roles r
-                LEFT JOIN users u ON u.role_id = r.id AND u.is_deleted = 0
-                LEFT JOIN role_permissions rp ON rp.role_id = r.id
-                WHERE r.is_deleted = 0
-                GROUP BY r.id";
-
-        $stmt = $this->db->executeQuery($sql);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**

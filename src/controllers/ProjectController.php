@@ -80,11 +80,12 @@ class ProjectController
             
             include __DIR__ . '/../Views/Projects/view.php';
         } catch (InvalidArgumentException $e) {
+            error_log("InvalidArgumentException in ProjectController::view - " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
             header('Location: /projects');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::view: " . $e->getMessage());
+            error_log("Exception in ProjectController::view - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching project details.';
             header('Location: /projects');
             exit;
@@ -107,7 +108,7 @@ class ProjectController
             
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
-            error_log("Error in ProjectController::createForm: " . $e->getMessage());
+            error_log("Exception in ProjectController::createForm - " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
             header('Location: /projects');
             exit;
@@ -245,7 +246,6 @@ class ProjectController
             }
 
             $projectData = [
-                'id' => $id,
                 'name' => htmlspecialchars($data['name']),
                 'description' => isset($data['description']) ? 
                     htmlspecialchars($data['description']) : null,
@@ -255,7 +255,7 @@ class ProjectController
                 'end_date' => $data['end_date'] ?? null
             ];
 
-            $this->projectModel->update($projectData);
+            $this->projectModel->update($id, $projectData);
 
             $_SESSION['success'] = 'Project updated successfully.';
             header('Location: /projects/view/' . $id);
@@ -306,10 +306,7 @@ class ProjectController
                 throw new InvalidArgumentException('Cannot delete project with active tasks');
             }
 
-            $this->projectModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->projectModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Project deleted successfully.';
             header('Location: /projects');

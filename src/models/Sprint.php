@@ -44,38 +44,6 @@ class Sprint extends BaseModel
     ];
 
     /**
-     * Get sprint with its related project and tasks
-     * 
-     * @param int $id
-     * @return object|null
-     * @throws RuntimeException
-     */
-    public function findWithRelations(int $id): ?object
-    {
-        $sql = "SELECT s.*, 
-                       p.name as project_name,
-                       ss.name as status_name,
-                       COUNT(DISTINCT st.task_id) as total_tasks,
-                       COUNT(DISTINCT CASE WHEN t.status_id = 6 THEN t.id END) as completed_tasks
-                FROM sprints s
-                LEFT JOIN projects p ON s.project_id = p.id
-                LEFT JOIN sprint_statuses ss ON s.status_id = ss.id
-                LEFT JOIN sprint_tasks st ON s.id = st.sprint_id
-                LEFT JOIN tasks t ON st.task_id = t.id
-                WHERE s.id = :id AND s.is_deleted = 0
-                GROUP BY s.id";
-
-        $stmt = $this->db->executeQuery($sql, [':id' => $id]);
-        $result = $stmt->fetch(PDO::FETCH_OBJ);
-        
-        if ($result) {
-            $result->tasks = $this->getSprintTasks($id);
-        }
-        
-        return $result;
-    }
-
-    /**
      * Get tasks assigned to sprint
      * 
      * @param int $sprintId
@@ -111,15 +79,21 @@ class Sprint extends BaseModel
     public function getProjectSprints(int $projectId, ?string $status = null): array
     {
         $sql = "SELECT s.*, 
-                       ss.name as status_name,
-                       COUNT(DISTINCT st.task_id) as total_tasks,
-                       COUNT(DISTINCT CASE WHEN t.status_id = 6 THEN t.id END) as completed_tasks
-                FROM sprints s
-                LEFT JOIN sprint_statuses ss ON s.status_id = ss.id
-                LEFT JOIN sprint_tasks st ON s.id = st.sprint_id
-                LEFT JOIN tasks t ON st.task_id = t.id
-                WHERE s.project_id = :project_id 
-                AND s.is_deleted = 0";
+               ss.name as status_name,
+               task_counts.total_tasks,
+               task_counts.completed_tasks
+        FROM sprints s USE INDEX (idx_sprints_project_id)
+        LEFT JOIN sprint_statuses ss ON s.status_id = ss.id
+        LEFT JOIN (
+            SELECT st.sprint_id,
+                   COUNT(DISTINCT st.task_id) as total_tasks,
+                   COUNT(DISTINCT CASE WHEN t.status_id = 6 THEN t.id END) as completed_tasks
+            FROM sprint_tasks st
+            LEFT JOIN tasks t ON st.task_id = t.id AND t.is_deleted = 0
+            GROUP BY st.sprint_id
+        ) task_counts ON s.id = task_counts.sprint_id
+        WHERE s.project_id = :project_id 
+        AND s.is_deleted = 0";
 
         $params = [':project_id' => $projectId];
 

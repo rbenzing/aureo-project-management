@@ -36,7 +36,7 @@ class SessionMiddleware
             [':id' => $sessionId]
         );
         $session = $stmt->fetch(\PDO::FETCH_OBJ);
-
+        
         if ($session) {
             // Deserialize session data
             $_SESSION = json_decode($session->data, true);
@@ -65,6 +65,9 @@ class SessionMiddleware
         if (self::$db === null) {
             self::$db = Database::getInstance();
         }
+
+        // Regenerate session ID on login to prevent session fixation
+        self::regenerateSessionId();
 
         $ipAddress = "::1";
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {

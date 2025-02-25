@@ -276,7 +276,7 @@ class MilestoneController
                 $milestoneData['complete_date'] = date('Y-m-d');
             }
 
-            $this->milestoneModel->update($milestoneData);
+            $this->milestoneModel->update($id, $milestoneData);
 
             $_SESSION['success'] = 'Milestone updated successfully.';
             header('Location: /milestones/view/' . $id);
@@ -330,10 +330,7 @@ class MilestoneController
                 }
             }
 
-            $this->milestoneModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->milestoneModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Milestone deleted successfully.';
             header('Location: /milestones');

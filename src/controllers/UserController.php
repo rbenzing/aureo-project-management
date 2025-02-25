@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\User;
 use App\Models\Company;
@@ -40,10 +41,11 @@ class UserController
             $this->authMiddleware->hasPermission('view_users');
             
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = 10;
+            $limit = Config::get('max_pages', 10);
             
-            $users = $this->userModel->getAllWithDetails($limit, $page);
-            $totalUsers = $this->userModel->count(['is_deleted' => 0]);
+            $results = $this->userModel->getAll(['is_deleted' => 0], $page, $limit);
+            $users = $results['records'];
+            $totalUsers = $results['total'];
             $totalPages = ceil($totalUsers / $limit);
             
             include __DIR__ . '/../Views/Users/index.php';
@@ -249,7 +251,6 @@ class UserController
             }
 
             $userData = [
-                'id' => $id,
                 'first_name' => htmlspecialchars($data['first_name']),
                 'last_name' => htmlspecialchars($data['last_name']),
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
@@ -258,7 +259,7 @@ class UserController
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null
             ];
 
-            $this->userModel->update($userData);
+            $this->userModel->update($id, $userData);
 
             $_SESSION['success'] = 'User updated successfully.';
             header('Location: /users');
@@ -310,10 +311,7 @@ class UserController
                 throw new InvalidArgumentException('Cannot delete your own account');
             }
 
-            $this->userModel->update([
-                'id' => $id,
-                'is_deleted' => true
-            ]);
+            $this->userModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'User deleted successfully.';
             header('Location: /users');

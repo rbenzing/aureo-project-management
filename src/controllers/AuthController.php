@@ -115,7 +115,7 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::logout: " . $e->getMessage());
+            error_log("Exception in AuthController::logout: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred during logout.';
             header('Location: /dashboard');
             exit;
@@ -181,7 +181,7 @@ class AuthController
             header('Location: /register');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::register: " . $e->getMessage());
+            error_log("Exception in AuthController::register: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred during registration.';
             header('Location: /register');
             exit;
@@ -216,10 +216,7 @@ class AuthController
                     throw new InvalidArgumentException(implode(', ', $validator->errors()));
                 }
 
-                $this->userModel->update([
-                    'id' => $user->id,
-                    'password_hash' => password_hash($data['password'], PASSWORD_ARGON2ID)
-                ]);
+                $this->userModel->update($user->id, ['password_hash' => password_hash($data['password'], PASSWORD_ARGON2ID)]);
 
                 $this->userModel->clearPasswordResetToken($user->id);
 
@@ -261,10 +258,7 @@ class AuthController
                     throw new InvalidArgumentException('Invalid or expired activation token');
                 }
 
-                $this->userModel->update([
-                    'id' => $user->id,
-                    'is_active' => true
-                ]);
+                $this->userModel->update($user->id, ['is_active' => true]);
 
                 $this->userModel->clearActivationToken($user->id);
 

@@ -293,6 +293,7 @@ abstract class BaseModel
         $params[':limit'] = $limit;
 
         $stmt = $this->db->executeQuery($sql, $params);
+
         $records = array_map(
             fn($record) => $this->hideAttributes($record),
             $stmt->fetchAll(PDO::FETCH_OBJ)

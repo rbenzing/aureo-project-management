@@ -43,6 +43,38 @@ class Task extends BaseModel
     public ?string $updated_at = null;
 
     /**
+     * Get task with details
+     * @param int $id
+     * @return ?object
+     */
+    public function findWithDetails(int $id): ?object
+    {
+        try {
+            $sql = "SELECT t.*,
+                p.name as project_name,
+                ts.name as status_name,
+                u.first_name,
+                u.last_name
+            FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN task_statuses ts ON t.status_id = ts.id
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE t.id = :id AND t.is_deleted = 0";
+
+            $stmt = $this->db->executeQuery($sql, [':id' => $id]);
+            $task = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            if ($task) {
+                $task->subtasks = $this->getSubtasks($id);
+            }
+            
+            return $task ?: null;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching task details: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Get tasks by user ID
      * 
      * @param int $userId
@@ -65,7 +97,10 @@ class Task extends BaseModel
                 AND t.is_deleted = 0
                 ORDER BY t.due_date ASC, t.priority DESC";
 
-        return $this->paginate($sql, [':user_id' => $userId], $page, $limit);
+        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+        $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        return $tasks;
     }
 
     /**

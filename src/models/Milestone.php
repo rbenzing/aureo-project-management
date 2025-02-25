@@ -158,10 +158,26 @@ class Milestone extends BaseModel
             }
         }
 
+        // Improved validation with cycle detection
         if (!empty($data['epic_id'])) {
             $epic = $this->find($data['epic_id']);
             if (!$epic || $epic->milestone_type !== 'epic') {
                 throw new InvalidArgumentException('Invalid epic ID');
+            }
+            
+            // Prevent circular references
+            if (!empty($data['id']) && $data['id'] == $data['epic_id']) {
+                throw new InvalidArgumentException('A milestone cannot be its own epic');
+            }
+            
+            // Check if this milestone is an epic for the current epic (circular reference)
+            if (!empty($data['id']) && $data['milestone_type'] === 'epic') {
+                $childEpics = $this->getEpicMilestones($data['id']);
+                foreach ($childEpics as $childEpic) {
+                    if ($childEpic->id == $data['epic_id']) {
+                        throw new InvalidArgumentException('Circular epic reference detected');
+                    }
+                }
             }
         }
     }
