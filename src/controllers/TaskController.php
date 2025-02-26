@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Task;
 use App\Models\Project;
@@ -20,6 +21,8 @@ class TaskController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
+        $this->authMiddleware->hasPermission('manage_tasks');
+
         $this->taskModel = new Task();
         $this->projectModel = new Project();
     }
@@ -35,16 +38,18 @@ class TaskController
         try {
             $this->authMiddleware->hasPermission('view_tasks');
             
-            $userId = $_SESSION['user']['id'] ?? null;
-            if (!$userId) {
-                throw new RuntimeException('User session not found');
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = Config::get('max_pages', 10);
+            $userId = $data['id'] ?? null;
+
+            if (!empty($userId)) {
+                $tasks = $this->taskModel->getByUserId($userId, $limit, $page);
+                $totalTasks = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
+            } else {
+                $tasks = $this->taskModel->getAllWithDetails($limit, $page);
+                $totalTasks = $this->taskModel->count(['is_deleted' => 0]);
             }
 
-            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = 10;
-            
-            $tasks = $this->taskModel->getByUserId($userId, $limit, $page);
-            $totalTasks = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
             $totalPages = ceil($totalTasks / $limit);
 
             include __DIR__ . '/../Views/Tasks/index.php';

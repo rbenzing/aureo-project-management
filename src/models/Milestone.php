@@ -51,6 +51,7 @@ class Milestone extends BaseModel
             due_date,
             complete_date,
             status_id,
+            project_id,
             CASE 
                 WHEN start_date IS NULL OR due_date IS NULL THEN NULL
                 WHEN DATEDIFF(due_date, start_date) = 0 THEN 100
@@ -133,7 +134,7 @@ class Milestone extends BaseModel
     protected function beforeSave(array $data): void
     {
         parent::validate($data, $this->id);
-        
+
         if (empty($data['title'])) {
             throw new InvalidArgumentException('Milestone title is required');
         }

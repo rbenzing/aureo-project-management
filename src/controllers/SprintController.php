@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Sprint;
 use App\Models\Project;
@@ -22,6 +23,7 @@ class SprintController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
+        $this->authMiddleware->hasPermission('manage_sprints');
         $this->sprintModel = new Sprint();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
@@ -36,29 +38,28 @@ class SprintController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
+            $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             
-            $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
-            if (!$projectId) {
-                throw new InvalidArgumentException('Project ID is required');
+            $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
+            $limit = Config::get('max_pages', 10);
+
+            if (!empty($project_id)) {
+                $project = $this->projectModel->findWithDetails($project_id);
+                
+            } else {
+                $projects = $this->projectModel->getAllWithDetails($limit, $page);
             }
-            
-            $project = $this->projectModel->find($projectId);
-            if (!$project || $project->is_deleted) {
-                throw new InvalidArgumentException('Project not found');
-            }
-            
-            $sprints = $this->sprintModel->getProjectSprints($projectId);
-            
+            $sprints = $this->sprintModel->getAllWithTasks($limit, $page);
+
             include __DIR__ . '/../Views/Sprints/index.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
+            header('Location: /sprints');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::index: " . $e->getMessage());
+            error_log("Exception in SprintController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching sprints.';
-            header('Location: /projects');
+            header('Location: /dashboard');
             exit;
         }
     }
@@ -72,7 +73,7 @@ class SprintController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
+            $this->authMiddleware->hasPermission('view_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -90,12 +91,12 @@ class SprintController
             include __DIR__ . '/../Views/Sprints/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
+            header('Location: /sprints');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::view: " . $e->getMessage());
+            error_log("Exception in SprintController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching sprint details.';
-            header('Location: /projects');
+            header('Location: /dashboard');
             exit;
         }
     }
@@ -109,7 +110,7 @@ class SprintController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_projects');
+            $this->authMiddleware->hasPermission('create_sprints');
             
             $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {
@@ -124,12 +125,12 @@ class SprintController
             include __DIR__ . '/../Views/Sprints/create.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
+            header('Location: /sprints');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::createForm: " . $e->getMessage());
+            error_log("Exception in SprintController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the sprint creation form.';
-            header('Location: /projects');
+            header('Location: /dashboard');
             exit;
         }
     }
@@ -148,12 +149,12 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_projects');
+            $this->authMiddleware->hasPermission('create_sprints');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'project_id' => 'required|integer|exists:projects,id',
+                'project_id' => 'required|integer|exists:sprints,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'status_id' => 'required|integer|exists:sprint_statuses,id'
@@ -188,12 +189,12 @@ class SprintController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /sprints/create?project_id=' . $data['project_id']);
+            header('Location: /sprints/create/' . $data['project_id']);
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::create: " . $e->getMessage());
+            error_log("Exception in SprintController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the sprint.';
-            header('Location: /sprints/create?project_id=' . $data['project_id']);
+            header('Location: /sprints/create/' . $data['project_id']);
             exit;
         }
     }
@@ -207,7 +208,7 @@ class SprintController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_projects');
+            $this->authMiddleware->hasPermission('edit_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -236,12 +237,12 @@ class SprintController
             include __DIR__ . '/../Views/Sprints/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints/view/' . ($id ?? ''));
+            header('Location: /sprints/view/' . $id);
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::editForm: " . $e->getMessage());
+            error_log("Exception in SprintController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /sprints');
+            header('Location: /dashboard');
             exit;
         }
     }
@@ -260,7 +261,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_projects');
+            $this->authMiddleware->hasPermission('edit_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -313,7 +314,7 @@ class SprintController
             header("Location: /sprints/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Error in SprintController::update: " . $e->getMessage());
+            error_log("Exception in SprintController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the sprint.';
             header("Location: /sprints/edit/{$id}");
             exit;
@@ -335,7 +336,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_projects');
+            $this->authMiddleware->hasPermission('delete_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -364,7 +365,7 @@ class SprintController
             $this->sprintModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Sprint deleted successfully.';
-            header('Location: /projects/view/' . $projectId);
+            header('Location: /sprints/view/' . $projectId);
             exit;
 
         } catch (InvalidArgumentException $e) {
@@ -394,7 +395,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_projects');
+            $this->authMiddleware->hasPermission('edit_sprints');
 
             $sprintId = filter_var($data['sprint_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$sprintId) {

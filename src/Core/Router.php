@@ -79,6 +79,7 @@ class Router
         if (empty($uri)) {
             $uri = 'dashboard';
         }
+        
 
         foreach ($this->routes[$method] as $route => $params) {
             if (preg_match('#^' . $route . '$#', $uri, $matches)) {
@@ -128,7 +129,7 @@ class Router
         if (!method_exists($controller, $actionName)) {
             throw new \Exception('Action not found', 404);
         }
-
+        
         // Build request data
         $requestData = [];
         if ($requestMethod === 'POST') {
@@ -136,7 +137,8 @@ class Router
         } else {
             // Map route parameters to names if defined
             if (isset($params['params']) && !empty($matches)) {
-                $paramNames = explode(',', $params['params']);
+                $paramNames = $params['params'];
+                
                 foreach ($matches as $index => $value) {
                     if (isset($paramNames[$index])) {
                         $requestData[$paramNames[$index]] = $value;
@@ -144,6 +146,9 @@ class Router
                 }
             }
         }
+
+        
+
 
         // Call controller action
         call_user_func([$controller, $actionName], $requestMethod, $requestData);

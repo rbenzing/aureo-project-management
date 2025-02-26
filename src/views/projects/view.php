@@ -23,8 +23,8 @@ if (!defined('BASE_PATH')) {
     <!-- Main Content -->
     <main class="container mx-auto p-6">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold"><?= htmlspecialchars($project['name']) ?></h1>
-            <a href="/projects/edit/<?= htmlspecialchars($project['id']) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
+            <h1 class="text-2xl font-bold"><?= htmlspecialchars($project->name) ?></h1>
+            <a href="/projects/edit/<?= htmlspecialchars($project->id) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
         </div>
 
         <!-- Project Details -->
@@ -32,15 +32,15 @@ if (!defined('BASE_PATH')) {
             <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Project Details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p><strong>Description:</strong> <?= htmlspecialchars($project['description'] ?? 'No description') ?></p>
-                    <p><strong>Status:</strong> <?= htmlspecialchars($project['project_status'] ?? 'Unknown') ?></p>
-                    <p><strong>Start Date:</strong> <?= htmlspecialchars($project['start_date'] ?? '') ?></p>
-                    <p><strong>End Date:</strong> <?= htmlspecialchars($project['end_date'] ?? '') ?></p>
+                    <p><strong>Description:</strong> <?= htmlspecialchars($project->description ?? 'No description') ?></p>
+                    <p><strong>Status:</strong> <?= htmlspecialchars($project->project_status ?? 'Unknown') ?></p>
+                    <p><strong>Start Date:</strong> <?= htmlspecialchars($project->start_date ?? '') ?></p>
+                    <p><strong>End Date:</strong> <?= htmlspecialchars($project->end_date ?? '') ?></p>
                 </div>
                 <div>
-                    <p><strong>Company:</strong> <?= htmlspecialchars($project['company_name'] ?? '') ?></p>
-                    <p><strong>Owner:</strong> <?= htmlspecialchars($project['owner_firstname'] ?? '') ?> <?= htmlspecialchars($project['owner_lastname'] ?? '') ?></p>
-                    <p><strong>Created At:</strong> <?= htmlspecialchars($project['created_at'] ?? 'Unknown') ?></p>
+                    <p><strong>Company:</strong> <?= htmlspecialchars($project->company_name ?? '') ?></p>
+                    <p><strong>Owner:</strong> <?= htmlspecialchars($project->owner_firstname ?? '') ?> <?= htmlspecialchars($project->owner_lastname ?? '') ?></p>
+                    <p><strong>Created At:</strong> <?= htmlspecialchars($project->created_at ?? 'Unknown') ?></p>
                 </div>
             </div>
         </div>
@@ -49,17 +49,17 @@ if (!defined('BASE_PATH')) {
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6 mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Milestones</h2>
-                <a href="/milestones/create?id=<?= htmlspecialchars($project['id']) ?>" class="text-indigo-600 hover:text-indigo-900">[+]</a>
+                <a href="/milestones/create?id=<?= htmlspecialchars($project->id) ?>" class="text-indigo-600 hover:text-indigo-900">[+]</a>
             </div>
             <?php if (!empty($milestones)): ?>
                 <ul class="space-y-2">
                     <?php foreach ($milestones as $milestone): ?>
                         <li class="flex justify-between items-center">
                             <div>
-                                <span class="font-medium"><?= htmlspecialchars($milestone['title']) ?></span>
-                                <span class="text-sm text-gray-500">(<?= htmlspecialchars($milestoneStatuses[$milestone['status_id']] ?? 'Unknown') ?>)</span>
+                                <span class="font-medium"><?= htmlspecialchars($milestone->title) ?></span>
+                                <span class="text-sm text-gray-500">(<?= htmlspecialchars($milestoneStatuses[$milestone->status_id] ?? 'Unknown') ?>)</span>
                             </div>
-                            <span class="text-sm text-gray-500"><?= htmlspecialchars($milestone['due_date'] ?? 'No due date') ?></span>
+                            <span class="text-sm text-gray-500"><?= htmlspecialchars($milestone->due_date ?? 'No due date') ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -84,11 +84,11 @@ if (!defined('BASE_PATH')) {
                     <?php if (!empty($tasks)): ?>
                         <?php foreach ($tasks as $task): ?>
                             <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                                <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task['title']) ?></h4>
-                                <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task['description'] ?? 'No description') ?></p>
-                                <?php if (!empty($task['subtasks'])): ?>
+                                <h4 class="text-md font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task->title) ?></h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($task->description ?? 'No description') ?></p>
+                                <?php if (!empty($task->subtasks)): ?>
                                     <ul class="mt-2 space-y-1">
-                                        <?php foreach ($task['subtasks'] as $subtaskId): ?>
+                                        <?php foreach ($task->subtasks as $subtaskId): ?>
                                             <li class="text-sm text-gray-700 dark:text-gray-300">
                                                 - Subtask ID: <?= htmlspecialchars($subtaskId) ?>
                                             </li>

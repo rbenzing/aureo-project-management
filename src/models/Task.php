@@ -75,6 +75,39 @@ class Task extends BaseModel
     }
 
     /**
+     * Get all tasks with details
+     * @return ?array
+     */
+    public function getAllWithDetails(int $limit = 10, int $page = 1): ?array
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            $sql = "SELECT t.*,
+                p.name as project_name,
+                ts.name as status_name,
+                u.first_name,
+                u.last_name
+            FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN task_statuses ts ON t.status_id = ts.id
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE t.is_deleted = 0 AND p.is_deleted = 0 AND ts.is_deleted = 0 and u.is_deleted = 0
+            LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':limit' => $limit,
+                ':offset' => $offset,
+            ]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            return $tasks ?: null;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching tasks details: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Get tasks by user ID
      * 
      * @param int $userId
@@ -313,7 +346,7 @@ class Task extends BaseModel
     protected function beforeSave(array $data): void
     {
         parent::validate($data, $this->id);
-        
+
         if (empty($data['title'])) {
             throw new InvalidArgumentException('Task title is required');
         }
