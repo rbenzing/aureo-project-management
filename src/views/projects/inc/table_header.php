@@ -1,5 +1,8 @@
 <!-- Toolbar for Table View -->
 <div class="flex flex-wrap items-center gap-4">
+    <?php if (isset($_SESSION['user']['permissions']) && in_array('create_projects', $_SESSION['user']['permissions'])): ?>
+        <a href="/projects/create" class="inline-block px-3 py-2 bg-indigo-100 dark:bg-indigo-900 text-black dark:text-white text-sm rounded-md hover:bg-indigo-700 ml-4">+ New Project</a>
+    <?php endif; ?>
     <form action="/projects" method="GET" class="flex-grow sm:flex-grow-0 flex gap-4">
         <input type="hidden" name="view" value="table">
         <div class="relative flex-grow sm:flex-grow-0">

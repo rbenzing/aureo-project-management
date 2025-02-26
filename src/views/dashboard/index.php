@@ -55,7 +55,7 @@ use \App\Core\Config;
         <!-- Welcome & Quick Actions Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Welcome Card -->
-            <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -68,20 +68,20 @@ use \App\Core\Config;
                 </div>
                 
                 <!-- Quick Stats -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="h-full bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
                         <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= $dashboardData['task_summary']['in_progress'] ?></div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Tasks In Progress</div>
                     </div>
-                    <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
+                    <div class="h-full bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
                         <div class="text-3xl font-bold text-red-600 dark:text-red-400"><?= $dashboardData['task_summary']['overdue'] ?></div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Overdue Tasks</div>
                     </div>
-                    <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                    <div class="h-full bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
                         <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= $dashboardData['project_summary']['in_progress'] ?></div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Active Projects</div>
                     </div>
-                    <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
+                    <div class="h-full bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
                         <div class="text-3xl font-bold text-purple-600 dark:text-purple-400"><?= number_format($dashboardData['time_tracking_summary']['this_week'] / 3600, 1) ?></div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Hours This Week</div>
                     </div>
@@ -90,63 +90,46 @@ use \App\Core\Config;
 
             <!-- Active Timer / Quick Actions -->
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <?php if (!empty($dashboardData['active_timer'])): ?>
-                    <div class="mb-4">
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Timer</h2>
-                        <div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-4 timer-pulse">
-                            <div class="flex items-center mb-2">
-                                <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="font-medium text-yellow-700 dark:text-yellow-300">
-                                    <?= htmlspecialchars($dashboardData['active_timer']['task']->title) ?>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="text-2xl font-bold tracking-wide text-yellow-600 dark:text-yellow-400" id="active-timer">
-                                    <?= gmdate("H:i:s", $dashboardData['active_timer']['duration']) ?>
-                                </div>
-                                <form action="/tasks/stop-timer/<?= $dashboardData['active_timer']['task_id'] ?>" method="POST" class="inline">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-                                        </svg>
-                                        Stop
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Actions</h2>
                 <div class="space-y-2">
-                    <a href="/tasks/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
-                        <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Task</span>
-                    </a>
                     <a href="/projects/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                         <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Project</span>
+                        <span class="text-gray-800 dark:text-gray-200">+ New Project</span>
+                    </a>
+                    <a href="/milestones/create?type=epic" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                        <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                        </svg>
+                        <span class="text-gray-800 dark:text-gray-200">+ New Epic</span>
                     </a>
                     <a href="/milestones/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                         <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                         </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Milestone</span>
+                        <span class="text-gray-800 dark:text-gray-200">+ New Milestone</span>
                     </a>
                     <a href="/sprints/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                         <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Sprint</span>
+                        <span class="text-gray-800 dark:text-gray-200">+ New Sprint</span>
                     </a>
+                    <a href="/tasks/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                        <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span class="text-gray-800 dark:text-gray-200">+ New Task</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Favorites -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Favorite Links</h2>
+                <div class="flex flex-col justify-center items-center">
+                    No favorite links found.
                 </div>
             </div>
         </div>
@@ -356,29 +339,29 @@ use \App\Core\Config;
                 </div>
                 
                 <!-- Project Distribution Circle Chart -->
-                <div>
+                <div class="flex flex-col gap-2">
                     <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Activity Distribution</h3>
-                    <div class="flex items-center justify-center mb-4">
+                    <div class="flex flex-row justify-start">
                         <div class="w-32 h-32 rounded-full flex items-center justify-center" style="background: conic-gradient(#60a5fa <?= $weeklyTimePercentage * 3.6 ?>deg, #34d399 <?= $weeklyTimePercentage * 3.6 ?>deg <?= $weeklyTimePercentage * 3.6 + $completionRate * 3.6 ?>deg, #f87171 <?= $weeklyTimePercentage * 3.6 + $completionRate * 3.6 ?>deg <?= $weeklyTimePercentage * 3.6 + $completionRate * 3.6 + 40 * 3.6 ?>deg, #e4e4e7 <?= $weeklyTimePercentage * 3.6 + $completionRate * 3.6 + 40 * 3.6 ?>deg);">
                             <div class="w-24 h-24 bg-white dark:bg-gray-800 rounded-full"></div>
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Time Tracked</span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Completed Tasks</span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">In Progress</span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Remaining</span>
+                        <div class="grid grid-cols-1 gap-2 ml-4">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Time Tracked</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Completed Tasks</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">In Progress</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Remaining</span>
+                            </div>
                         </div>
                     </div>
                 </div>

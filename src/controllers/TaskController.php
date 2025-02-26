@@ -43,8 +43,8 @@ class TaskController
             $userId = $data['id'] ?? null;
 
             if (!empty($userId)) {
-                $tasks = $this->taskModel->getByUserId($userId, $limit, $page);
-                $totalTasks = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
+                $tasks = $this->taskModel->getByUserId(intval($userId), $limit, $page);
+                $totalTasks = $this->taskModel->count(['assigned_to' => intval($userId), 'is_deleted' => 0]);
             } else {
                 $tasks = $this->taskModel->getAllWithDetails($limit, $page);
                 $totalTasks = $this->taskModel->count(['is_deleted' => 0]);

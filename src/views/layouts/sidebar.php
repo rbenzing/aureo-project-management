@@ -70,7 +70,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <ul class="mt-2 space-y-1">
                     <?php
                     foreach ($projectItems as $item) {
-                        $isActive = str_starts_with($currentPath, $item['path']) ? 'bg-indigo-600' : '';
+                        $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
                         echo '<li>';
                         echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
                         echo '<span class="mr-3">' . $item['icon'] . '</span>';
@@ -89,7 +89,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <ul class="mt-2 space-y-1">
                     <?php
                     foreach ($taskItems as $item) {
-                        $isActive = str_starts_with($currentPath, $item['path']) ? 'bg-indigo-600' : '';
+                        $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
                         echo '<li>';
                         echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
                         echo '<span class="mr-3">' . $item['icon'] . '</span>';
@@ -108,7 +108,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <ul class="mt-2 space-y-1">
                     <?php
                     foreach ($adminItems as $item) {
-                        $isActive = str_starts_with($currentPath, $item['path']) ? 'bg-indigo-600' : '';
+                        $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
                         echo '<li>';
                         echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
                         echo '<span class="mr-3">' . $item['icon'] . '</span>';

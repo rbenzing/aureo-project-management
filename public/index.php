@@ -55,7 +55,7 @@ try {
     $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['page']]);
     $router->get('tasks/assigned/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
     $router->get('tasks/assigned/:id/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['id', 'page']]);
-    $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view']);
+    $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view', 'params' => ['id']]);
     $router->get('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
     $router->post('tasks/create', ['controller' => 'Task', 'action' => 'create']);
     $router->get('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm']);
@@ -106,7 +106,7 @@ try {
 
     // Sprint Routes
     $router->get('sprints', ['controller' => 'Sprint', 'action' => 'index']);
-    $router->get('sprints/page/:page', ['controller' => 'Sprint', 'action' => 'index']);
+    $router->get('sprints/page/:page', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['page']]);
     $router->get('sprints/project/:id', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['id']]);
     $router->get('sprints/project/:id/page/:page', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['id', 'page']]);
     $router->get('sprints/view/:id', ['controller' => 'Sprint', 'action' => 'view', 'params' => ['id']]);
