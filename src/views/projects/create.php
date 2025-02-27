@@ -53,7 +53,7 @@ if (!defined('BASE_PATH')) {
                     <option value="">Select a company</option>
                     <?php
                     foreach ($companies as $company): ?>
-                        <option value="<?php echo $company['id']; ?>"><?php echo htmlspecialchars($company['name']); ?></option>
+                        <option value="<?php echo $company->id; ?>"><?php echo htmlspecialchars($company->name); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -66,7 +66,7 @@ if (!defined('BASE_PATH')) {
                     <option value="">Select a status</option>
                     <?php
                     foreach ($statuses as $status): ?>
-                        <option value="<?php echo $status['id']; ?>"><?php echo htmlspecialchars($status['name']); ?></option>
+                        <option value="<?= $status->id ?>"><?php echo htmlspecialchars($status->name); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

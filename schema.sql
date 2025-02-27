@@ -211,7 +211,6 @@ CREATE TABLE csrf_tokens (
   user_id int(11) DEFAULT NULL,
   token varchar(255) NOT NULL,
   session_id varchar(255) NOT NULL,
-  user_id int(11) DEFAULT NULL,
   expires_at timestamp NOT NULL,
   created_at timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (id),
@@ -263,7 +262,9 @@ CREATE TABLE milestones (
   KEY project_id (project_id),
   KEY status_id (status_id),
   KEY epic_id (epic_id),
-  CONSTRAINT fk_epic FOREIGN KEY (epic_id) REFERENCES milestones(id) ON DELETE SET NULL
+  CONSTRAINT fk_epic FOREIGN KEY (epic_id) REFERENCES milestones(id) ON DELETE SET NULL,
+  CONSTRAINT fk_milestone_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+  CONSTRAINT fk_milestone_status FOREIGN KEY (status_id) REFERENCES milestone_statuses(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -294,9 +295,11 @@ CREATE TABLE tasks (
   KEY assigned_to (assigned_to),
   KEY idx_tasks_project_id (project_id),
   KEY fk_parent_task (parent_task_id),
+  KEY status_id (status_id),
   CONSTRAINT fk_parent_task FOREIGN KEY (parent_task_id) REFERENCES tasks (id) ON DELETE SET NULL,
-  CONSTRAINT tasks_ibfk_1 FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
-  CONSTRAINT tasks_ibfk_2 FOREIGN KEY (assigned_to) REFERENCES users (id) ON DELETE SET NULL
+  CONSTRAINT tasks_ibfk_1 FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE SET NULL,
+  CONSTRAINT tasks_ibfk_2 FOREIGN KEY (assigned_to) REFERENCES users (id) ON DELETE SET NULL,
+  CONSTRAINT tasks_ibfk_3 FOREIGN KEY (status_id) REFERENCES task_statuses (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -344,7 +347,7 @@ CREATE TABLE sessions (
 -- ----------------------------
 CREATE TABLE activity_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    user_id INT UNSIGNED NULL,
+    user_id INT(11) NULL,
     session_id VARCHAR(255) NOT NULL,
     event_type VARCHAR(50) NOT NULL,
     method VARCHAR(10) NOT NULL,
@@ -359,7 +362,8 @@ CREATE TABLE activity_logs (
     KEY idx_user_id (user_id),
     KEY idx_session_id (session_id),
     KEY idx_event_type (event_type),
-    KEY idx_created_at (created_at)
+    KEY idx_created_at (created_at),
+    CONSTRAINT activity_logs_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------

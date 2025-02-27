@@ -10,9 +10,10 @@ src/
         AuthController.php
         CompanyController.php
         DashboardController.php
-        MilestonesController.php
+        MilestoneController.php
         ProjectController.php
         RoleController.php
+        SprintController.php
         TaskController.php
         TimeTrackingController.php
         UserController.php
@@ -57,12 +58,28 @@ src/
             footer.php
             header.php
             sidebar.php
+        Milestones/
+            create.php
+            edit.php
+            index.php
+            view.php
         Projects/
+            inc/
+                charts.php
+                gantt.php
+                table_header.php
+                table.php
+                timeline.php
             create.php
             edit.php
             index.php
             view.php
         Roles/
+            create.php
+            edit.php
+            index.php
+            view.php
+        Sprints/
             create.php
             edit.php
             index.php

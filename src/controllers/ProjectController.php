@@ -102,8 +102,9 @@ class ProjectController
         try {
             $this->authMiddleware->hasPermission('create_projects');
             
-            $companies = $this->companyModel->getAll(['is_deleted' => 0]);
+            $results = $this->companyModel->getAll(['is_deleted' => 0]);
             $statuses = $this->projectModel->getAllStatuses();
+            $companies = $results['records'];
             
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
