@@ -49,7 +49,7 @@ $activeTab = $_GET['view'] ?? 'table';
 
         <!-- Navigation Tabs -->
         <div class="flex items-center space-x-6 border-b border-gray-200 mb-6">
-            <a href="/projects?view=table" class="px-4 py-2 <?= $activeTab === 'table' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Main Table</a>
+            <a href="/projects?view=table" class="px-4 py-2 <?= $activeTab === 'table' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Table</a>
             <a href="/projects?view=timeline" class="px-4 py-2 <?= $activeTab === 'timeline' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Timeline</a>
             <a href="/projects?view=charts" class="px-4 py-2 <?= $activeTab === 'charts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Charts</a>
             <a href="/projects?view=pivot" class="px-4 py-2 <?= $activeTab === 'pivot' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Pivot Board</a>

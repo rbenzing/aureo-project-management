@@ -58,11 +58,11 @@ try {
     $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view', 'params' => ['id']]);
     $router->get('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
     $router->post('tasks/create', ['controller' => 'Task', 'action' => 'create']);
-    $router->get('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm']);
+    $router->get('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm', 'params' => ['id']]);
     $router->post('tasks/update', ['controller' => 'Task', 'action' => 'update']);
-    $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete']);
-    $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer']);
-    $router->post('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer']);
+    $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete', 'params' => ['id']]);
+    $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer', 'params' => ['task_id']]);
+    $router->post('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer', 'params' => ['time_entry_id']]);
 
     // User Routes
     $router->get('users', ['controller' => 'User', 'action' => 'index']);

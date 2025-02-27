@@ -10,67 +10,74 @@ if (!defined('BASE_PATH')) {
 <div class="space-y-8">
     <?php if (!empty($projects)): ?>
         <?php foreach ($projects as $project): ?>
-            <div class="text-white shadow border-b border-gray-200">
-                <div class="py-4">
-                    <div class="flex items-center w-full">
+            <div class="text-white">
+                <div class="py-2">
+                    <div class="flex justify-between align-center w-full">
                         <?php 
                         // Status indicator color
-                        $statusColor = 'bg-gray-600';
                         switch ($project->status) {
                             case 'ready':
                                 $statusColor = 'bg-blue-600';
+                                $status = "READY";
                                 break;
                             case 'in_progress':
-                                $statusColor = 'bg-yellow-600';
+                                $statusColor = 'bg-yellow-300';
+                                $status = "IN PROGRESS";
                                 break;
                             case 'completed':
-                                $statusColor = 'bg-green-600';
+                                $statusColor = 'bg-green-300';
+                                $status = "COMPLETED";
                                 break;
                             case 'on_hold':
-                                $statusColor = 'bg-purple-600';
+                                $statusColor = 'bg-purple-300';
+                                $status = "ON HOLD";
                                 break;
                             case 'delayed':
-                                $statusColor = 'bg-red-600';
+                                $statusColor = 'bg-red-300';
+                                $status = "DELAYED";
                                 break;
                             case 'cancelled':
-                                $statusColor = 'bg-gray-600';
+                                $statusColor = 'bg-gray-300';
+                                $status = "CANCELED";
                                 break;
+                            default:
+                                $statusColor = 'bg-gray-600';
+                                $status = "UNKNOWN";
                         }
                         ?>
-                        <div class="w-1 h-6 <?= $statusColor ?> rounded-full mr-4"></div>
-                        <h2 class="inline-block w-text-lg font-medium">
-                            <a href="/projects/view/<?= $project->id ?>" class="hover:text-blue-500 text-nowrap"><?= htmlspecialchars($project->name) ?></a>
-                        </h2>
-                        <span class="ml-4 px-2 py-1 text-xs rounded-full <?= $statusColor ?> bg-opacity-20">
-                            <?= ucfirst(htmlspecialchars($project->status)) ?>
-                        </span>
-                        <div class="ml-4 flex justify-between align-center w-full">
+                        <div class="flex items-center">
+                            <div class="w-1 h-12 <?= $statusColor ?> mr-4"></div>
+                            <h2 class="inline-block w-text-lg font-medium">
+                                <a href="/projects/view/<?= $project->id ?>" class="hover:text-blue-500 text-nowrap"><?= htmlspecialchars($project->name) ?></a>
+                            </h2>
+                            <span class="ml-4 px-4 py-2 text-xs rounded-full <?= $statusColor ?> bg-opacity-20">
+                                <?= htmlspecialchars($status) ?>
+                            </span>
                             <?php if ($project->company_name): ?>
-                                <span class="text-gray-400 text-nowrap"><?= htmlspecialchars($project->company_name) ?></span>
-                            <?php endif; ?>
-                            <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
-                                <a href="/tasks/create/project/<?= $project->id ?>" class="px-4 py-2 bg-indigo-700 text-white text-sm rounded-md hover:bg-blue-600">
-                                    + New Task
-                                </a>
+                                    <span class="ml-4 text-gray-400 text-nowrap"><?= htmlspecialchars($project->company_name) ?></span>
                             <?php endif; ?>
                         </div>
+                        <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
+                            <a href="/tasks/create/project/<?= $project->id ?>" class="px-3 py-1 text-sm text-white text-sm rounded-md hover:bg-indigo-700 flex items-center">
+                                + New Task
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
                     <table class="w-full">
-                        <thead>
+                        <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr class="text-left text-sm text-gray-500 border-b border-gray-500">
-                                <th class="px-6 py-3 font-medium"></th>
-                                <th class="px-6 py-3 font-medium">Task</th>
-                                <th class="px-6 py-3 font-medium">Owner</th>
-                                <th class="px-6 py-3 font-medium">Client</th>
-                                <th class="px-6 py-3 font-medium">Priority</th>
-                                <th class="px-6 py-3 font-medium">Status</th>
-                                <th class="px-6 py-3 font-medium">Timeline</th>
-                                <th class="px-6 py-3 font-medium">Actual Time</th>
-                                <th class="px-6 py-3 font-medium">Hourly rate</th>
-                                <th class="px-6 py-3 font-medium">Billable amount</th>
-                                <th class="px-6 py-3 font-medium">Files</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Task</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Owner</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Timeline</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actual Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hourly rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Billable amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Files</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-600">
@@ -100,12 +107,15 @@ if (!defined('BASE_PATH')) {
                                     $priorityLevel = 0;
                                     switch ($task->priority) {
                                         case 'high':
-                                            $priorityLevel = 3;
+                                            $priorityLevel = 4;
                                             break;
                                         case 'medium':
-                                            $priorityLevel = 2;
+                                            $priorityLevel = 3;
                                             break;
                                         case 'low':
+                                            $priorityLevel = 2;
+                                            break;
+                                        case 'none':
                                             $priorityLevel = 1;
                                             break;
                                     }
@@ -128,8 +138,8 @@ if (!defined('BASE_PATH')) {
                                     }
                             ?>
                             <tr>
-                                <td class="pr-6 px-0">
-                                    <div class="w-1 h-6 bg-purple-500 rounded-full"></div>
+                                <td class="pr-6 px-0 py-0">
+                                    <div class="w-1 h-12 bg-purple-500"></div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <a href="/tasks/view/<?= $task->id ?>" class="text-white hover:text-blue-400"><?= htmlspecialchars($task->title) ?></a>
@@ -143,10 +153,9 @@ if (!defined('BASE_PATH')) {
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-white"><?= htmlspecialchars($project->company_name) ?></td>
                                 <td class="px-6 py-4">
                                     <div class="flex text-yellow-400">
-                                        <?php for ($i = 1; $i <= 3; $i++): ?>
+                                        <?php for ($i = 1; $i <= 4; $i++): ?>
                                             <svg class="w-5 h-5" fill="<?= $i <= $priorityLevel ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                                             </svg>
@@ -212,7 +221,7 @@ if (!defined('BASE_PATH')) {
 
                             <!-- Project Summary Row -->
                             <tr class="bg-gray-700">
-                                <td colspan="7" class="px-6 py-1 text-white">
+                                <td colspan="6" class="px-6 py-1 text-white">
                                     <?= $completedTasks ?> / <?= $totalTasks ?> Tasks Completed
                                 </td>
                                 <td class="px-6 py-1 text-white">
