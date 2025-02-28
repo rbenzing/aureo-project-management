@@ -24,6 +24,10 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name)?></h1>
 
         <!-- User Details -->

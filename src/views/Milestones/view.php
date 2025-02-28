@@ -20,6 +20,10 @@ if (!defined('BASE_PATH')) {
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars($milestone->title) ?></h1>
         <!-- Milestone Details -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">

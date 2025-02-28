@@ -27,20 +27,9 @@ use App\Core\Config;
 
     <!-- Main Content -->
     <main class="container mx-auto p-6 flex-grow">
-        <!-- Notification Messages -->
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['error']) ?>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['success']) ?>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
         <!-- Project Selection (if not already selected) -->
         <?php if (empty($project)): ?>

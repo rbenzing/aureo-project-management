@@ -22,6 +22,10 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold"><?= htmlspecialchars($project->name) ?></h1>
             <a href="/projects/edit/<?= htmlspecialchars($project->id) ?>" class="block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>

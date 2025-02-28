@@ -24,6 +24,10 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <div class="flex flex-row justify-between mb-6">
             <div class="flex items-center space-x-2">
                 <h1 class="text-2xl font-medium">Users</h1>

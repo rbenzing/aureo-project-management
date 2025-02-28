@@ -26,6 +26,10 @@ $activeTab = $_GET['view'] ?? 'table';
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-center space-x-2">
                 <h1 class="text-2xl font-medium">Client Projects</h1>

@@ -223,6 +223,7 @@ CREATE TABLE csrf_tokens (
 -- ----------------------------
 CREATE TABLE projects (
   id int(11) NOT NULL AUTO_INCREMENT,
+  key_code varchar(4) NOT NULL,
   company_id int(11) NOT NULL,
   owner_id int(11) NOT NULL,
   name varchar(255) NOT NULL,

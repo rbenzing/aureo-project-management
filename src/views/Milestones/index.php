@@ -27,20 +27,9 @@ use App\Core\Config;
 
     <!-- Main Content -->
     <main class="container mx-auto p-6 flex-grow">
-        <!-- Notification Messages -->
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['error']) ?>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['success']) ?>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
         <!-- Milestone Stats Summary -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -142,7 +131,7 @@ use App\Core\Config;
             <div class="flex space-x-4">
                 <!-- Filter Dropdown -->
                 <div class="relative">
-                    <select id="milestone-filter" class="appearance-none w-40 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="milestone-filter" class="appearance-none w-40 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="all">All Milestones</option>
                         <option value="epic">Epics Only</option>
                         <option value="milestone">Regular Milestones</option>
@@ -161,7 +150,7 @@ use App\Core\Config;
                 <!-- Project Filter (If applicable) -->
                 <?php if (!empty($projects)): ?>
                 <div class="relative">
-                    <select id="project-filter" class="appearance-none w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="project-filter" class="appearance-none w-48 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">All Projects</option>
                         <?php foreach ($projects as $project): ?>
                         <option value="<?= $project->id ?>"><?= htmlspecialchars($project->name) ?></option>
@@ -181,7 +170,7 @@ use App\Core\Config;
                         type="search" 
                         id="milestone-search"
                         placeholder="Search milestones..." 
-                        class="w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-64 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                     <svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

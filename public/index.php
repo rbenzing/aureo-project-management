@@ -55,6 +55,7 @@ try {
     $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['page']]);
     $router->get('tasks/assigned/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
     $router->get('tasks/assigned/:id/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['id', 'page']]);
+    $router->get('tasks/project/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
     $router->get('tasks/view/:id', ['controller' => 'Task', 'action' => 'view', 'params' => ['id']]);
     $router->get('tasks/create', ['controller' => 'Task', 'action' => 'createForm']);
     $router->post('tasks/create', ['controller' => 'Task', 'action' => 'create']);

@@ -264,4 +264,20 @@ class Project extends BaseModel
             }
         }
     }
+
+    /**
+     * Transforms a string into key code format
+     */
+    public function transformKeyCodeFormat($input) {
+        // 1. Remove all non-alphabetic characters (this includes spaces).
+        $filtered = preg_replace('/[^A-Za-z]/', '', $input);
+    
+        // 2. Extract the first 4 characters.
+        $firstFour = substr($filtered, 0, 4);
+    
+        // 3. Convert the result to uppercase.
+        $result = strtoupper($firstFour);
+    
+        return $result;
+    }
 }

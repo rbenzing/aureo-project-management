@@ -21,6 +21,10 @@ if (!defined('BASE_PATH')) {
     <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <div class="flex flex-row justify-between mb-6">
             <div class="flex items-center space-x-2">
                 <h1 class="text-2xl font-medium">Roles</h1>
@@ -33,20 +37,6 @@ if (!defined('BASE_PATH')) {
             <!-- Create Button -->
             <a href="/roles/create" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create New User</a>
         </div>
-
-        <!-- Display Errors or Success Messages -->
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['error']) ?>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-                <?= htmlspecialchars($_SESSION['success']) ?>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
 
         <!-- Table of roles -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">

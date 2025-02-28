@@ -24,6 +24,10 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
         <div class="flex-col">
             <small><a href="/view_project?id=<?php echo $project->id; ?>" class="text-gray-200 py-4">&laquo; Back to Project</a></small>
             <h1 class="text-2xl font-bold mb-6">Edit Project</h1>

@@ -9,6 +9,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Company;
+use App\Models\User;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
@@ -19,12 +20,14 @@ class ProjectController
     private Project $projectModel;
     private Task $taskModel;
     private Company $companyModel;
+    private User $userModel;
 
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
+        $this->userModel = new User();
         $this->companyModel = new Company();
     }
 
@@ -102,9 +105,9 @@ class ProjectController
         try {
             $this->authMiddleware->hasPermission('create_projects');
             
-            $results = $this->companyModel->getAll(['is_deleted' => 0]);
+            $users = $this->userModel->getAllUsers();
+            $companies = $this->companyModel->getAllCompanies();
             $statuses = $this->projectModel->getAllStatuses();
-            $companies = $results['records'];
             
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
@@ -132,9 +135,10 @@ class ProjectController
             $this->authMiddleware->hasPermission('create_projects');
 
             $validator = new Validator($data, [
-                'name' => 'required|string|max:255',
+                'name' => 'required|string|max:255|min:5',
                 'description' => 'nullable|string|max:500',
                 'status_id' => 'required|integer|exists:project_statuses,id',
+                'owner_id' => 'required|integer|exists:users,id',
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date'
@@ -146,13 +150,13 @@ class ProjectController
 
             $projectData = [
                 'name' => htmlspecialchars($data['name']),
-                'description' => isset($data['description']) ? 
-                    htmlspecialchars($data['description']) : null,
-                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
-                'company_id' => filter_var($data['company_id'], FILTER_VALIDATE_INT),
-                'owner_id' => $_SESSION['user']['id'],
+                'description' => isset($data['description']) ? htmlspecialchars($data['description']) : null,
+                'owner_id' => $data['owner_id'] ? filter_var($data['owner_id'], FILTER_VALIDATE_INT) : null,
+                'status_id' => $data['status_id'] ? filter_var($data['status_id'], FILTER_VALIDATE_INT) : null,
+                'company_id' => $data['company_id'] ? filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
                 'start_date' => $data['start_date'] ?? null,
-                'end_date' => $data['end_date'] ?? null
+                'end_date' => $data['end_date'] ?? null,
+                'key_code' => $this->projectModel->transformKeyCodeFormat($data['name'])
             ];
 
             $projectId = $this->projectModel->create($projectData);

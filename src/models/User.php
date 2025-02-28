@@ -61,6 +61,25 @@ class User extends BaseModel
     }
 
     /**
+     * Get all users without pagination
+     * 
+     * @return array
+     */
+    public function getAllUsers(): array
+    {
+        $sql = "SELECT u.*, 
+                       c.name as company_name,
+                       r.name as role_name
+                FROM users u
+                LEFT JOIN companies c ON u.company_id = c.id
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.is_deleted = 0";
+
+        $stmt = $this->db->executeQuery($sql);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
      * Get user roles and permissions
      * 
      * @param int $userId

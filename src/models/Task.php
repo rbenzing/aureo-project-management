@@ -52,7 +52,7 @@ class Task extends BaseModel
         try {
             $sql = "SELECT t.*,
                 p.name as project_name,
-                ts.name as status_name,
+                ts.name as status,
                 u.first_name,
                 u.last_name
             FROM tasks t

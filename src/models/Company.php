@@ -63,6 +63,18 @@ class Company extends BaseModel
     }
 
     /**
+     * Get all companies without pagination
+     * 
+     * @return array
+     */
+    public function getAllCompanies(): array
+    {
+        $sql = "SELECT * FROM companies WHERE is_deleted = 0";
+        $stmt = $this->db->executeQuery($sql);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
      * Get recent projects for a user
      * 
      * @param int $userId

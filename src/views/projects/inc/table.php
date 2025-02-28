@@ -73,7 +73,7 @@ if (!defined('BASE_PATH')) {
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Owner</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Timeline</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actual Time</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hourly rate</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Billable amount</th>
@@ -104,7 +104,6 @@ if (!defined('BASE_PATH')) {
                                     }
                                     
                                     // Priority level mapping
-                                    $priorityLevel = 0;
                                     switch ($task->priority) {
                                         case 'high':
                                             $priorityLevel = 4;
@@ -118,10 +117,11 @@ if (!defined('BASE_PATH')) {
                                         case 'none':
                                             $priorityLevel = 1;
                                             break;
+                                        default:
+                                            $priorityLevel = 0;
                                     }
                                     
                                     // Status color
-                                    $taskStatusColor = 'bg-blue-100 text-blue-800';
                                     switch ($task->status_id) {
                                         case 6: // Completed
                                             $taskStatusColor = 'bg-green-100 text-green-800';
@@ -135,6 +135,31 @@ if (!defined('BASE_PATH')) {
                                         case 7: // Cancelled
                                             $taskStatusColor = 'bg-red-100 text-red-800';
                                             break;
+                                        default:
+                                            $taskStatusColor = 'bg-blue-100 text-blue-800';
+                                    }
+
+                                    switch(strtolower($task->status)) {
+                                        case 'open':
+                                            $taskStatus = "OPEN";
+                                            break;
+                                        case 'in_progress':
+                                            $taskStatus = "IN PROGRESS";
+                                            break;
+                                        case 'on_hold':
+                                            $taskStatus = "ON HOLD";
+                                            break;
+                                        case 'in_review':
+                                            $taskStatus = "IN REVIEW";
+                                            break;
+                                        case 'closed':
+                                            $taskStatus = "CLOSED";
+                                            break;
+                                        case 'completed':
+                                            $taskStatus = "COMPLETED";
+                                            break;
+                                        default:
+                                            $taskStatus = 'UNKNOWN';
                                     }
                             ?>
                             <tr>
@@ -164,7 +189,7 @@ if (!defined('BASE_PATH')) {
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="px-3 py-1 text-sm <?= $taskStatusColor ?> rounded-full">
-                                        <?= htmlspecialchars($task->status_name ?? 'Unknown') ?>
+                                        <?= $taskStatus ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
