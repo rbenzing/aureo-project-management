@@ -157,7 +157,7 @@ if ($isMyTasksView && !$viewingOwnTasks) {
                 <!-- Context Switcher (only show in appropriate contexts) -->
                 <?php if (!$isMyTasksView || $viewingOwnTasks): ?>
                 <div class="relative">
-                    <select id="context-switcher" onchange="window.location.href=this.value" class="appearance-none w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="context-switcher" onchange="window.location.href=this.value" class="appearance-none w-40 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="/tasks" <?= !$isMyTasksView ? 'selected' : '' ?>>All Tasks (Backlog)</option>
                         <option value="/tasks/assigned/<?= $currentUserId ?>" <?= $viewingOwnTasks ? 'selected' : '' ?>>My Tasks</option>
                         <?php if (isset($_SESSION['user']) && $_SESSION['user']['permissions'] && in_array('manage_tasks', $_SESSION['user']['permissions'])): ?>
@@ -174,7 +174,7 @@ if ($isMyTasksView && !$viewingOwnTasks) {
 
                 <!-- Filter Dropdown -->
                 <div class="relative">
-                    <select id="task-filter" class="appearance-none w-40 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="task-filter" class="appearance-none w-40 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <?php foreach ($filterOptions as $value => $label): ?>
                         <option value="<?= $value ?>"><?= $label ?></option>
                         <?php endforeach; ?>
@@ -191,7 +191,7 @@ if ($isMyTasksView && !$viewingOwnTasks) {
                     <input 
                         type="search" 
                         placeholder="Search tasks..." 
-                        class="w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-64 appearance-none py-2 pr-4 pl-10 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                     <svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

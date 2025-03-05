@@ -24,6 +24,10 @@ if (!defined('BASE_PATH')) {
 
     <!-- Main Content -->
     <main class="container mx-auto p-6">
+        <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+        
         <h1 class="text-2xl font-bold mb-6">Create Company</h1>
 
         <!-- Create Company Form -->
