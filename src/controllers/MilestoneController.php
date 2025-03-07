@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/MilestoneController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -142,7 +142,7 @@ class MilestoneController
                 'milestone_type' => 'required|in:epic,milestone',
                 'start_date' => 'nullable|date',
                 'due_date' => 'nullable|date|after:start_date',
-                'status_id' => 'required|integer|exists:milestone_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_milestone,id',
                 'project_id' => 'required|integer|exists:projects,id',
                 'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);
@@ -248,7 +248,7 @@ class MilestoneController
                 'milestone_type' => 'required|in:epic,milestone',
                 'start_date' => 'nullable|date',
                 'due_date' => 'nullable|date|after:start_date',
-                'status_id' => 'required|integer|exists:milestone_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_milestone,id',
                 'project_id' => 'required|integer|exists:projects,id',
                 'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);

@@ -1,5 +1,5 @@
 <?php
-
+// file: Models/Milestone.php
 declare(strict_types=1);
 
 namespace App\Models;
@@ -32,50 +32,124 @@ class Milestone extends BaseModel
     public bool $is_deleted = false;
     public ?string $created_at = null;
     public ?string $updated_at = null;
+    
+    /**
+     * Define fillable fields
+     */
+    protected array $fillable = [
+        'title', 'description', 'milestone_type', 'start_date', 'due_date', 
+        'complete_date', 'epic_id', 'project_id', 'status_id'
+    ];
+    
+    /**
+     * Define searchable fields
+     */
+    protected array $searchable = [
+        'title', 'description'
+    ];
+    
+    /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'title' => ['required', 'string'],
+        'project_id' => ['required'],
+        'status_id' => ['required']
+    ];
 
     /**
      * Get milestones with completion rates and time remaining
      * 
      * @param int $limit Items per page
      * @param int $page Current page number
+     * @param array $conditions Optional conditions to filter by
      * @return array
      */
-    public function getAllWithProgress(int $limit = 10, int $page = 1): array
+    public function getAllWithProgress(int $limit = 10, int $page = 1, array $conditions = []): array
     {
         $offset = ($page - 1) * $limit;
         
+        $whereClauses = ['m.is_deleted = 0'];
+        $params = [];
+        
+        // Process additional conditions
+        foreach ($conditions as $column => $value) {
+            // Skip non-column conditions
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+                continue;
+            }
+            
+            // Process complex conditions (operators)
+            if (is_array($value)) {
+                $operator = key($value);
+                $condValue = $value[$operator];
+                
+                switch ($operator) {
+                    case '>':
+                        $whereClauses[] = "m.{$column} > :{$column}";
+                        $params[":{$column}"] = $condValue;
+                        break;
+                    case '<':
+                        $whereClauses[] = "m.{$column} < :{$column}";
+                        $params[":{$column}"] = $condValue;
+                        break;
+                    default:
+                        $whereClauses[] = "m.{$column} = :{$column}";
+                        $params[":{$column}"] = $condValue;
+                }
+            } else {
+                // Simple equality
+                $whereClauses[] = "m.{$column} = :{$column}";
+                $params[":{$column}"] = $value;
+            }
+        }
+        
+        $whereClause = implode(' AND ', $whereClauses);
+        
         $sql = "SELECT
-            id,
-            title,
-            start_date,
-            due_date,
-            complete_date,
-            status_id,
-            project_id,
+            m.id,
+            m.title,
+            m.start_date,
+            m.due_date,
+            m.complete_date,
+            m.status_id,
+            m.project_id,
+            m.milestone_type,
+            m.epic_id,
+            p.name as project_name,
+            s.name as status_name,
             CASE 
-                WHEN start_date IS NULL OR due_date IS NULL THEN NULL
-                WHEN DATEDIFF(due_date, start_date) = 0 THEN 100
-                WHEN complete_date IS NOT NULL THEN 100
+                WHEN m.start_date IS NULL OR m.due_date IS NULL THEN NULL
+                WHEN DATEDIFF(m.due_date, m.start_date) = 0 THEN 100
+                WHEN m.complete_date IS NOT NULL THEN 100
                 ELSE 
                     LEAST(
-                        (DATEDIFF(CURDATE(), start_date) * 100.0) / 
-                        DATEDIFF(due_date, start_date), 
+                        (DATEDIFF(CURDATE(), m.start_date) * 100.0) / 
+                        DATEDIFF(m.due_date, m.start_date), 
                         100
                     )
             END AS completion_rate,
             CASE 
-                WHEN due_date IS NULL THEN NULL
-                ELSE DATEDIFF(due_date, CURDATE())
-            END AS time_remaining
-        FROM milestones
-        WHERE is_deleted = 0
+                WHEN m.due_date IS NULL THEN NULL
+                ELSE DATEDIFF(m.due_date, CURDATE())
+            END AS time_remaining,
+            (
+                SELECT COUNT(*) 
+                FROM milestone_tasks mt 
+                JOIN tasks t ON mt.task_id = t.id 
+                WHERE mt.milestone_id = m.id AND t.is_deleted = 0
+            ) as task_count
+        FROM milestones m
+        LEFT JOIN projects p ON m.project_id = p.id
+        LEFT JOIN statuses_milestone s ON m.status_id = s.id
+        WHERE {$whereClause}
+        ORDER BY m.due_date ASC, m.title ASC
         LIMIT :limit OFFSET :offset";
 
-        $stmt = $this->db->executeQuery($sql, [
-            ':limit' => $limit,
-            ':offset' => $offset,
-        ]);
-
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+        
+        $stmt = $this->db->executeQuery($sql, $params);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -86,7 +160,7 @@ class Milestone extends BaseModel
      */
     public function getMilestoneStatuses(): array
     {
-        $sql = "SELECT * FROM milestone_statuses WHERE is_deleted = 0";
+        $sql = "SELECT * FROM statuses_milestone WHERE is_deleted = 0";
         $stmt = $this->db->executeQuery($sql);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
@@ -99,10 +173,12 @@ class Milestone extends BaseModel
      */
     public function getProjectEpics(int $projectId): array
     {
-        $sql = "SELECT * FROM milestones 
-                WHERE project_id = :project_id 
-                AND milestone_type = 'epic' 
-                AND is_deleted = 0";
+        $sql = "SELECT m.*, s.name as status_name 
+                FROM milestones m
+                JOIN statuses_milestone s ON m.status_id = s.id
+                WHERE m.project_id = :project_id 
+                AND m.milestone_type = 'epic' 
+                AND m.is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -116,70 +192,169 @@ class Milestone extends BaseModel
      */
     public function getEpicMilestones(int $epicId): array
     {
-        $sql = "SELECT * FROM milestones 
-                WHERE epic_id = :epic_id 
-                AND milestone_type = 'milestone' 
-                AND is_deleted = 0";
+        $sql = "SELECT m.*, s.name as status_name
+                FROM milestones m
+                JOIN statuses_milestone s ON m.status_id = s.id
+                WHERE m.epic_id = :epic_id 
+                AND m.milestone_type = 'milestone' 
+                AND m.is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+    
+    /**
+     * Get tasks associated with a milestone
+     * 
+     * @param int $milestoneId
+     * @return array
+     */
+    public function getTasks(int $milestoneId): array
+    {
+        $sql = "SELECT t.*, ts.name as status_name, u.first_name, u.last_name
+                FROM tasks t
+                JOIN milestone_tasks mt ON t.id = mt.task_id
+                JOIN statuses_task ts ON t.status_id = ts.id
+                LEFT JOIN users u ON t.assigned_to = u.id
+                WHERE mt.milestone_id = :milestone_id
+                AND t.is_deleted = 0";
+                
+        $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+    
+    /**
+     * Add tasks to milestone
+     * 
+     * @param int $milestoneId
+     * @param array $taskIds
+     * @return bool
+     */
+    public function addTasks(int $milestoneId, array $taskIds): bool
+    {
+        try {
+            $this->db->beginTransaction();
+            
+            // First remove existing associations to ensure clean state
+            $sql = "DELETE FROM milestone_tasks WHERE milestone_id = :milestone_id";
+            $this->db->executeInsertUpdate($sql, [':milestone_id' => $milestoneId]);
+            
+            // Then add new associations
+            foreach ($taskIds as $taskId) {
+                $sql = "INSERT INTO milestone_tasks (milestone_id, task_id) 
+                        VALUES (:milestone_id, :task_id)";
+                $this->db->executeInsertUpdate($sql, [
+                    ':milestone_id' => $milestoneId,
+                    ':task_id' => $taskId
+                ]);
+            }
+            
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw new \RuntimeException("Failed to add tasks to milestone: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Calculate milestone progress based on completed tasks
+     * 
+     * @param int $milestoneId
+     * @return float Percentage of completion (0-100)
+     */
+    public function calculateTaskProgress(int $milestoneId): float
+    {
+        $sql = "SELECT 
+                    COUNT(t.id) as total_tasks,
+                    SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) as completed_tasks
+                FROM tasks t
+                JOIN milestone_tasks mt ON t.id = mt.task_id
+                WHERE mt.milestone_id = :milestone_id
+                AND t.is_deleted = 0";
+                
+        $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+        $result = $stmt->fetch(PDO::FETCH_OBJ);
+        
+        if (!$result || $result->total_tasks == 0) {
+            return 0;
+        }
+        
+        return ($result->completed_tasks / $result->total_tasks) * 100;
     }
 
     /**
      * Validate milestone data before save
      * 
      * @param array $data
+     * @param int|null $id
      * @throws InvalidArgumentException
      */
-    protected function beforeSave(array $data): void
+    protected function validate(array $data, ?int $id = null): void
     {
-        parent::validate($data, $this->id);
-
-        if (empty($data['title'])) {
-            throw new InvalidArgumentException('Milestone title is required');
-        }
-
-        if (empty($data['project_id'])) {
-            throw new InvalidArgumentException('Project ID is required');
-        }
-
-        if (empty($data['status_id'])) {
-            throw new InvalidArgumentException('Status ID is required');
-        }
-
-        if (!empty($data['start_date']) && !empty($data['due_date'])) {
+        parent::validate($data, $id);
+        
+        if (isset($data['start_date']) && isset($data['due_date']) && !empty($data['start_date']) && !empty($data['due_date'])) {
             if (strtotime($data['due_date']) < strtotime($data['start_date'])) {
                 throw new InvalidArgumentException('Due date cannot be earlier than start date');
             }
         }
 
-        if (!empty($data['complete_date'])) {
-            if (!empty($data['due_date']) && strtotime($data['complete_date']) > strtotime($data['due_date'])) {
+        if (isset($data['complete_date']) && !empty($data['complete_date'])) {
+            if (isset($data['due_date']) && !empty($data['due_date']) && strtotime($data['complete_date']) > strtotime($data['due_date'])) {
                 throw new InvalidArgumentException('Complete date cannot be later than due date');
             }
         }
 
-        // Improved validation with cycle detection
-        if (!empty($data['epic_id'])) {
-            $epic = $this->find($data['epic_id']);
+        // Validate epic-milestone relationship to prevent circular references
+        if (isset($data['epic_id']) && !empty($data['epic_id'])) {
+            // Don't allow self-reference
+            if (isset($id) && $data['epic_id'] == $id) {
+                throw new InvalidArgumentException('A milestone cannot be its own epic');
+            }
+            
+            // Check if it's a valid epic
+            $sql = "SELECT milestone_type FROM milestones WHERE id = :epic_id AND is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql, [':epic_id' => $data['epic_id']]);
+            $epic = $stmt->fetch(PDO::FETCH_OBJ);
+            
             if (!$epic || $epic->milestone_type !== 'epic') {
                 throw new InvalidArgumentException('Invalid epic ID');
             }
             
-            // Prevent circular references
-            if (!empty($data['id']) && $data['id'] == $data['epic_id']) {
-                throw new InvalidArgumentException('A milestone cannot be its own epic');
+            // If this is an epic itself, check for circular references
+            if (isset($data['milestone_type']) && $data['milestone_type'] === 'epic' && isset($id)) {
+                $this->checkCircularEpicReference($id, $data['epic_id']);
             }
-            
-            // Check if this milestone is an epic for the current epic (circular reference)
-            if (!empty($data['id']) && $data['milestone_type'] === 'epic') {
-                $childEpics = $this->getEpicMilestones($data['id']);
-                foreach ($childEpics as $childEpic) {
-                    if ($childEpic->id == $data['epic_id']) {
-                        throw new InvalidArgumentException('Circular epic reference detected');
-                    }
-                }
-            }
+        }
+    }
+    
+    /**
+     * Check for circular epic references
+     * 
+     * @param int $currentId
+     * @param int $newParentId
+     * @throws InvalidArgumentException
+     */
+    private function checkCircularEpicReference(int $currentId, int $newParentId): void
+    {
+        // Check if any child milestones of current milestone have the new parent as a child
+        $sql = "WITH RECURSIVE milestone_hierarchy AS (
+                    SELECT id, epic_id FROM milestones WHERE id = :start_id
+                    UNION ALL
+                    SELECT m.id, m.epic_id 
+                    FROM milestones m
+                    JOIN milestone_hierarchy mh ON m.epic_id = mh.id
+                )
+                SELECT COUNT(*) FROM milestone_hierarchy WHERE id = :check_id";
+                
+        $stmt = $this->db->executeQuery($sql, [
+            ':start_id' => $newParentId,
+            ':check_id' => $currentId
+        ]);
+        
+        if ($stmt->fetchColumn() > 0) {
+            throw new InvalidArgumentException('Circular epic reference detected');
         }
     }
 }

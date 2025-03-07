@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/DashboardController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -42,13 +42,13 @@ class DashboardController
 
             $userId = $_SESSION['user']['id'] ?? null;
             if (!$userId) {
-                throw new RuntimeException('User session not found');
+                throw new RuntimeException('Session expired. Please log in again.');
             }
 
             // Fetch user data with roles and permissions
             $user = $this->userModel->findWithDetails($userId);
             if (!$user || $user->is_deleted) {
-                throw new RuntimeException('User not found');
+                throw new RuntimeException('User not found. Please try again.');
             }
 
             // Fetch dashboard data
@@ -57,7 +57,7 @@ class DashboardController
             include __DIR__ . '/../Views/Dashboard/index.php';
 
         } catch (RuntimeException $e) {
-            $_SESSION['error'] = 'Session expired. Please log in again.';
+            $_SESSION['error'] = $e->getMessage();
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
@@ -133,7 +133,7 @@ class DashboardController
                 ]),
                 'delayed' => $this->projectModel->count([
                     'owner_id' => $userId,
-                    'status_id' => 5, // Delayed status
+                    'status_id' => 5, // Delayed status (updated to match schema)
                     'is_deleted' => 0
                 ])
             ];

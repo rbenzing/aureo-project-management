@@ -93,7 +93,7 @@ $currentCompany = isset($_GET['company_id']) ? htmlspecialchars($_GET['company_i
 ?>
 
 <!-- Toolbar for Table View -->
-<div class="mb-6 flex flex-wrap items-center gap-4">
+<div class="flex flex-wrap items-center gap-4">
     <!-- New Project Button -->
     <?php if (isset($_SESSION['user']['permissions']) && in_array('create_projects', $_SESSION['user']['permissions'])): ?>
         <a href="/projects/create" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 shadow-sm">

@@ -1,4 +1,7 @@
 <?php
+// file: Core/Router.php
+declare(strict_types=1);
+
 namespace App\Core;
 
 // Ensure this view is not directly accessible via the web

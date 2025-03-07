@@ -1,5 +1,5 @@
 <?php
-
+// file: Models/Task.php
 declare(strict_types=1);
 
 namespace App\Models;
@@ -41,6 +41,32 @@ class Task extends BaseModel
     public ?int $parent_task_id = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
+    
+    /**
+     * Define fillable fields
+     */
+    protected array $fillable = [
+        'project_id', 'assigned_to', 'title', 'description', 'priority',
+        'status_id', 'estimated_time', 'billable_time', 'time_spent',
+        'start_date', 'due_date', 'complete_date', 'hourly_rate',
+        'is_hourly', 'is_subtask', 'parent_task_id'
+    ];
+    
+    /**
+     * Define searchable fields
+     */
+    protected array $searchable = [
+        'title', 'description'
+    ];
+    
+    /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'title' => ['required', 'string'],
+        'project_id' => ['required'],
+        'status_id' => ['required']
+    ];
 
     /**
      * Get task with details
@@ -52,12 +78,12 @@ class Task extends BaseModel
         try {
             $sql = "SELECT t.*,
                 p.name as project_name,
-                ts.name as status,
+                ts.name as status_name,
                 u.first_name,
                 u.last_name
             FROM tasks t
             LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN task_statuses ts ON t.status_id = ts.id
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
             LEFT JOIN users u ON t.assigned_to = u.id
             WHERE t.id = :id AND t.is_deleted = 0";
 
@@ -66,6 +92,15 @@ class Task extends BaseModel
             
             if ($task) {
                 $task->subtasks = $this->getSubtasks($id);
+                $task->time_entries = $this->getTaskTimeEntries($id);
+                $task->comments = $this->getTaskComments($id);
+                $task->milestones = $this->getTaskMilestones($id);
+                $task->history = $this->getTaskHistory($id);
+                
+                // Format times for display
+                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
+                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
+                $task->formatted_billable_time = $this->formatTimeInSeconds($task->billable_time);
             }
             
             return $task ?: null;
@@ -90,9 +125,10 @@ class Task extends BaseModel
                 u.last_name
             FROM tasks t
             LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN task_statuses ts ON t.status_id = ts.id
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
             LEFT JOIN users u ON t.assigned_to = u.id
-            WHERE t.is_deleted = 0 AND p.is_deleted = 0 AND ts.is_deleted = 0 and u.is_deleted = 0
+            WHERE t.is_deleted = 0 AND p.is_deleted = 0 
+            ORDER BY t.due_date ASC, t.priority DESC
             LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->executeQuery($sql, [
@@ -100,6 +136,13 @@ class Task extends BaseModel
                 ':offset' => $offset,
             ]);
             $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            // Format times for display
+            foreach ($tasks as $task) {
+                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
+                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
+                $task->formatted_billable_time = $this->formatTimeInSeconds($task->billable_time);
+            }
             
             return $tasks ?: null;
         } catch (\Exception $e) {
@@ -117,23 +160,40 @@ class Task extends BaseModel
      */
     public function getByUserId(int $userId, int $limit = 10, int $page = 1): array
     {
-        $sql = "SELECT t.*, 
+        try {
+            $offset = ($page - 1) * $limit;
+            
+            $sql = "SELECT t.*, 
                        p.name as project_name,
                        ts.name as status_name,
                        u.first_name, 
                        u.last_name
                 FROM tasks t
                 LEFT JOIN projects p ON t.project_id = p.id
-                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN statuses_task ts ON t.status_id = ts.id
                 LEFT JOIN users u ON t.assigned_to = u.id
                 WHERE t.assigned_to = :user_id 
                 AND t.is_deleted = 0
-                ORDER BY t.due_date ASC, t.priority DESC";
+                ORDER BY t.due_date ASC, t.priority DESC
+                LIMIT :limit OFFSET :offset";
 
-        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
-        $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [
+                ':user_id' => $userId,
+                ':limit' => $limit,
+                ':offset' => $offset
+            ]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            // Format times for display
+            foreach ($tasks as $task) {
+                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
+                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
+            }
 
-        return $tasks;
+            return $tasks;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching user tasks: " . $e->getMessage());
+        }
     }
 
     /**
@@ -144,7 +204,8 @@ class Task extends BaseModel
      */
     public function getByProjectId(int $projectId): array
     {
-        $sql = "SELECT 
+        try {
+            $sql = "SELECT 
                     t.*,
                     ts.name AS status_name,
                     u.first_name,
@@ -152,7 +213,7 @@ class Task extends BaseModel
                 FROM 
                     tasks t
                 LEFT JOIN
-                    task_statuses ts ON t.status_id = ts.id
+                    statuses_task ts ON t.status_id = ts.id
                 LEFT JOIN
                     users u ON t.assigned_to = u.id
                 WHERE 
@@ -164,10 +225,13 @@ class Task extends BaseModel
                     t.priority DESC,
                     t.due_date ASC";
 
-        $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
-        $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-        return $this->organizeTasksByStatus($tasks);
+            return $this->organizeTasksByStatus($tasks);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching project tasks: " . $e->getMessage());
+        }
     }
 
     /**
@@ -178,20 +242,32 @@ class Task extends BaseModel
      */
     public function getSubtasks(int $taskId): array
     {
-        $sql = "SELECT t.*,
+        try {
+            $sql = "SELECT t.*,
                        ts.name as status_name,
                        u.first_name,
                        u.last_name
                 FROM tasks t
-                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN statuses_task ts ON t.status_id = ts.id
                 LEFT JOIN users u ON t.assigned_to = u.id
                 WHERE t.parent_task_id = :task_id
                 AND t.is_subtask = 1
                 AND t.is_deleted = 0
                 ORDER BY t.priority DESC, t.due_date ASC";
 
-        $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            $subtasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            // Format times for subtasks
+            foreach ($subtasks as $subtask) {
+                $subtask->formatted_time_spent = $this->formatTimeInSeconds($subtask->time_spent);
+                $subtask->formatted_estimated_time = $this->formatTimeInSeconds($subtask->estimated_time);
+            }
+            
+            return $subtasks;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching subtasks: " . $e->getMessage());
+        }
     }
 
     /**
@@ -201,9 +277,13 @@ class Task extends BaseModel
      */
     public function getTaskStatuses(): array
     {
-        $sql = "SELECT * FROM task_statuses WHERE is_deleted = 0";
-        $stmt = $this->db->executeQuery($sql);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        try {
+            $sql = "SELECT * FROM statuses_task WHERE is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching task statuses: " . $e->getMessage());
+        }
     }
 
     /**
@@ -215,23 +295,235 @@ class Task extends BaseModel
      */
     public function getRecentByUser(int $userId, int $limit = 5): array
     {
-        $sql = "SELECT t.*, 
+        try {
+            $sql = "SELECT t.*, 
                        p.name as project_name,
                        ts.name as status_name
                 FROM tasks t
                 LEFT JOIN projects p ON t.project_id = p.id
-                LEFT JOIN task_statuses ts ON t.status_id = ts.id
+                LEFT JOIN statuses_task ts ON t.status_id = ts.id
                 WHERE t.assigned_to = :user_id 
                 AND t.is_deleted = 0
-                ORDER BY t.created_at DESC 
+                ORDER BY t.updated_at DESC 
                 LIMIT :limit";
 
-        $stmt = $this->db->executeQuery($sql, [
-            ':user_id' => $userId,
-            ':limit' => $limit
-        ]);
+            $stmt = $this->db->executeQuery($sql, [
+                ':user_id' => $userId,
+                ':limit' => $limit
+            ]);
 
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching recent tasks: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get task time entries
+     * 
+     * @param int $taskId
+     * @return array
+     */
+    public function getTaskTimeEntries(int $taskId): array
+    {
+        try {
+            $sql = "SELECT te.*,
+                       u.first_name,
+                       u.last_name
+                FROM time_entries te
+                LEFT JOIN users u ON te.user_id = u.id
+                WHERE te.task_id = :task_id
+                ORDER BY te.start_time DESC";
+                
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            $entries = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            // Format duration
+            foreach ($entries as $entry) {
+                $entry->formatted_duration = $this->formatTimeInSeconds($entry->duration);
+            }
+            
+            return $entries;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching time entries: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Create a time entry
+     * 
+     * @param array $data
+     * @return int The new time entry ID
+     */
+    public function createTimeEntry(array $data): int
+    {
+        try {
+            $fields = array_keys($data);
+            $placeholders = array_map(fn($field) => ":$field", $fields);
+
+            $sql = sprintf(
+                "INSERT INTO time_entries (%s) VALUES (%s)",
+                implode(', ', $fields),
+                implode(', ', $placeholders)
+            );
+
+            $params = array_combine($placeholders, array_values($data));
+            
+            $success = $this->db->executeInsertUpdate($sql, $params);
+            
+            if (!$success) {
+                throw new RuntimeException("Failed to create time entry");
+            }
+            
+            return $this->db->lastInsertId();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error creating time entry: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get task comments
+     * 
+     * @param int $taskId
+     * @return array
+     */
+    public function getTaskComments(int $taskId): array
+    {
+        try {
+            $sql = "SELECT tc.*,
+                       u.first_name,
+                       u.last_name
+                FROM task_comments tc
+                LEFT JOIN users u ON tc.user_id = u.id
+                WHERE tc.task_id = :task_id
+                AND tc.is_deleted = 0
+                ORDER BY tc.created_at DESC";
+                
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching task comments: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Add a comment to a task
+     * 
+     * @param int $taskId
+     * @param int $userId
+     * @param string $content
+     * @return int The new comment ID
+     */
+    public function addComment(int $taskId, int $userId, string $content): int
+    {
+        try {
+            $sql = "INSERT INTO task_comments (task_id, user_id, content)
+                    VALUES (:task_id, :user_id, :content)";
+                    
+            $success = $this->db->executeInsertUpdate($sql, [
+                ':task_id' => $taskId,
+                ':user_id' => $userId,
+                ':content' => $content
+            ]);
+            
+            if (!$success) {
+                throw new RuntimeException("Failed to add comment");
+            }
+            
+            return $this->db->lastInsertId();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error adding comment: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get task history
+     * 
+     * @param int $taskId
+     * @return array
+     */
+    public function getTaskHistory(int $taskId): array
+    {
+        try {
+            $sql = "SELECT th.*,
+                       u.first_name,
+                       u.last_name
+                FROM task_history th
+                LEFT JOIN users u ON th.user_id = u.id
+                WHERE th.task_id = :task_id
+                ORDER BY th.created_at DESC";
+                
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching task history: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Add a history entry
+     * 
+     * @param int $taskId
+     * @param int $userId
+     * @param string $action
+     * @param string|null $fieldChanged
+     * @param string|null $oldValue
+     * @param string|null $newValue
+     * @return int The new history entry ID
+     */
+    public function addHistoryEntry(
+        int $taskId, 
+        int $userId, 
+        string $action, 
+        ?string $fieldChanged = null, 
+        ?string $oldValue = null, 
+        ?string $newValue = null
+    ): int {
+        try {
+            $sql = "INSERT INTO task_history (task_id, user_id, action, field_changed, old_value, new_value)
+                    VALUES (:task_id, :user_id, :action, :field_changed, :old_value, :new_value)";
+                    
+            $success = $this->db->executeInsertUpdate($sql, [
+                ':task_id' => $taskId,
+                ':user_id' => $userId,
+                ':action' => $action,
+                ':field_changed' => $fieldChanged,
+                ':old_value' => $oldValue,
+                ':new_value' => $newValue
+            ]);
+            
+            if (!$success) {
+                throw new RuntimeException("Failed to add history entry");
+            }
+            
+            return $this->db->lastInsertId();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error adding history entry: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get task milestones
+     * 
+     * @param int $taskId
+     * @return array
+     */
+    public function getTaskMilestones(int $taskId): array
+    {
+        try {
+            $sql = "SELECT m.*,
+                       ms.name as status_name
+                FROM milestones m
+                JOIN milestone_tasks mt ON m.id = mt.milestone_id
+                LEFT JOIN statuses_milestone ms ON m.status_id = ms.id
+                WHERE mt.task_id = :task_id
+                AND m.is_deleted = 0";
+                
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching task milestones: " . $e->getMessage());
+        }
     }
 
     /**
@@ -242,13 +534,17 @@ class Task extends BaseModel
      */
     public function getTotalTimeSpent(int $userId): int
     {
-        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
-                FROM tasks 
-                WHERE assigned_to = :user_id 
-                AND is_deleted = 0";
+        try {
+            $sql = "SELECT COALESCE(SUM(time_spent), 0) 
+                    FROM tasks 
+                    WHERE assigned_to = :user_id 
+                    AND is_deleted = 0";
 
-        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error calculating total time spent: " . $e->getMessage());
+        }
     }
 
     /**
@@ -259,14 +555,18 @@ class Task extends BaseModel
      */
     public function getTotalBillableTime(int $userId): int
     {
-        $sql = "SELECT COALESCE(SUM(billable_time), 0) 
-                FROM tasks 
-                WHERE assigned_to = :user_id 
-                AND is_hourly = 1 
-                AND is_deleted = 0";
+        try {
+            $sql = "SELECT COALESCE(SUM(billable_time), 0) 
+                    FROM tasks 
+                    WHERE assigned_to = :user_id 
+                    AND is_hourly = 1 
+                    AND is_deleted = 0";
 
-        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error calculating total billable time: " . $e->getMessage());
+        }
     }
 
     /**
@@ -277,16 +577,19 @@ class Task extends BaseModel
      */
     public function getWeeklyTimeSpent(int $userId): int
     {
-        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
-                FROM tasks 
-                WHERE assigned_to = :user_id 
-                AND is_deleted = 0 
-                AND complete_date BETWEEN 
-                    DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) 
-                    AND DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)";
+        try {
+            $sql = "SELECT COALESCE(SUM(duration), 0)
+                    FROM time_entries 
+                    WHERE user_id = :user_id 
+                    AND start_time BETWEEN 
+                        DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) 
+                        AND DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)";
 
-        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error calculating weekly time spent: " . $e->getMessage());
+        }
     }
 
     /**
@@ -297,16 +600,37 @@ class Task extends BaseModel
      */
     public function getMonthlyTimeSpent(int $userId): int
     {
-        $sql = "SELECT COALESCE(SUM(time_spent), 0) 
-                FROM tasks 
-                WHERE assigned_to = :user_id 
-                AND is_deleted = 0 
-                AND complete_date BETWEEN 
-                    DATE_FORMAT(CURDATE(), '%Y-%m-01') 
-                    AND LAST_DAY(CURDATE())";
+        try {
+            $sql = "SELECT COALESCE(SUM(duration), 0)
+                    FROM time_entries 
+                    WHERE user_id = :user_id 
+                    AND start_time BETWEEN 
+                        DATE_FORMAT(CURDATE(), '%Y-%m-01') 
+                        AND LAST_DAY(CURDATE())";
 
-        $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error calculating monthly time spent: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Format time in seconds to human-readable format
+     * 
+     * @param int|null $seconds
+     * @return string
+     */
+    private function formatTimeInSeconds(?int $seconds): string
+    {
+        if ($seconds === null || $seconds == 0) {
+            return '0h 0m';
+        }
+        
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        
+        return "{$hours}h {$minutes}m";
     }
 
     /**
@@ -317,71 +641,85 @@ class Task extends BaseModel
      */
     private function organizeTasksByStatus(array $tasks): array
     {
-        $organized = [
-            'on_hold' => [],
-            'open' => [],
-            'in_progress' => [],
-            'in_review' => [],
-            'completed' => [],
-            'cancelled' => []
-        ];
-
-        foreach ($tasks as $task) {
-            $status = strtolower($task->status_name);
-            if (!isset($organized[$status])) {
-                $organized[$status] = [];
+        try {
+            // Get status mappings
+            $statusMap = [];
+            $statuses = $this->getTaskStatuses();
+            foreach ($statuses as $status) {
+                $normalizedKey = strtolower(str_replace(' ', '_', $status->name));
+                $statusMap[$status->id] = $normalizedKey;
             }
-            $organized[$status][] = $task;
-        }
+            
+            // Organize by status
+            $organized = [];
+            foreach ($statusMap as $id => $key) {
+                $organized[$key] = [];
+            }
+            
+            // Default fallbacks in case statuses are missing
+            if (!isset($organized['open'])) $organized['open'] = [];
+            if (!isset($organized['in_progress'])) $organized['in_progress'] = [];
+            if (!isset($organized['completed'])) $organized['completed'] = [];
 
-        return $organized;
+            foreach ($tasks as $task) {
+                $statusKey = $statusMap[$task->status_id] ?? 'other';
+                if (!isset($organized[$statusKey])) {
+                    $organized[$statusKey] = [];
+                }
+                $organized[$statusKey][] = $task;
+            }
+
+            return $organized;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error organizing tasks by status: " . $e->getMessage());
+        }
     }
 
     /**
      * Validate task data before save
      * 
      * @param array $data
+     * @param int|null $id
      * @throws InvalidArgumentException
      */
-    protected function beforeSave(array $data): void
+    protected function validate(array $data, ?int $id = null): void
     {
-        parent::validate($data, $this->id);
-
-        if (empty($data['title'])) {
-            throw new InvalidArgumentException('Task title is required');
-        }
-
-        if (empty($data['project_id'])) {
-            throw new InvalidArgumentException('Project ID is required');
-        }
-
-        if (empty($data['status_id'])) {
-            throw new InvalidArgumentException('Status ID is required');
-        }
+        parent::validate($data, $id);
 
         if (!empty($data['parent_task_id'])) {
             // Validate parent task exists and is not a subtask
-            $parent = $this->find($data['parent_task_id']);
-            if (!$parent || $parent->is_subtask) {
+            $sql = "SELECT is_subtask FROM tasks WHERE id = :id AND is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql, [':id' => $data['parent_task_id']]);
+            $parentTask = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            if (!$parentTask) {
                 throw new InvalidArgumentException('Invalid parent task');
+            }
+            
+            if ($parentTask->is_subtask) {
+                throw new InvalidArgumentException('A subtask cannot be a parent task');
+            }
+            
+            // Prevent circular references
+            if ($id && $id == $data['parent_task_id']) {
+                throw new InvalidArgumentException('A task cannot be its own parent');
             }
         }
 
         if (!empty($data['due_date'])) {
-            if (strtotime($data['due_date']) < strtotime('today')) {
-                throw new InvalidArgumentException('Due date cannot be in the past');
-            }
+            // Don't force due dates to be in the future for flexibility
+            // But warn if they're in the past in the controller
         }
 
-        if (!empty($data['time_spent']) && $data['time_spent'] < 0) {
+        if (isset($data['time_spent']) && $data['time_spent'] < 0) {
             throw new InvalidArgumentException('Time spent cannot be negative');
         }
 
-        if (!empty($data['estimated_time']) && $data['estimated_time'] < 0) {
+        if (isset($data['estimated_time']) && $data['estimated_time'] < 0) {
             throw new InvalidArgumentException('Estimated time cannot be negative');
         }
 
-        if (!empty($data['priority']) && !in_array($data['priority'], ['none', 'low', 'medium', 'high'])) {
+        if (isset($data['priority']) && !in_array($data['priority'], ['none', 'low', 'medium', 'high'])) {
             throw new InvalidArgumentException('Invalid priority value');
         }
     }

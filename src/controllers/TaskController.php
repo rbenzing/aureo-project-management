@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/TaskController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -148,7 +148,7 @@ class TaskController
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'priority' => 'required|in:none,low,medium,high',
-                'status_id' => 'required|integer|exists:task_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_task,id',
                 'project_id' => 'required|integer|exists:projects,id',
                 'due_date' => 'nullable|date',
                 'estimated_time' => 'nullable|integer|min:0',
@@ -268,7 +268,7 @@ class TaskController
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'priority' => 'required|in:none,low,medium,high',
-                'status_id' => 'required|integer|exists:task_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_task,id',
                 'project_id' => 'required|integer|exists:projects,id',
                 'due_date' => 'nullable|date',
                 'estimated_time' => 'nullable|integer|min:0',

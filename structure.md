@@ -39,6 +39,7 @@ src/
         Task.php
         User.php
     Utils/
+        Breadcrumb.php
         Email.php
         Validator.php
     Views/

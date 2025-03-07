@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/SprintController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -154,10 +154,10 @@ class SprintController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'project_id' => 'required|integer|exists:sprints,id',
+                'project_id' => 'required|integer|exists:projects,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
-                'status_id' => 'required|integer|exists:sprint_statuses,id'
+                'status_id' => 'required|integer|exists:statuses_sprint,id'
             ]);
 
             if ($validator->fails()) {
@@ -273,7 +273,7 @@ class SprintController
                 'description' => 'nullable|string',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
-                'status_id' => 'required|integer|exists:sprint_statuses,id'
+                'status_id' => 'required|integer|exists:statuses_sprint,id'
             ]);
 
             if ($validator->fails()) {

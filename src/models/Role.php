@@ -1,5 +1,5 @@
 <?php
-
+// file: Models/Role.php
 declare(strict_types=1);
 
 namespace App\Models;
@@ -28,6 +28,28 @@ class Role extends BaseModel
     public ?string $created_at = null;
     public ?string $updated_at = null;
     public array $permissions = [];
+    
+    /**
+     * Define fillable fields
+     */
+    protected array $fillable = [
+        'name', 'description'
+    ];
+    
+    /**
+     * Define searchable fields
+     */
+    protected array $searchable = [
+        'name', 'description'
+    ];
+    
+    /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'name' => ['required', 'string', 'unique'],
+        'description' => ['string']
+    ];
 
     /**
      * Find role with permissions
@@ -37,13 +59,17 @@ class Role extends BaseModel
      */
     public function findWithPermissions(int $id): ?object
     {
-        $role = $this->find($id);
-        
-        if ($role) {
-            $role->permissions = $this->getPermissions($id);
-        }
+        try {
+            $role = $this->find($id);
+            
+            if ($role) {
+                $role->permissions = $this->getPermissions($id);
+            }
 
-        return $role;
+            return $role;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to find role with permissions: " . $e->getMessage());
+        }
     }
 
     /**
@@ -54,14 +80,18 @@ class Role extends BaseModel
      */
     public function getPermissions(int $roleId): array
     {
-        $sql = "SELECT p.* 
-                FROM permissions p
-                INNER JOIN role_permissions rp ON p.id = rp.permission_id
-                WHERE rp.role_id = :role_id
-                AND p.is_deleted = 0";
+        try {
+            $sql = "SELECT p.* 
+                    FROM permissions p
+                    INNER JOIN role_permissions rp ON p.id = rp.permission_id
+                    WHERE rp.role_id = :role_id
+                    AND p.is_deleted = 0";
 
-        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get role permissions: " . $e->getMessage());
+        }
     }
 
     /**
@@ -72,13 +102,19 @@ class Role extends BaseModel
      */
     public function getUsers(int $roleId): array
     {
-        $sql = "SELECT * 
-                FROM users 
-                WHERE role_id = :role_id
-                AND is_deleted = 0";
+        try {
+            $sql = "SELECT u.*, 
+                          c.name as company_name
+                    FROM users u
+                    LEFT JOIN companies c ON u.company_id = c.id
+                    WHERE u.role_id = :role_id
+                    AND u.is_deleted = 0";
 
-        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get role users: " . $e->getMessage());
+        }
     }
 
     /**
@@ -100,14 +136,20 @@ class Role extends BaseModel
 
             // Add new permissions if any
             if (!empty($permissionIds)) {
-                $values = array_map(function($id) use ($roleId) {
-                    return "($roleId, $id)";
-                }, $permissionIds);
-
-                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " . 
-                       implode(',', $values);
+                $placeholders = [];
+                $params = [];
                 
-                $this->db->executeInsertUpdate($sql);
+                foreach ($permissionIds as $index => $permissionId) {
+                    $placeholders[] = "(:role_id, :permission_id_{$index})";
+                    $params[":permission_id_{$index}"] = $permissionId;
+                }
+                
+                $params[':role_id'] = $roleId;
+                
+                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " . 
+                       implode(',', $placeholders);
+                
+                $this->db->executeInsertUpdate($sql, $params);
             }
 
             $this->db->commit();
@@ -128,14 +170,18 @@ class Role extends BaseModel
      */
     public function assignPermission(int $roleId, int $permissionId): bool
     {
-        $sql = "INSERT INTO role_permissions (role_id, permission_id)
-                VALUES (:role_id, :permission_id)
-                ON DUPLICATE KEY UPDATE role_id = :role_id";
+        try {
+            $sql = "INSERT INTO role_permissions (role_id, permission_id)
+                    VALUES (:role_id, :permission_id)
+                    ON DUPLICATE KEY UPDATE role_id = :role_id";
 
-        return $this->db->executeInsertUpdate($sql, [
-            ':role_id' => $roleId,
-            ':permission_id' => $permissionId
-        ]);
+            return $this->db->executeInsertUpdate($sql, [
+                ':role_id' => $roleId,
+                ':permission_id' => $permissionId
+            ]);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to assign permission: " . $e->getMessage());
+        }
     }
 
     /**
@@ -147,47 +193,114 @@ class Role extends BaseModel
      */
     public function removePermission(int $roleId, int $permissionId): bool
     {
-        $sql = "DELETE FROM role_permissions 
-                WHERE role_id = :role_id 
-                AND permission_id = :permission_id";
+        try {
+            $sql = "DELETE FROM role_permissions 
+                    WHERE role_id = :role_id 
+                    AND permission_id = :permission_id";
 
-        return $this->db->executeInsertUpdate($sql, [
-            ':role_id' => $roleId,
-            ':permission_id' => $permissionId
-        ]);
+            return $this->db->executeInsertUpdate($sql, [
+                ':role_id' => $roleId,
+                ':permission_id' => $permissionId
+            ]);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to remove permission: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get all roles with permission counts
+     * 
+     * @return array
+     */
+    public function getAllWithPermissionCounts(): array
+    {
+        try {
+            $sql = "SELECT r.*, 
+                    (
+                        SELECT COUNT(*) 
+                        FROM role_permissions rp 
+                        WHERE rp.role_id = r.id
+                    ) as permission_count,
+                    (
+                        SELECT COUNT(*) 
+                        FROM users u 
+                        WHERE u.role_id = r.id AND u.is_deleted = 0
+                    ) as user_count
+                    FROM roles r
+                    WHERE r.is_deleted = 0
+                    ORDER BY r.name ASC";
+                    
+            $stmt = $this->db->executeQuery($sql);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get roles with permission counts: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a role has a specific permission
+     * 
+     * @param int $roleId
+     * @param int $permissionId
+     * @return bool
+     */
+    public function hasPermission(int $roleId, int $permissionId): bool
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM role_permissions 
+                    WHERE role_id = :role_id AND permission_id = :permission_id";
+            
+            $stmt = $this->db->executeQuery($sql, [
+                ':role_id' => $roleId,
+                ':permission_id' => $permissionId
+            ]);
+            
+            return (bool)$stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to check permission: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Check if a role has a specific permission by name
+     * 
+     * @param int $roleId
+     * @param string $permissionName
+     * @return bool
+     */
+    public function hasPermissionByName(int $roleId, string $permissionName): bool
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM role_permissions rp
+                    JOIN permissions p ON rp.permission_id = p.id
+                    WHERE rp.role_id = :role_id 
+                    AND p.name = :permission_name
+                    AND p.is_deleted = 0";
+            
+            $stmt = $this->db->executeQuery($sql, [
+                ':role_id' => $roleId,
+                ':permission_name' => $permissionName
+            ]);
+            
+            return (bool)$stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to check permission by name: " . $e->getMessage());
+        }
     }
 
     /**
      * Validate role data before save
      * 
      * @param array $data
+     * @param int|null $id
      * @throws InvalidArgumentException
      */
-    protected function beforeSave(array $data): void
+    protected function validate(array $data, ?int $id = null): void
     {
-        parent::validate($data, $this->id);
+        parent::validate($data, $id);
         
-        if (empty($data['name'])) {
-            throw new InvalidArgumentException('Role name is required');
-        }
-
-        // Check for unique name
-        $sql = "SELECT COUNT(*) FROM roles 
-                WHERE name = :name 
-                AND id != :id 
-                AND is_deleted = 0";
-
-        $stmt = $this->db->executeQuery($sql, [
-            ':name' => $data['name'],
-            ':id' => $data['id'] ?? 0
-        ]);
-
-        if ($stmt->fetchColumn() > 0) {
-            throw new InvalidArgumentException('Role name must be unique');
-        }
-
         // Validate role name format
-        if (!preg_match('/^[a-zA-Z0-9_\- ]+$/', $data['name'])) {
+        if (isset($data['name']) && !preg_match('/^[a-zA-Z0-9_\- ]+$/', $data['name'])) {
             throw new InvalidArgumentException('Role name can only contain letters, numbers, spaces, underscores and hyphens');
         }
     }

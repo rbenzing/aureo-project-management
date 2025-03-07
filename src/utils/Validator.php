@@ -1,4 +1,7 @@
 <?php
+// file: Utils/Validator.php
+declare(strict_types=1);
+
 namespace App\Utils;
 
 // Ensure this view is not directly accessible via the web

@@ -1,5 +1,5 @@
 <?php
-
+// file: Models/Permission.php
 declare(strict_types=1);
 
 namespace App\Models;
@@ -26,6 +26,28 @@ class Permission extends BaseModel
     public ?string $description = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
+    
+    /**
+     * Define fillable fields
+     */
+    protected array $fillable = [
+        'name', 'description'
+    ];
+    
+    /**
+     * Define searchable fields
+     */
+    protected array $searchable = [
+        'name', 'description'
+    ];
+    
+    /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'name' => ['required', 'string', 'unique'],
+        'description' => ['string']
+    ];
 
     /**
      * Get permissions by role ID
@@ -36,14 +58,18 @@ class Permission extends BaseModel
      */
     public function getByRoleId(int $roleId): array
     {
-        $sql = "SELECT p.*
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_id = p.id
-                WHERE rp.role_id = :role_id 
-                AND p.is_deleted = 0";
+        try {
+            $sql = "SELECT p.*
+                    FROM role_permissions rp
+                    JOIN permissions p ON rp.permission_id = p.id
+                    WHERE rp.role_id = :role_id 
+                    AND p.is_deleted = 0";
 
-        $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get permissions for role: " . $e->getMessage());
+        }
     }
 
     /**
@@ -64,12 +90,15 @@ class Permission extends BaseModel
             $this->db->executeInsertUpdate($sql, [':role_id' => $roleId]);
 
             // Then, add new permissions
-            $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :permission_id)";
-            foreach ($permissionIds as $permissionId) {
-                $this->db->executeInsertUpdate($sql, [
-                    ':role_id' => $roleId,
-                    ':permission_id' => $permissionId
-                ]);
+            if (!empty($permissionIds)) {
+                foreach ($permissionIds as $permissionId) {
+                    $sql = "INSERT INTO role_permissions (role_id, permission_id) 
+                            VALUES (:role_id, :permission_id)";
+                    $this->db->executeInsertUpdate($sql, [
+                        ':role_id' => $roleId,
+                        ':permission_id' => $permissionId
+                    ]);
+                }
             }
 
             $this->db->commit();
@@ -88,47 +117,105 @@ class Permission extends BaseModel
      */
     public function getGroupedPermissions(): array
     {
-        $permissions = $this->getAll();
-        $grouped = [];
+        try {
+            $permissions = $this->getAll(['is_deleted' => 0])['records'];
+            $grouped = [];
 
-        foreach ($permissions as $permission) {
-            $type = explode('_', $permission->name)[0];
-            if (!isset($grouped[$type])) {
-                $grouped[$type] = [];
+            foreach ($permissions as $permission) {
+                $parts = explode('_', $permission->name);
+                $type = $parts[0] ?? 'other';  // Default group is 'other'
+                
+                if (!isset($grouped[$type])) {
+                    $grouped[$type] = [];
+                }
+                $grouped[$type][] = $permission;
             }
-            $grouped[$type][] = $permission;
-        }
 
-        return $grouped;
+            // Sort groups alphabetically
+            ksort($grouped);
+            
+            return $grouped;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to group permissions: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Check if permission exists by name
+     * 
+     * @param string $name
+     * @return bool
+     */
+    public function existsByName(string $name): bool
+    {
+        try {
+            $sql = "SELECT COUNT(*) FROM permissions WHERE name = :name AND is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql, [':name' => $name]);
+            return (bool)$stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to check if permission exists: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get permission by name
+     * 
+     * @param string $name
+     * @return object|null
+     */
+    public function getByName(string $name): ?object
+    {
+        try {
+            $sql = "SELECT * FROM permissions WHERE name = :name AND is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql, [':name' => $name]);
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
+            return $result ?: null;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get permission by name: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Create a new permission if it doesn't exist
+     * 
+     * @param string $name
+     * @param string|null $description
+     * @return int Permission ID
+     */
+    public function createIfNotExists(string $name, ?string $description = null): int
+    {
+        try {
+            // Check if permission already exists
+            $permission = $this->getByName($name);
+            if ($permission) {
+                return $permission->id;
+            }
+            
+            // Create new permission
+            $permissionData = [
+                'name' => $name,
+                'description' => $description
+            ];
+            
+            return $this->create($permissionData);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to create permission: " . $e->getMessage());
+        }
     }
 
     /**
      * Validate permission data before save
      * 
      * @param array $data
+     * @param int|null $id
      * @throws InvalidArgumentException
      */
-    protected function beforeSave(array $data): void
+    protected function validate(array $data, ?int $id = null): void
     {
-        parent::validate($data, $this->id);
+        parent::validate($data, $id);
         
-        if (empty($data['name'])) {
-            throw new InvalidArgumentException('Permission name is required');
-        }
-
-        // Check for unique name
-        $sql = "SELECT COUNT(*) FROM permissions WHERE name = :name AND id != :id AND is_deleted = 0";
-        $stmt = $this->db->executeQuery($sql, [
-            ':name' => $data['name'],
-            ':id' => $data['id'] ?? 0
-        ]);
-
-        if ($stmt->fetchColumn() > 0) {
-            throw new InvalidArgumentException('Permission name must be unique');
-        }
-
         // Validate permission name format
-        if (!preg_match('/^[a-z_]+$/', $data['name'])) {
+        if (isset($data['name']) && !preg_match('/^[a-z_]+$/', $data['name'])) {
             throw new InvalidArgumentException('Permission name must contain only lowercase letters and underscores');
         }
     }

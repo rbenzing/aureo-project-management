@@ -1,4 +1,7 @@
 <?php
+// file: Middleware/ActivityMiddleware.php
+declare(strict_types=1);
+
 namespace App\Middleware;
 
 use App\Core\Database;

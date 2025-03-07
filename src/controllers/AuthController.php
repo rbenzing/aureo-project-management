@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/AuthController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -162,13 +162,14 @@ class AuthController
                 'last_name' => htmlspecialchars($data['last_name']),
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
                 'password_hash' => password_hash($data['password'], PASSWORD_ARGON2ID),
-                'role_id' => 2, // Default role for new registrations
+                'role_id' => 2, // Default role for new registrations (client role)
                 'is_active' => false
             ];
 
             $userId = $this->userModel->create($userData);
             $activationToken = $this->userModel->generateActivationToken($userId);
 
+            // This needs to be updated in your Email class to match schema
             Email::sendActivationEmail($userData['email'], $activationToken);
 
             $_SESSION['success'] = 'Registration successful. Please check your email to activate your account.';
@@ -322,6 +323,8 @@ class AuthController
                 }
 
                 $resetToken = $this->userModel->generatePasswordResetToken($user->id);
+                
+                // This needs to be updated in your Email class to match schema
                 if (!Email::sendPasswordResetEmail($email, $resetToken)) {
                     throw new RuntimeException('Failed to send password reset email');
                 }

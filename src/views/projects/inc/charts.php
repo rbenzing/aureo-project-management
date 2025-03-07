@@ -245,8 +245,8 @@ if (!empty($projects)) {
 <script>
 // Set theme-aware defaults based on dark mode state
 const isDarkMode = document.documentElement.classList.contains('dark');
-const fontColor = isDarkMode ? '#E5E7EB' : '#374151';
-const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+const fontColor = '#fff'; //isDarkMode ? '#E5E7EB' : '#374151';
+const gridColor = '#374151'; //isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
 
 Chart.defaults.color = fontColor;
 Chart.defaults.scale.grid.color = gridColor;

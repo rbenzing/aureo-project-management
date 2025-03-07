@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/ProjectController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -137,7 +137,7 @@ class ProjectController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255|min:5',
                 'description' => 'nullable|string|max:500',
-                'status_id' => 'required|integer|exists:project_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_project,id',
                 'owner_id' => 'required|integer|exists:users,id',
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
@@ -239,7 +239,7 @@ class ProjectController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:500',
-                'status_id' => 'required|integer|exists:project_statuses,id',
+                'status_id' => 'required|integer|exists:statuses_project,id',
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date'

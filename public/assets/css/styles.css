@@ -2069,11 +2069,6 @@ button,
   background-color: rgb(216 180 254 / var(--tw-bg-opacity, 1));
 }
 
-.bg-purple-400 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(192 132 252 / var(--tw-bg-opacity, 1));
-}
-
 .bg-purple-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 245 255 / var(--tw-bg-opacity, 1));
@@ -2291,10 +2286,6 @@ button,
 
 .pl-5 {
   padding-left: 1.25rem;
-}
-
-.pl-8 {
-  padding-left: 2rem;
 }
 
 .pr-10 {
@@ -2570,10 +2561,6 @@ button,
   color: rgb(133 77 14 / var(--tw-text-opacity, 1));
 }
 
-.opacity-75 {
-  opacity: 0.75;
-}
-
 .shadow {
   --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
@@ -2696,11 +2683,6 @@ button,
 .hover\:bg-gray-50:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
-}
-
-.hover\:bg-gray-600:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(75 85 99 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-gray-700:hover {

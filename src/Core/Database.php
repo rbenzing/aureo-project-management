@@ -1,4 +1,7 @@
 <?php
+// file: Core/Database.php
+declare(strict_types=1);
+
 namespace App\Core;
 
 // Ensure this view is not directly accessible via the web
@@ -147,7 +150,7 @@ class Database
      * Execute a prepared statement
      * @param string $sql SQL query
      * @param array $params Query parameters
-     * @param string $fetchMode PDO fetch mode
+     * @param int $fetchMode PDO fetch mode
      * @return \PDOStatement
      * @throws RuntimeException
      */
@@ -157,8 +160,17 @@ class Database
             $startTime = microtime(true);
             
             $stmt = $this->getConnection()->prepare($sql);
+            
+            // Ensure numeric indexing for parameters
+            $sanitizedParams = [];
+            foreach ($params as $key => $value) {
+                // Remove ':' prefix if present
+                $cleanKey = ltrim($key, ':');
+                $stmt->bindValue(':' . $cleanKey, $value);
+            }
+
             $stmt->setFetchMode($fetchMode);
-            $success = $stmt->execute($params);
+            $success = $stmt->execute();
 
             if (self::$logQueries) {
                 $this->logQuery($sql, $params, microtime(true) - $startTime);
@@ -170,6 +182,11 @@ class Database
 
             return $stmt;
         } catch (PDOException $e) {
+            // Log the full error details
+            error_log("Query Execution Error: " . $e->getMessage());
+            error_log("SQL: " . $sql);
+            error_log("Params: " . json_encode($params));
+            
             throw new RuntimeException('Query execution failed: ' . $e->getMessage());
         }
     }
@@ -201,7 +218,7 @@ class Database
 
     public function lastInsertId(): int
     {
-        return $this->getConnection()->lastInsertId();
+        return (int)$this->getConnection()->lastInsertId();
     }
 
     /**

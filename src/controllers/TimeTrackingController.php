@@ -1,5 +1,5 @@
 <?php
-
+// file: Controllers/TimeTrackingController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -123,6 +123,9 @@ class TimeTrackingController
 
             $this->taskModel->update($taskId, $taskUpdate);
 
+            // Create time entry record
+            $this->createTimeEntry($taskId, $startTime, time(), $duration, $task->is_hourly);
+
             // Clear the active timer
             unset($_SESSION['active_timer']);
 
@@ -140,5 +143,39 @@ class TimeTrackingController
             header('Location: /tasks');
             exit;
         }
+    }
+
+    /**
+     * Create a time entry record
+     * @param int $taskId
+     * @param int $startTime Unix timestamp
+     * @param int $endTime Unix timestamp
+     * @param int $duration Duration in seconds
+     * @param bool $isBillable
+     * @return int Time entry ID
+     */
+    private function createTimeEntry(int $taskId, int $startTime, int $endTime, int $duration, bool $isBillable): int
+    {
+        // Get the current user ID
+        $userId = $_SESSION['user']['id'] ?? null;
+        if (!$userId) {
+            throw new RuntimeException('User session not found');
+        }
+
+        // Format start and end times for database
+        $startDateTime = date('Y-m-d H:i:s', $startTime);
+        $endDateTime = date('Y-m-d H:i:s', $endTime);
+
+        // Create time entry record
+        $entryData = [
+            'task_id' => $taskId,
+            'user_id' => $userId,
+            'start_time' => $startDateTime,
+            'end_time' => $endDateTime,
+            'duration' => $duration,
+            'is_billable' => $isBillable ? 1 : 0,
+        ];
+
+        return $this->taskModel->createTimeEntry($entryData);
     }
 }
