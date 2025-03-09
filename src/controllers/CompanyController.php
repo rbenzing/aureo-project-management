@@ -22,7 +22,7 @@ class CompanyController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
-        $this->authMiddleware->hasPermission('manage_companies');
+        $this->authMiddleware->hasPermission('view_companies');
 
         $this->companyModel = new Company();
         $this->projectModel = new Project();
@@ -41,11 +41,21 @@ class CompanyController
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = 10;
             
-            // Use regular getAll method with pagination instead of getAllWithDetails
-            $result = $this->companyModel->getAll(['is_deleted' => 0], $page, $limit);
+            // Build filters based on search query
+            $filters = ['is_deleted' => 0];
+            if (isset($data['search']) && !empty($data['search'])) {
+                $filters['search'] = trim($data['search']);
+            }
+            
+            // Get paginated companies
+            $result = $this->companyModel->getAll($filters, $page, $limit);
             $companies = $result['records'];
             $totalCompanies = $result['total'];
             $totalPages = ceil($totalCompanies / $limit);
+            
+            // Get summary counts for the dashboard cards
+            $totalUsers = $this->userModel->count(['is_deleted' => 0]);
+            $activeProjects = $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]); // Assuming status_id 2 is "in_progress"
             
             include __DIR__ . '/../Views/Companies/index.php';
         } catch (\Exception $e) {
@@ -55,7 +65,6 @@ class CompanyController
             exit;
         }
     }
-
 
     /**
      * View company details
@@ -80,7 +89,7 @@ class CompanyController
 
             // Get company related data
             $this->companyModel->id = $id; // Set ID on model instance
-            $projects = $this->companyModel->getProjects(); // Now call without parameter
+            $projects = $this->companyModel->getProjects();
             $users = $this->companyModel->getUsers($id);
             
             include __DIR__ . '/../Views/Companies/view.php';
@@ -123,6 +132,11 @@ class CompanyController
      */
     public function create(string $requestMethod, array $data): void
     {
+        if ($requestMethod !== 'POST') {
+            $this->createForm($requestMethod, $data);
+            return;
+        }
+
         try {
             $this->authMiddleware->hasPermission('create_companies');
 
@@ -147,7 +161,7 @@ class CompanyController
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
                 'website' => isset($data['website']) ? 
                     filter_var($data['website'], FILTER_SANITIZE_URL) : null,
-                'user_id' => $_SESSION['user']['id']
+                'user_id' => $_SESSION['user']['id'] ?? null
             ];
 
             $companyId = $this->companyModel->create($companyData);
