@@ -306,19 +306,4 @@ class Company extends BaseModel
             throw new RuntimeException("Failed to remove project from company: " . $e->getMessage());
         }
     }
-    
-    /**
-     * Validate company data before save
-     * 
-     * @param array $data
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-        
-        if (isset($data['phone']) && !empty($data['phone']) && !preg_match('/^[+]?[0-9()-\s]{10,}$/', $data['phone'])) {
-            throw new InvalidArgumentException('Invalid phone number format');
-        }
-    }
 }

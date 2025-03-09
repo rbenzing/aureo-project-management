@@ -156,6 +156,11 @@ class MilestoneController
                 'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);
 
+            // If this is an epic itself, check for circular references
+            if (isset($data['milestone_type']) && $data['milestone_type'] === 'epic' && isset($id)) {
+                $this->milestoneModel->checkCircularEpicReference($id, $data['epic_id']);
+            }
+
             if ($validator->fails()) {
                 throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
@@ -260,6 +265,11 @@ class MilestoneController
                 'project_id' => 'required|integer|exists:projects,id',
                 'epic_id' => 'nullable|integer|exists:milestones,id'
             ]);
+
+            // If this is an epic itself, check for circular references
+            if (isset($data['milestone_type']) && $data['milestone_type'] === 'epic' && isset($id)) {
+                $this->milestoneModel->checkCircularEpicReference($id, $data['epic_id']);
+            }
 
             if ($validator->fails()) {
                 throw new InvalidArgumentException(implode(', ', $validator->errors()));

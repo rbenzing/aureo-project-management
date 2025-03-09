@@ -328,21 +328,4 @@ class Role extends BaseModel
             throw new RuntimeException("Failed to get roles with details: " . $e->getMessage());
         }
     }
-
-    /**
-     * Validate role data before save
-     * 
-     * @param array $data
-     * @param int|null $id
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-
-        // Validate role name format
-        if (isset($data['name']) && !preg_match('/^[a-zA-Z0-9_\- ]+$/', $data['name'])) {
-            throw new InvalidArgumentException('Role name can only contain letters, numbers, spaces, underscores and hyphens');
-        }
-    }
 }

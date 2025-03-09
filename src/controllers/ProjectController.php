@@ -286,11 +286,6 @@ class ProjectController
      */
     public function update(string $requestMethod, array $data): void
     {
-        if ($requestMethod !== 'POST') {
-            $this->editForm($requestMethod, $data);
-            return;
-        }
-
         try {
             $this->authMiddleware->hasPermission('edit_projects');
 
@@ -303,7 +298,7 @@ class ProjectController
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:500',
                 'status_id' => 'required|integer|exists:statuses_project,id',
-                'company_id' => 'required|integer|exists:companies,id',
+                'company_id' => 'nullable|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date',
                 'template_id' => 'nullable|integer|exists:project_templates,id'

@@ -26,9 +26,26 @@ class Validator
      * Available validation rules
      */
     private const AVAILABLE_RULES = [
-        'required', 'string', 'email', 'unique', 'max', 'min',
-        'integer', 'boolean', 'in', 'date', 'nullable', 'same',
-        'alpha', 'alphanumeric', 'url', 'phone', 'json', 'array'
+        'required',
+        'string',
+        'email',
+        'unique',
+        'max',
+        'min',
+        'integer',
+        'boolean',
+        'in',
+        'date',
+        'nullable',
+        'same',
+        'alpha',
+        'alphanumeric',
+        'url',
+        'phone',
+        'json',
+        'array',
+        'exists',
+        'after'
     ];
 
     /**
@@ -51,7 +68,9 @@ class Validator
         'url' => ':field must be a valid URL.',
         'phone' => ':field must be a valid phone number.',
         'json' => ':field must be valid JSON.',
-        'array' => ':field must be an array.'
+        'array' => ':field must be an array.',
+        'exists' => ':field does not exist in the database.',
+        'after' => ':field must be a date after :param.'
     ];
 
     public function __construct(array $data, array $rules)
@@ -88,13 +107,16 @@ class Validator
     {
         $this->errors = [];
         foreach ($this->rules as $field => $rules) {
+
             foreach ($rules as $rule) {
                 if (!in_array($rule['name'], self::AVAILABLE_RULES)) {
+
                     throw new InvalidArgumentException("Unknown validation rule: {$rule['name']}");
                 }
                 $this->validateField($field, $rule);
             }
         }
+
         return !empty($this->errors);
     }
 
@@ -188,7 +210,7 @@ class Validator
         if (!is_null($value) && !is_string($value)) {
             $this->addError($field, 'string');
         }
-        $this->sanitizedData[$field] = is_string($value) ? 
+        $this->sanitizedData[$field] = is_string($value) ?
             htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8') : $value;
     }
 
@@ -210,10 +232,16 @@ class Validator
         }
 
         [$table, $column] = $parameters;
+
+        // Validate table and column names
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table) || !preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            throw new InvalidArgumentException("Invalid table or column name in unique validation");
+        }
+
         $excludeId = $this->data['id'] ?? null;
 
         try {
-            $query = "SELECT COUNT(*) FROM $table WHERE $column = :value";
+            $query = "SELECT COUNT(*) FROM `$table` WHERE `$column` = :value";
             $params = [':value' => $value];
 
             if ($excludeId) {
@@ -329,6 +357,52 @@ class Validator
     {
         if (!is_null($value) && !is_array($value)) {
             $this->addError($field, 'array');
+        }
+    }
+
+    private function validateExists(string $field, $value, array $parameters): void
+    {
+        if (empty($value) || empty($parameters)) {
+            return;
+        }
+
+        [$table, $column] = $parameters;
+
+        // Validate table and column names
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table) || !preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            throw new InvalidArgumentException("Invalid table or column name in unique validation");
+        }
+
+        try {
+            $query = "SELECT COUNT(*) as cnt FROM $table WHERE $column = :value";
+            $params = [':value' => $value];
+            $stmt = $this->db->executeQuery($query, $params);
+            if (!$stmt->fetchColumn()) {
+                $this->addError($field, 'exists');
+            }
+        } catch (PDOException $e) {
+            throw new PDOException("Database error in exists validation: " . $e->getMessage());
+        }
+    }
+
+    private function validateAfter(string $field, $value, array $parameters): void
+    {
+        if (empty($value) || empty($parameters)) {
+            return;
+        }
+
+        // If the parameter is a field name, get the date from that field
+        $compareValue = $parameters[0];
+        if (isset($this->data[$compareValue])) {
+            $compareValue = $this->data[$compareValue];
+        }
+
+        // Convert both to timestamps for comparison
+        $date1 = strtotime($value);
+        $date2 = strtotime($compareValue);
+
+        if (!$date1 || !$date2 || $date1 <= $date2) {
+            $this->addError($field, 'after', $parameters);
         }
     }
 }

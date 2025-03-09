@@ -68,6 +68,8 @@ class SessionMiddleware
             self::$db = Database::getInstance();
         }
 
+        $prevSessionId = session_id();
+
         // Regenerate session ID on login to prevent session fixation
         self::regenerateSessionId();
 
@@ -107,6 +109,15 @@ class SessionMiddleware
                 ':ip_address' => $ipAddress,
                 ':user_agent' => $userAgent,
                 ':expires_at' => $expiresAt,
+            ]
+        );
+
+        // update CSRF session ID
+        self::$db->executeQuery(
+            "UPDATE csrf_tokens SET session_id = :id WHERE session_id = :prev_id",
+            [
+                ':id' => $sessionId,
+                ':prev_id' => $prevSessionId
             ]
         );
     }

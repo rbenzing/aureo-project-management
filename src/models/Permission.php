@@ -236,21 +236,4 @@ class Permission extends BaseModel
             throw new RuntimeException("Failed to bulk create permissions: " . $e->getMessage());
         }
     }
-
-    /**
-     * Validate permission data before save
-     * 
-     * @param array $data
-     * @param int|null $id
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-        
-        // Validate permission name format
-        if (isset($data['name']) && !preg_match('/^[a-z_]+$/', $data['name'])) {
-            throw new InvalidArgumentException('Permission name must contain only lowercase letters and underscores');
-        }
-    }
 }

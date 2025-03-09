@@ -363,59 +363,13 @@ class Milestone extends BaseModel
     }
 
     /**
-     * Validate milestone data before save
-     * 
-     * @param array $data
-     * @param int|null $id
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-
-        if (isset($data['start_date']) && isset($data['due_date']) && !empty($data['start_date']) && !empty($data['due_date'])) {
-            if (strtotime($data['due_date']) < strtotime($data['start_date'])) {
-                throw new InvalidArgumentException('Due date cannot be earlier than start date');
-            }
-        }
-
-        if (isset($data['complete_date']) && !empty($data['complete_date'])) {
-            if (isset($data['due_date']) && !empty($data['due_date']) && strtotime($data['complete_date']) > strtotime($data['due_date'])) {
-                throw new InvalidArgumentException('Complete date cannot be later than due date');
-            }
-        }
-
-        // Validate epic-milestone relationship to prevent circular references
-        if (isset($data['epic_id']) && !empty($data['epic_id'])) {
-            // Don't allow self-reference
-            if (isset($id) && $data['epic_id'] == $id) {
-                throw new InvalidArgumentException('A milestone cannot be its own epic');
-            }
-
-            // Check if it's a valid epic
-            $sql = "SELECT milestone_type FROM milestones WHERE id = :epic_id AND is_deleted = 0";
-            $stmt = $this->db->executeQuery($sql, [':epic_id' => $data['epic_id']]);
-            $epic = $stmt->fetch(PDO::FETCH_OBJ);
-
-            if (!$epic || $epic->milestone_type !== 'epic') {
-                throw new InvalidArgumentException('Invalid epic ID');
-            }
-
-            // If this is an epic itself, check for circular references
-            if (isset($data['milestone_type']) && $data['milestone_type'] === 'epic' && isset($id)) {
-                $this->checkCircularEpicReference($id, $data['epic_id']);
-            }
-        }
-    }
-
-    /**
      * Check for circular epic references
      * 
      * @param int $currentId
      * @param int $newParentId
      * @throws InvalidArgumentException
      */
-    private function checkCircularEpicReference(int $currentId, int $newParentId): void
+    public function checkCircularEpicReference(int $currentId, int $newParentId): void
     {
         // Check if any child milestones of current milestone have the new parent as a child
         $sql = "WITH RECURSIVE milestone_hierarchy AS (

@@ -78,7 +78,7 @@ unset($_SESSION['form_data']);
                             <select id="company_id" name="company_id" required
                                 class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Select a company</option>
-                                <?php foreach ($companies as $company): ?>
+                                <?php foreach ($companies['records'] as $company): ?>
                                     <option value="<?php echo $company->id; ?>"
                                         <?php echo (isset($formData['company_id']) ? $formData['company_id'] : $project->company_id) == $company->id ? ' selected' : ''; ?>>
                                         <?php echo htmlspecialchars($company->name); ?>

@@ -464,49 +464,4 @@ class Project extends BaseModel
             throw new RuntimeException("Error fetching recent tasks: " . $e->getMessage());
         }
     }
-
-    /**
-     * Validate project data before save
-     * 
-     * @param array $data
-     * @param int|null $id
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-
-        // Validate dates
-        if (
-            isset($data['start_date']) && isset($data['end_date']) &&
-            !empty($data['start_date']) && !empty($data['end_date'])
-        ) {
-            if (strtotime($data['end_date']) < strtotime($data['start_date'])) {
-                throw new InvalidArgumentException('End date cannot be earlier than start date');
-            }
-        }
-
-        // Validate name uniqueness within a company if company_id is provided
-        if (isset($data['name']) && isset($data['company_id'])) {
-            $sql = "SELECT COUNT(*) FROM projects 
-                    WHERE name = :name 
-                    AND company_id = :company_id 
-                    AND is_deleted = 0";
-
-            $params = [
-                ':name' => $data['name'],
-                ':company_id' => $data['company_id']
-            ];
-
-            if ($id !== null) {
-                $sql .= " AND id != :id";
-                $params[':id'] = $id;
-            }
-
-            $stmt = $this->db->executeQuery($sql, $params);
-            if ($stmt->fetchColumn() > 0) {
-                throw new InvalidArgumentException('A project with this name already exists in this company');
-            }
-        }
-    }
 }

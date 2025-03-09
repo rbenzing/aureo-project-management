@@ -579,20 +579,4 @@ class User extends BaseModel
             throw new RuntimeException("Failed to remove project assignment: " . $e->getMessage());
         }
     }
-
-    /**
-     * Validate user data before save
-     * 
-     * @param array $data
-     * @param int|null $id
-     * @throws InvalidArgumentException
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        parent::validate($data, $id);
-        
-        if (isset($data['phone']) && !empty($data['phone']) && !preg_match('/^[+]?[0-9()-\s]{10,}$/', $data['phone'])) {
-            throw new InvalidArgumentException('Invalid phone number format');
-        }
-    }
 }

@@ -15,7 +15,7 @@ abstract class BaseModel
     protected string $table;
     protected string $primaryKey = 'id';
     protected array $fillable = [];
-    protected array $guarded = ['id', 'created_at', 'updated_at'];
+    protected array $guarded = ['id', 'guid', 'created_at', 'updated_at'];
     protected array $hidden = [];
     protected array $dates = ['created_at', 'updated_at'];
     protected bool $usesSoftDeletes = true;
@@ -120,7 +120,6 @@ abstract class BaseModel
     public function create(array $data): int|false
     {
         try {
-            $this->validate($data);
             $data = $this->prepareSaveData($data);
 
             $fields = array_keys($data);
@@ -153,8 +152,7 @@ abstract class BaseModel
      */
     public function update(int $id, array $data): bool
     {
-        try {
-            $this->validate($data, $id);
+        try {            
             $data = $this->prepareSaveData($data);
 
             if (empty($data)) {
@@ -169,6 +167,8 @@ abstract class BaseModel
                 $this->primaryKey,
                 $this->usesSoftDeletes ? " AND is_deleted = 0" : ""
             );
+
+
 
             $params = array_combine(
                 array_map(fn($field) => ":$field", array_keys($data)),
@@ -351,96 +351,6 @@ abstract class BaseModel
             unset($record->$attribute);
         }
         return $record;
-    }
-
-    /**
-     * Basic validation method - can be overridden by child classes
-     * 
-     * @param array $data Data to validate
-     * @param int|null $id Record ID for updates
-     * @throws InvalidArgumentException If validation fails
-     */
-    protected function validate(array $data, ?int $id = null): void
-    {
-        foreach ($this->validationRules as $field => $rules) {
-            if (!isset($data[$field]) && in_array('required', $rules)) {
-                throw new InvalidArgumentException("The $field field is required");
-            }
-
-            if (isset($data[$field])) {
-                $value = $data[$field];
-
-                foreach ($rules as $rule) {
-                    switch ($rule) {
-                        case 'email':
-                            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                                throw new InvalidArgumentException("Invalid email format for $field");
-                            }
-                            break;
-
-                        case 'url':
-                            if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                                throw new InvalidArgumentException("Invalid URL format for $field");
-                            }
-                            break;
-
-                        case 'unique':
-                            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE $field = :value";
-                            $params = [':value' => $value];
-
-                            if ($id !== null) {
-                                $sql .= " AND {$this->primaryKey} != :id";
-                                $params[':id'] = $id;
-                            }
-
-                            if ($this->usesSoftDeletes) {
-                                $sql .= " AND is_deleted = 0";
-                            }
-
-                            $stmt = $this->db->executeQuery($sql, $params);
-                            if ($stmt->fetchColumn() > 0) {
-                                throw new InvalidArgumentException("The $field must be unique");
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Check if a record exists
-     * 
-     * @param array $conditions Conditions to check
-     * @return bool Whether the record exists
-     */
-    protected function exists(array $conditions): bool
-    {
-        $whereConditions = [];
-        $params = [];
-
-        foreach ($conditions as $field => $value) {
-            // Validate column names
-            if (!preg_match('/^[a-zA-Z0-9_]+$/', $field)) {
-                throw new InvalidArgumentException("Invalid column name: {$field}");
-            }
-
-            $whereConditions[] = "$field = :$field";
-            $params[":$field"] = $value;
-        }
-
-        if ($this->usesSoftDeletes) {
-            $whereConditions[] = "is_deleted = 0";
-        }
-
-        $sql = sprintf(
-            "SELECT COUNT(*) FROM %s WHERE %s",
-            $this->table,
-            implode(' AND ', $whereConditions)
-        );
-
-        $stmt = $this->db->executeQuery($sql, $params);
-        return (bool) $stmt->fetchColumn();
     }
 
     /**

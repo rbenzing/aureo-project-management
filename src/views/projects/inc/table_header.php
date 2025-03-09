@@ -255,10 +255,13 @@ $statusOptions = [
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
             </svg>
         </button>
-        <div class="accordion-dropdown-menu hidden absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10">
+        <div class="accordion-dropdown-menu hidden absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
             <div class="py-1">         
-                <button id="toggle-all-projects" type="button" class="sort-dropdown-toggle w-full flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                <button id="toggle-all-projects" type="button" class="w-full flex items-center justify-between px-4 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
                     <span class="toggle-all-text">Collapse All</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                    </svg>
                 </button>
             </div>
         </div>
