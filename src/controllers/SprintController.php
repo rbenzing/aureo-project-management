@@ -8,7 +8,6 @@ use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Sprint;
 use App\Models\Project;
-use App\Models\Role;
 use App\Models\Task;
 use App\Utils\Validator;
 use RuntimeException;
@@ -20,7 +19,6 @@ class SprintController
     private Sprint $sprintModel;
     private Project $projectModel;
     private Task $taskModel;
-    private Role $roleModel;
 
     public function __construct()
     {
@@ -29,7 +27,6 @@ class SprintController
         $this->sprintModel = new Sprint();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
-        $this->roleModel = new Role();
     }
 
     /**
@@ -41,26 +38,26 @@ class SprintController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_roles');
-            
+            $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            
-            // Use getAllWithDetails to get role information
-            $results = $this->roleModel->getAllWithDetails($page, $limit);
-            $roles = $results['records'];
-            $totalRoles = $results['total'];
-            $totalPages = ceil($totalRoles / $limit);
-            
-            // Fetch permissions for each role
-            foreach ($roles as &$role) {
-                $role->permissions = $this->roleModel->getPermissions($role->id);
+
+            if (!empty($project_id)) {
+                $project = $this->projectModel->findWithDetails($project_id);
+            } else {
+                $projects = $this->projectModel->getAllWithDetails($limit, $page);
             }
-            
-            include __DIR__ . '/../Views/Roles/index.php';
+            $sprints = $this->sprintModel->getAllWithTasks($limit, $page);
+
+            include __DIR__ . '/../Views/Sprints/index.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /sprints');
+            exit;
         } catch (\Exception $e) {
-            error_log("Exception in RoleController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching roles.';
+            error_log("Exception in SprintController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching sprints.';
             header('Location: /dashboard');
             exit;
         }
