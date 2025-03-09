@@ -115,23 +115,35 @@ try {
     $router->get('sprints/create', ['controller' => 'Sprint', 'action' => 'createForm']);
     $router->post('sprints/create', ['controller' => 'Sprint', 'action' => 'create']);
     $router->get('sprints/edit/:id', ['controller' => 'Sprint', 'action' => 'editForm', 'params' => ['id']]);
-    $router->post('sprints/update/:id', ['controller' => 'Sprint', 'action' => 'update', 'params' => ['id']]);    $router->post('sprints/delete/:id', ['controller' => 'Sprint', 'action' => 'delete', 'params' => ['id']]);
+    $router->post('sprints/update/:id', ['controller' => 'Sprint', 'action' => 'update', 'params' => ['id']]);
+    $router->post('sprints/delete/:id', ['controller' => 'Sprint', 'action' => 'delete', 'params' => ['id']]);
     $router->post('sprints/start/:id', ['controller' => 'Sprint', 'action' => 'startSprint', 'params' => ['id']]);
     $router->post('sprints/complete/:id', ['controller' => 'Sprint', 'action' => 'completeSprint', 'params' => ['id']]);
     $router->post('sprints/delay/:id', ['controller' => 'Sprint', 'action' => 'delaySprint', 'params' => ['id']]);
     $router->post('sprints/cancel/:id', ['controller' => 'Sprint', 'action' => 'cancelSprint', 'params' => ['id']]);
     $router->post('sprints/add-tasks/:id', ['controller' => 'Sprint', 'action' => 'addTasks', 'params' => ['id']]);
 
+    // Project Template Routes
+    $router->get('project-templates', ['controller' => 'ProjectTemplate', 'action' => 'index']);
+    $router->get('project-templates/page/:page', ['controller' => 'ProjectTemplate', 'action' => 'index', 'params' => ['page']]);
+    $router->get('project-templates/view/:id', ['controller' => 'ProjectTemplate', 'action' => 'view', 'params' => ['id']]);
+    $router->get('project-templates/create', ['controller' => 'ProjectTemplate', 'action' => 'createForm']);
+    $router->post('project-templates/create', ['controller' => 'ProjectTemplate', 'action' => 'create']);
+    $router->get('project-templates/edit/:id', ['controller' => 'ProjectTemplate', 'action' => 'editForm', 'params' => ['id']]);
+    $router->post('project-templates/update', ['controller' => 'ProjectTemplate', 'action' => 'update']);
+    $router->post('project-templates/delete/:id', ['controller' => 'ProjectTemplate', 'action' => 'delete', 'params' => ['id']]);
+    $router->get('project-templates/get/:id', ['controller' => 'ProjectTemplate', 'action' => 'getTemplate', 'params' => ['id']]);
+
     // Get request URI and method
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $segments = explode('/', ltrim($uri, '/'));
-    
+
     // Dispatch Request with proper error handling
     $router->dispatch(
-        $_SERVER['REQUEST_METHOD'], 
+        $_SERVER['REQUEST_METHOD'],
         $segments
     );
-} catch(\PDOException $e) {
+} catch (\PDOException $e) {
     // Database errors
     error_log($e->getMessage());
     http_response_code(500);

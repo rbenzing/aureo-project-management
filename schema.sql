@@ -699,6 +699,29 @@ CREATE TABLE IF NOT EXISTS `task_history` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for project templates
+--
+
+DROP TABLE IF EXISTS `project_templates`;
+CREATE TABLE IF NOT EXISTS `project_templates` (
+  `id` int(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `guid` uuid NOT NULL DEFAULT uuid(),
+  `name` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `company_id` int(20) UNSIGNED DEFAULT NULL COMMENT 'Can be organization-specific or null for global',
+  `is_default` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+  `is_deleted` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `guid` (`guid`),
+  KEY `fk_templates_company` (`company_id`),
+  CONSTRAINT `fk_templates_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Add indexes for searching and performance
 --
 

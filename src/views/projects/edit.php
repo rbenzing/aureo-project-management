@@ -17,12 +17,14 @@ unset($_SESSION['form_data']);
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Project - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
     <!-- Header -->
@@ -121,6 +123,30 @@ unset($_SESSION['form_data']);
                     </div>
                 </div>
 
+                <!-- Template Selection -->
+                <div>
+                    <label for="template_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description Template</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <select id="template_id" name="template_id"
+                            class="block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">Select a template or keep current description</option>
+                            <?php
+                            // Load templates
+                            if (isset($templates) && !empty($templates)) {
+                                foreach ($templates as $template) {
+                                    echo '<option value="' . $template->id . '"';
+                                    if (isset($formData['template_id']) && $formData['template_id'] == $template->id) {
+                                        echo ' selected';
+                                    }
+                                    echo '>' . htmlspecialchars($template->name) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Selecting a template will replace your current description</p>
+                </div>
+
                 <!-- Description -->
                 <div>
                     <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
@@ -132,21 +158,21 @@ unset($_SESSION['form_data']);
 
         <!-- Danger Zone -->
         <?php if (isset($_SESSION['user']['permissions']) && in_array('delete_projects', $_SESSION['user']['permissions'])): ?>
-        <div class="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h3 class="text-lg font-medium text-red-600 dark:text-red-400">Danger Zone</h3>
-            <div class="mt-4 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-700 dark:text-gray-300">Delete this project</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Once deleted, this project and all its data will be permanently removed.</p>
+            <div class="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-red-600 dark:text-red-400">Danger Zone</h3>
+                <div class="mt-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Delete this project</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Once deleted, this project and all its data will be permanently removed.</p>
+                    </div>
+                    <form method="POST" action="/projects/delete/<?php echo $project->id; ?>" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Delete Project
+                        </button>
+                    </form>
                 </div>
-                <form method="POST" action="/projects/delete/<?php echo $project->id; ?>" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        Delete Project
-                    </button>
-                </form>
             </div>
-        </div>
         <?php endif; ?>
     </main>
 
@@ -158,7 +184,7 @@ unset($_SESSION['form_data']);
         document.addEventListener('DOMContentLoaded', function() {
             const startDateInput = document.getElementById('start_date');
             const endDateInput = document.getElementById('end_date');
-            
+
             function validateDates() {
                 if (startDateInput.value && endDateInput.value) {
                     if (new Date(endDateInput.value) < new Date(startDateInput.value)) {
@@ -169,9 +195,9 @@ unset($_SESSION['form_data']);
                 }
                 return true;
             }
-            
+
             endDateInput.addEventListener('change', validateDates);
-            
+
             // Also validate before form submission
             document.getElementById('editProjectForm').addEventListener('submit', function(e) {
                 if (!validateDates()) {
@@ -179,6 +205,45 @@ unset($_SESSION['form_data']);
                 }
             });
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateSelect = document.getElementById('template_id');
+            const descriptionTextarea = document.getElementById('description');
+
+            if (templateSelect && descriptionTextarea) {
+                templateSelect.addEventListener('change', function() {
+                    const templateId = this.value;
+
+                    // If no template selected, do nothing
+                    if (!templateId) {
+                        return;
+                    }
+
+                    // If description already has content, confirm before overwriting
+                    if (descriptionTextarea.value.trim() !== '' &&
+                        !confirm('This will replace your current description. Continue?')) {
+                        // Reset the select if user cancels
+                        templateSelect.value = '';
+                        return;
+                    }
+
+                    // Fetch template content
+                    fetch(`/project-templates/get/${templateId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.template) {
+                                descriptionTextarea.value = data.template.description;
+                            } else {
+                                console.error('Error loading template:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching template:', error);
+                        });
+                });
+            }
+        });
     </script>
 </body>
+
 </html>

@@ -42,7 +42,7 @@ if (!defined('BASE_PATH')) {
                     <?php if (!empty($user->roles)): ?>
                         <ul class="list-disc pl-5">
                             <?php foreach ($user->roles as $role): ?>
-                                <li><?= htmlspecialchars($role->name) ?></li>
+                                <li><?= htmlspecialchars($role) ?></li>
                             <?php endforeach; ?>
                         </ul>
                     <?php else: ?>
@@ -54,7 +54,7 @@ if (!defined('BASE_PATH')) {
 
         <!-- Actions -->
         <div class="mt-6 flex gap-4">
-            <a href="/edit_user?id=<?= htmlspecialchars($user->id) ?>" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
+            <a href="/edit_user?id=<?= htmlspecialchars((string)$user->id) ?>" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Edit</a>
             <a href="/users" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Back to Users</a>
         </div>
     </main>

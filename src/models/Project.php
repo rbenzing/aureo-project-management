@@ -242,7 +242,7 @@ class Project extends BaseModel
     }
 
     /**
-     * Get project tasks
+     * Get project tasks with assignee details
      * 
      * @param int $projectId
      * @return array
@@ -251,27 +251,28 @@ class Project extends BaseModel
     {
         try {
             $sql = "SELECT 
-                    t.*,
-                    ts.name AS status_name,
-                    u.first_name AS assignee_firstname,
-                    u.last_name AS assignee_lastname
-                FROM 
-                    tasks t
-                LEFT JOIN 
-                    statuses_task ts ON t.status_id = ts.id
-                LEFT JOIN 
-                    users u ON u.id = t.assigned_to
-                WHERE 
-                    t.is_subtask = 0 
-                    AND t.project_id = :project_id 
-                    AND t.is_deleted = 0
-                ORDER BY
-                    t.priority DESC, t.due_date ASC";
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM 
+                tasks t
+            LEFT JOIN 
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN 
+                users u ON t.assigned_to = u.id
+            WHERE 
+                t.is_subtask = 0 
+                AND t.project_id = :project_id 
+                AND t.is_deleted = 0
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get project tasks: " . $e->getMessage());
+            error_log("Failed to get project tasks with assignees: " . $e->getMessage());
+            return [];
         }
     }
 
@@ -378,6 +379,50 @@ class Project extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get project team members: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Transform project name into a project key code format
+     * 
+     * @param string $name Project name
+     * @return string Key code (e.g. "Project Management System" -> "PMS")
+     */
+    public function transformKeyCodeFormat(string $name): string
+    {
+        // Remove any non-alphanumeric characters and split by spaces
+        $words = preg_split('/[^a-zA-Z0-9]/', $name, -1, PREG_SPLIT_NO_EMPTY);
+
+        // Simple project code - take first letter of each word and uppercase it
+        $code = '';
+        foreach ($words as $word) {
+            if (!empty($word)) {
+                $code .= strtoupper(substr($word, 0, 1));
+            }
+        }
+
+        // If code is empty or less than 2 chars, use first 3 letters of first word
+        if (strlen($code) < 2 && !empty($words[0])) {
+            $code = strtoupper(substr($words[0], 0, min(3, strlen($words[0]))));
+        }
+
+        // Ensure code is valid (fallback to "PRJ" if empty)
+        return !empty($code) ? $code : 'PRJ';
+    }
+
+    /**
+     * Get all project statuses
+     * 
+     * @return array
+     */
+    public function getAllStatuses(): array
+    {
+        try {
+            $sql = "SELECT * FROM statuses_project WHERE is_deleted = 0";
+            $stmt = $this->db->executeQuery($sql);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to fetch project statuses: " . $e->getMessage());
         }
     }
 

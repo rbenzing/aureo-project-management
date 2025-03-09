@@ -14,7 +14,7 @@ $currentView = isset($_GET['by']) ? htmlspecialchars($_GET['by']) : 'tasks';
 $currentStatus = isset($_GET['status_id']) ? (int)$_GET['status_id'] : '';
 $currentCompany = isset($_GET['company_id']) ? (int)$_GET['company_id'] : '';
 $currentSort = isset($_GET['sort']) ? htmlspecialchars($_GET['sort']) : 'updated_at';
-$currentDir = isset($_GET['dir']) ? htmlspecialchars($_GET['dir']) : 'desc';
+$currentDir = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
 
 // Map status IDs to names
 $statusOptions = [
@@ -205,7 +205,7 @@ $statusOptions = [
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
                 </svg>
-                Sort
+                Sort: <?= ucfirst($currentSort) ?> (<?= $currentDir ?>)
                 <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                 </svg>

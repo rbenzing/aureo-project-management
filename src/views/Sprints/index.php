@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include helper functions
-require_once __DIR__ . '/inc/helpers.php';
+include_once __DIR__ . '/inc/helpers.php';
 ?>
 
 <!DOCTYPE html>

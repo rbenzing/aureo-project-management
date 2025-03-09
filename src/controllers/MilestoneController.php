@@ -35,14 +35,14 @@ class MilestoneController
     {
         try {
             $this->authMiddleware->hasPermission('view_milestones');
-            
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            
+
             $milestones = $this->milestoneModel->getAllWithProgress($limit, $page);
             $totalMilestones = $this->milestoneModel->count(['is_deleted' => 0]);
             $totalPages = ceil($totalMilestones / $limit);
-            
+
             include __DIR__ . '/../Views/Milestones/index.php';
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::index: " . $e->getMessage());
@@ -68,7 +68,7 @@ class MilestoneController
                 throw new InvalidArgumentException('Invalid milestone ID');
             }
 
-            $milestone = $this->milestoneModel->find($id);
+            $milestone = $this->milestoneModel->findWithDetails($id);
             if (!$milestone || $milestone->is_deleted) {
                 throw new InvalidArgumentException('Milestone not found');
             }
@@ -78,11 +78,20 @@ class MilestoneController
                 throw new RuntimeException('Associated project not found');
             }
 
+            // Initialize optional variables
+            $epic = null;
+            $relatedMilestones = [];
+
+            // If this is a milestone under an epic, fetch the epic
             if ($milestone->epic_id) {
                 $epic = $this->milestoneModel->find($milestone->epic_id);
-                $relatedMilestones = $this->milestoneModel->getEpicMilestones($milestone->epic_id);
             }
-            
+
+            // If this is an epic, fetch its milestones
+            if ($milestone->milestone_type === 'epic') {
+                $relatedMilestones = $this->milestoneModel->getEpicMilestones($id);
+            }
+
             include __DIR__ . '/../Views/Milestones/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -106,11 +115,11 @@ class MilestoneController
     {
         try {
             $this->authMiddleware->hasPermission('create_milestones');
-            
+
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $epics = $this->milestoneModel->getProjectEpics($data['project_id'] ?? 0);
-            
+
             include __DIR__ . '/../Views/Milestones/create.php';
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::createForm: " . $e->getMessage());
@@ -153,14 +162,14 @@ class MilestoneController
 
             $milestoneData = [
                 'title' => htmlspecialchars($data['title']),
-                'description' => isset($data['description']) ? 
+                'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'milestone_type' => $data['milestone_type'],
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
-                'epic_id' => isset($data['epic_id']) ? 
+                'epic_id' => isset($data['epic_id']) ?
                     filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
             ];
 
@@ -169,7 +178,6 @@ class MilestoneController
             $_SESSION['success'] = 'Milestone created successfully.';
             header('Location: /milestones/view/' . $milestoneId);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -260,14 +268,14 @@ class MilestoneController
             $milestoneData = [
                 'id' => $id,
                 'title' => htmlspecialchars($data['title']),
-                'description' => isset($data['description']) ? 
+                'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'milestone_type' => $data['milestone_type'],
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
-                'epic_id' => isset($data['epic_id']) ? 
+                'epic_id' => isset($data['epic_id']) ?
                     filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
             ];
 
@@ -281,7 +289,6 @@ class MilestoneController
             $_SESSION['success'] = 'Milestone updated successfully.';
             header('Location: /milestones/view/' . $id);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -335,7 +342,6 @@ class MilestoneController
             $_SESSION['success'] = 'Milestone deleted successfully.';
             header('Location: /milestones');
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /milestones');

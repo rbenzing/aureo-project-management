@@ -64,7 +64,7 @@ if (!defined('BASE_PATH')) {
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
-                                            <a href="/users/view/<?= htmlspecialchars($user->id) ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                            <a href="/users/view/<?= htmlspecialchars((string)$user->id) ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                                 <?= htmlspecialchars($user->first_name) ?> <?= htmlspecialchars($user->last_name) ?>
                                             </a>
                                         </div>
@@ -93,19 +93,19 @@ if (!defined('BASE_PATH')) {
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex justify-end space-x-3">
                                         <a 
-                                            href="/users/view/<?= htmlspecialchars($user->id) ?>" 
+                                            href="/users/view/<?= htmlspecialchars((string)$user->id) ?>" 
                                             class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                                         >
                                             View
                                         </a>
                                         <a 
-                                            href="/users/edit/<?= htmlspecialchars($user->id) ?>" 
+                                            href="/users/edit/<?= htmlspecialchars((string)$user->id) ?>" 
                                             class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                                         >
                                             Edit
                                         </a>
                                         <form 
-                                            action="/users/delete/<?= htmlspecialchars($user->id) ?>" 
+                                            action="/users/delete/<?= htmlspecialchars((string)$user->id) ?>" 
                                             method="POST" 
                                             onsubmit="return confirm('Are you sure you want to delete this user?');"
                                             class="inline"

@@ -106,44 +106,48 @@ class Email {
     /**
      * Send an account activation email.
      *
-     * @param object $user The user object containing email, first_name, and activation_token.
+     * @param string $email The user's email
+     * @param string $activationToken The activation token
      * @return bool Returns true if the email was sent successfully, false otherwise.
      */
-    public static function sendActivationEmail($user) {
-        $email = new self(); // Create an instance of the Email class
+    public static function sendActivationEmail(string $email, string $activationToken): bool
+    {
+        $emailInstance = new self(); // Create an instance of the Email class
 
         $domain = Config::get('domain');
         $scheme = Config::get('scheme');
-        $activationLink = "$scheme://$domain/activate?token=" . urlencode($user->activation_token);
+        $activationLink = "$scheme://$domain/activate/{$activationToken}";
         
         $subject = "Activate Your Account";
         
-        $body = "<h1>Welcome, {$user->first_name}!</h1>
+        $body = "<h1>Welcome!</h1>
             <p>Please click the link below to activate your account:</p>
             <a href='$activationLink'>$activationLink</a>";
         
-        return $email->sendHtml($user->email, $subject, $body);
+        return $emailInstance->sendHtml($email, $subject, $body);
     }
 
     /**
      * Send a password reset email.
      *
-     * @param object $user The user object containing email and first_name.
+     * @param string $email The user's email
+     * @param string $resetToken The password reset token
      * @return bool Returns true if the email was sent successfully, false otherwise.
      */
-    public static function sendPasswordResetEmail($user) {
-        $email = new self(); // Create an instance of the Email class
+    public static function sendPasswordResetEmail(string $email, string $resetToken): bool
+    {
+        $emailInstance = new self(); // Create an instance of the Email class
 
         $domain = Config::get('domain');
         $scheme = Config::get('scheme');
-        $resetLink = "$scheme://$domain/reset-password?token=" . urlencode($user->reset_password_token);
+        $resetLink = "$scheme://$domain/reset-password/{$resetToken}";
 
         $subject = "Password Reset Request";
 
-        $body = "<h1>Hello, {$user->first_name}!</h1>
+        $body = "<h1>Password Reset</h1>
             <p>You requested a password reset. Please click the link below to reset your password:</p>
             <a href='$resetLink'>$resetLink</a>";
 
-        return $email->sendHtml($user->email, $subject, $body);
+        return $emailInstance->sendHtml($email, $subject, $body);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use PDO;
+use App\Utils\Time;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -113,9 +114,9 @@ class Task extends BaseModel
                 $task->metrics = $this->calculateTaskMetrics($task);
 
                 // Format times for display
-                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
-                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
-                $task->formatted_billable_time = $this->formatTimeInSeconds($task->billable_time);
+                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
+                $task->formatted_billable_time = Time::formatSeconds($task->billable_time);
             }
 
             return $task ?: null;
@@ -154,9 +155,9 @@ class Task extends BaseModel
 
             // Format times for display
             foreach ($tasks as $task) {
-                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
-                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
-                $task->formatted_billable_time = $this->formatTimeInSeconds($task->billable_time);
+                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
+                $task->formatted_billable_time = Time::formatSeconds($task->billable_time);
             }
 
             return $tasks ?: null;
@@ -201,8 +202,8 @@ class Task extends BaseModel
 
             // Format times for display
             foreach ($tasks as $task) {
-                $task->formatted_estimated_time = $this->formatTimeInSeconds($task->estimated_time);
-                $task->formatted_time_spent = $this->formatTimeInSeconds($task->time_spent);
+                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
             }
 
             return $tasks;
@@ -275,8 +276,8 @@ class Task extends BaseModel
 
             // Format times for subtasks
             foreach ($subtasks as $subtask) {
-                $subtask->formatted_time_spent = $this->formatTimeInSeconds($subtask->time_spent);
-                $subtask->formatted_estimated_time = $this->formatTimeInSeconds($subtask->estimated_time);
+                $subtask->formatted_time_spent = Time::formatSeconds($subtask->time_spent);
+                $subtask->formatted_estimated_time = Time::formatSeconds($subtask->estimated_time);
             }
 
             return $subtasks;
@@ -355,7 +356,7 @@ class Task extends BaseModel
 
             // Format duration
             foreach ($entries as $entry) {
-                $entry->formatted_duration = $this->formatTimeInSeconds($entry->duration);
+                $entry->formatted_duration = Time::formatSeconds($entry->duration);
             }
 
             return $entries;
@@ -631,24 +632,6 @@ class Task extends BaseModel
     }
 
     /**
-     * Format time in seconds to human-readable format
-     * 
-     * @param int|null $seconds
-     * @return string
-     */
-    private function formatTimeInSeconds(?int $seconds): string
-    {
-        if ($seconds === null || $seconds == 0) {
-            return '0h 0m';
-        }
-
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-
-        return "{$hours}h {$minutes}m";
-    }
-
-    /**
      * Organize tasks by status
      * 
      * @param array $tasks
@@ -713,8 +696,8 @@ class Task extends BaseModel
             : 0;
 
         // Deadline metrics
-        $isOverdue = $dueDate && $dueDate < $now && $task->status_id != 6; // 6 = completed status
-        $daysUntilDue = $dueDate ? $now->diff($dueDate)->days : null;
+        $isOverdue = Time::isOverdue($task->due_date, $task->status_id, [5, 6]);
+        $daysUntilDue = Time::daysRemaining($task->due_date);
         $daysInProgress = $startDate ? $now->diff($startDate)->days : 0;
 
         return [

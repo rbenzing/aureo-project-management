@@ -25,7 +25,7 @@ abstract class BaseModel
     public function __construct()
     {
         $this->db = Database::getInstance();
-        
+
         if (empty($this->table)) {
             // Convert CamelCase to snake_case and pluralize
             $className = strtolower((new \ReflectionClass($this))->getShortName());
@@ -69,14 +69,14 @@ abstract class BaseModel
                         if (!is_array($comparisonValue)) {
                             throw new InvalidArgumentException("NOT IN requires an array of values");
                         }
-                        
+
                         $inPlaceholders = [];
                         foreach ($comparisonValue as $k => $val) {
                             $placeholder = ":not_in_{$column}_{$k}";
                             $inPlaceholders[] = $placeholder;
                             $params[$placeholder] = $val;
                         }
-                        
+
                         $whereClauses[] = "{$column} NOT IN (" . implode(', ', $inPlaceholders) . ")";
                         break;
                     default:
@@ -97,7 +97,7 @@ abstract class BaseModel
         }
 
         $sql = "SELECT COUNT(*) FROM `{$this->table}`";
-        
+
         if (!empty($whereClauses)) {
             $sql .= " WHERE " . implode(' AND ', $whereClauses);
         }
@@ -134,9 +134,9 @@ abstract class BaseModel
             );
 
             $params = array_combine($placeholders, array_values($data));
-            
+
             $success = $this->db->executeInsertUpdate($sql, $params);
-            
+
             return $success ? $this->db->lastInsertId() : false;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to create {$this->table} record: " . $e->getMessage());
@@ -196,10 +196,10 @@ abstract class BaseModel
             $this->primaryKey,
             $this->usesSoftDeletes ? " AND is_deleted = 0" : ""
         );
-        
+
         $stmt = $this->db->executeQuery($sql, [':id' => $id]);
         $result = $stmt->fetch(PDO::FETCH_OBJ);
-        
+
         return $result ? $this->hideAttributes($result) : false;
     }
 
@@ -214,8 +214,8 @@ abstract class BaseModel
      * @return array Records list and total count
      */
     public function getAll(
-        array $filters = [], 
-        int $page = 1, 
+        array $filters = [],
+        int $page = 1,
         int $limit = 10,
         string $orderBy = 'id',
         string $orderDir = 'ASC'
@@ -236,26 +236,29 @@ abstract class BaseModel
 
         // Apply filters
         foreach ($filters as $field => $value) {
+            // Skip search filter as it's handled separately
+            if ($field === 'search') {
+                continue;
+            }
+
             // Validate field name
             if (!preg_match('/^[a-zA-Z0-9_]+$/', $field)) {
                 throw new InvalidArgumentException("Invalid filter field: {$field}");
             }
 
-            if (in_array($field, $this->fillable)) {
-                if (is_array($value)) {
-                    $placeholders = array_map(function($k) use ($field) {
-                        return ":{$field}_{$k}";
-                    }, array_keys($value));
-                    
-                    $conditions[] = "$field IN (" . implode(',', $placeholders) . ")";
-                    
-                    foreach ($value as $k => $val) {
-                        $params[":{$field}_{$k}"] = $val;
-                    }
-                } else {
-                    $conditions[] = "$field = :{$field}";
-                    $params[":{$field}"] = $value;
+            if (is_array($value)) {
+                $placeholders = array_map(function ($k) use ($field) {
+                    return ":{$field}_{$k}";
+                }, array_keys($value));
+
+                $conditions[] = "$field IN (" . implode(',', $placeholders) . ")";
+
+                foreach ($value as $k => $val) {
+                    $params[":{$field}_{$k}"] = $val;
                 }
+            } else {
+                $conditions[] = "$field = :{$field}";
+                $params[":{$field}"] = $value;
             }
         }
 
@@ -266,14 +269,14 @@ abstract class BaseModel
                 $this->searchable
             );
             $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
-            
+
             foreach ($this->searchable as $field) {
                 $params[":{$field}_search"] = '%' . $filters['search'] . '%';
             }
         }
 
         $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
-        
+
         // Get total count
         $countSql = "SELECT COUNT(*) FROM {$this->table} $whereClause";
         $stmt = $this->db->executeQuery($countSql, $params);
@@ -288,7 +291,7 @@ abstract class BaseModel
             $orderBy,
             $orderDir
         );
-        
+
         $params[':offset'] = $offset;
         $params[':limit'] = $limit;
 
@@ -318,7 +321,7 @@ abstract class BaseModel
         } else {
             $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id";
         }
-        
+
         return $this->db->executeInsertUpdate($sql, [':id' => $id]);
     }
 
@@ -384,12 +387,12 @@ abstract class BaseModel
                         case 'unique':
                             $sql = "SELECT COUNT(*) FROM {$this->table} WHERE $field = :value";
                             $params = [':value' => $value];
-                            
+
                             if ($id !== null) {
                                 $sql .= " AND {$this->primaryKey} != :id";
                                 $params[':id'] = $id;
                             }
-                            
+
                             if ($this->usesSoftDeletes) {
                                 $sql .= " AND is_deleted = 0";
                             }

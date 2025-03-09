@@ -36,66 +36,48 @@ $statusMap = [
     ]
 ];
 
-// Apply filters for search and sorting
+// Get filter parameters
 $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
-$statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
-$companyFilter = isset($_GET['company_id']) ? $_GET['company_id'] : '';
+$statusFilter = isset($_GET['status_id']) ? (int)$_GET['status_id'] : '';
+$companyFilter = isset($_GET['company_id']) ? (int)$_GET['company_id'] : '';
 $viewByFilter = isset($_GET['by']) ? $_GET['by'] : 'tasks';
-$sortField = isset($_GET['sort']) ? $_GET['sort'] : 'created_at';
+$sortField = isset($_GET['sort']) ? $_GET['sort'] : 'updated_at';
 $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
 
 // Function to format time in seconds to a more readable format
-function formatTimeInSeconds($seconds) {
+function formatTimeInSeconds($seconds)
+{
     if (!$seconds) return '0h 0m';
     $hours = floor($seconds / 3600);
     $minutes = floor(($seconds % 3600) / 60);
     return "{$hours}h {$minutes}m";
+}
+
+// Generate the current pagination URL with all parameters except page
+function getPaginationUrl($page)
+{
+    $params = $_GET;
+    $params['page'] = $page;
+    return '/projects?' . http_build_query($params);
 }
 ?>
 
 <!-- Project Table List -->
 <div class="space-y-8">
     <?php if (!empty($projects)): ?>
-        <?php 
-        $filteredProjects = $projects;
-        
-        // Apply search filtering if needed
-        if (!empty($searchQuery)) {
-            $filteredProjects = array_filter($projects, function($project) use ($searchQuery) {
-                return (
-                    stripos($project->name ?? '', $searchQuery) !== false || 
-                    stripos($project->company_name ?? '', $searchQuery) !== false ||
-                    stripos($project->description ?? '', $searchQuery) !== false
-                );
-            });
-        }
-        
-        // Apply status filtering if needed
-        if (!empty($statusFilter)) {
-            $filteredProjects = array_filter($filteredProjects, function($project) use ($statusFilter) {
-                return $project->status_id == $statusFilter;
-            });
-        }
-        
-        // Apply company filtering if needed
-        if (!empty($companyFilter)) {
-            $filteredProjects = array_filter($filteredProjects, function($project) use ($companyFilter) {
-                return $project->company_id == $companyFilter;
-            });
-        }
-        
-        foreach ($filteredProjects as $project): 
+        <?php
+        foreach ($projects as $project):
             // Get status info
             $statusId = $project->status_id ?? 1;
             $statusInfo = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-            
+
             // Calculate project metrics
             $totalTasks = 0;
             $completedTasks = 0;
             $totalTime = 0;
             $totalBillable = 0;
             $fileCount = 0;
-            
+
             if (isset($project->tasks) && is_array($project->tasks)) {
                 $totalTasks = count($project->tasks);
                 foreach ($project->tasks as $task) {
@@ -103,10 +85,12 @@ function formatTimeInSeconds($seconds) {
                         $completedTasks++;
                     }
                     $totalTime += isset($task->time_spent) ? (int)$task->time_spent : 0;
-                    
+
                     // Calculate billable amount
-                    if (isset($task->is_hourly) && $task->is_hourly && 
-                        isset($task->hourly_rate) && isset($task->billable_time)) {
+                    if (
+                        isset($task->is_hourly) && $task->is_hourly &&
+                        isset($task->hourly_rate) && isset($task->billable_time)
+                    ) {
                         $billableAmount = ($task->hourly_rate * $task->billable_time) / 3600; // Convert seconds to hours
                         $totalBillable += $billableAmount;
                     }
@@ -137,7 +121,7 @@ function formatTimeInSeconds($seconds) {
                                     New Task
                                 </a>
                             <?php endif; ?>
-                            
+
                             <div class="dropdown relative">
                                 <button class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -170,7 +154,7 @@ function formatTimeInSeconds($seconds) {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
                     <?php if ($viewByFilter === 'tasks'): ?>
                         <!-- Tasks View -->
@@ -199,7 +183,7 @@ function formatTimeInSeconds($seconds) {
                                                 'none' => 'text-gray-600 dark:text-gray-400'
                                             ];
                                             $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
-                                            
+
                                             // Status mapping
                                             $taskStatusMap = [
                                                 1 => ['label' => 'Open', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
@@ -220,7 +204,18 @@ function formatTimeInSeconds($seconds) {
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <?php if (isset($task->assigned_to) && !empty($task->assigned_to)): ?>
                                                         <div class="text-sm text-gray-700 dark:text-gray-300">
-                                                            <?= htmlspecialchars($task->first_name ?? '') ?> <?= htmlspecialchars($task->last_name ?? '') ?>
+                                                            <?php if (isset($task->first_name) && isset($task->last_name)): ?>
+                                                                <?= htmlspecialchars($task->first_name) ?> <?= htmlspecialchars($task->last_name) ?>
+                                                            <?php else: ?>
+                                                                <?php
+                                                                // Fetch user details if not provided with task
+                                                                $user = (new \App\Models\User())->find($task->assigned_to);
+                                                                if ($user): ?>
+                                                                    <?= htmlspecialchars($user->first_name) ?> <?= htmlspecialchars($user->last_name) ?>
+                                                                <?php else: ?>
+                                                                    ID: <?= $task->assigned_to ?>
+                                                                <?php endif; ?>
+                                                            <?php endif; ?>
                                                         </div>
                                                     <?php else: ?>
                                                         <span class="text-sm text-gray-500 dark:text-gray-400">Unassigned</span>
@@ -238,7 +233,7 @@ function formatTimeInSeconds($seconds) {
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                                                     <?php if (isset($task->due_date) && !empty($task->due_date)): ?>
-                                                        <?php 
+                                                        <?php
                                                         $dueDate = strtotime($task->due_date);
                                                         $today = strtotime('today');
                                                         $isDue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5);
@@ -263,62 +258,376 @@ function formatTimeInSeconds($seconds) {
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
-                                
+
                                 <!-- Project Summary Row -->
                                 <?php if (isset($project->tasks) && !empty($project->tasks)): ?>
-                                <tfoot class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                            Summary: <?= $completedTasks ?> / <?= $totalTasks ?> Tasks Completed
-                                        </td>
-                                        <td class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                            Total: <?= formatTimeInSeconds($totalTime) ?>
-                                        </td>
-                                    </tr>
-                                </tfoot>
+                                    <tfoot class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Summary: <?= $completedTasks ?> / <?= $totalTasks ?> Tasks Completed
+                                            </td>
+                                            <td class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Total: <?= formatTimeInSeconds($totalTime) ?>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
                                 <?php endif; ?>
                             </table>
+                        </div>
+                    <?php elseif ($viewByFilter === 'sprints' && isset($project->sprints) && !empty($project->sprints)): ?>
+                        <!-- Sprint View -->
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Sprints</h3>
+                            <div class="space-y-6">
+                                <?php foreach ($project->sprints as $sprint): ?>
+                                    <?php
+                                    // Get sprint tasks if not already loaded
+                                    if (!isset($sprint->tasks) || empty($sprint->tasks)) {
+                                        $sprintTasks = (new \App\Models\Sprint())->getSprintTasks($sprint->id);
+                                    } else {
+                                        $sprintTasks = $sprint->tasks;
+                                    }
+
+                                    // Calculate sprint progress
+                                    $totalTasks = count($sprintTasks);
+                                    $completedTasks = 0;
+                                    foreach ($sprintTasks as $task) {
+                                        if (isset($task->status_id) && $task->status_id == 6) { // Completed status is 6
+                                            $completedTasks++;
+                                        }
+                                    }
+                                    $progressPercentage = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+                                    // Set sprint status class
+                                    $statusClass = '';
+                                    $statusId = $sprint->status_id ?? 1;
+                                    switch ($statusId) {
+                                        case 1:
+                                            $statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                                            break; // Planning
+                                        case 2:
+                                            $statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                                            break; // Active
+                                        case 3:
+                                            $statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                                            break; // Completed
+                                        case 4:
+                                            $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                                            break; // Cancelled
+                                        case 5:
+                                            $statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                                            break; // Delayed
+                                        default:
+                                            $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                                    }
+                                    ?>
+                                    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
+                                        <div class="p-4 flex justify-between items-start border-b border-gray-200 dark:border-gray-700">
+                                            <div>
+                                                <h4 class="text-base font-medium text-gray-900 dark:text-white flex items-center">
+                                                    <a href="/sprints/view/<?= $sprint->id ?>" class="hover:text-indigo-600 dark:hover:text-indigo-400">
+                                                        <?= htmlspecialchars($sprint->name) ?>
+                                                    </a>
+                                                    <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
+                                                        <?= isset($sprint->status_name) ? htmlspecialchars($sprint->status_name) : 'Unknown' ?>
+                                                    </span>
+                                                </h4>
+                                                <?php if (!empty($sprint->description)): ?>
+                                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                                        <?= htmlspecialchars(substr($sprint->description, 0, 150)) ?>
+                                                        <?= strlen($sprint->description) > 150 ? '...' : '' ?>
+                                                    </p>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="flex flex-col items-end space-y-2">
+                                                <div class="flex space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                                                    <?php if (isset($sprint->start_date) && !empty($sprint->start_date)): ?>
+                                                        <span>Start: <?= date('M j, Y', strtotime($sprint->start_date)) ?></span>
+                                                    <?php endif; ?>
+                                                    <?php if (isset($sprint->end_date) && !empty($sprint->end_date)): ?>
+                                                        <span>End: <?= date('M j, Y', strtotime($sprint->end_date)) ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="w-48">
+                                                    <div class="flex items-center">
+                                                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300 mr-2"><?= $progressPercentage ?>%</span>
+                                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: <?= $progressPercentage ?>%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
+                                                        <?= $completedTasks ?>/<?= $totalTasks ?> tasks completed
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Display tasks associated with this sprint -->
+                                        <?php if (!empty($sprintTasks)): ?>
+                                            <div class="overflow-x-auto">
+                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                                        <tr>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Task</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assignee</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                        <?php foreach ($sprintTasks as $task): ?>
+                                                            <?php
+                                                            $priorityLevel = isset($task->priority) ? $task->priority : 'none';
+                                                            $priorityClasses = [
+                                                                'high' => 'text-red-600 dark:text-red-400',
+                                                                'medium' => 'text-yellow-600 dark:text-yellow-400',
+                                                                'low' => 'text-blue-600 dark:text-blue-400',
+                                                                'none' => 'text-gray-600 dark:text-gray-400'
+                                                            ];
+                                                            $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
+
+                                                            $taskStatusMap = [
+                                                                1 => ['label' => 'Open', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
+                                                                2 => ['label' => 'In Progress', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
+                                                                3 => ['label' => 'On Hold', 'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
+                                                                4 => ['label' => 'In Review', 'class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'],
+                                                                5 => ['label' => 'Closed', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'],
+                                                                6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200']
+                                                            ];
+                                                            $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'];
+                                                            ?>
+                                                            <tr>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <a href="/tasks/view/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                                                        <?= htmlspecialchars($task->title) ?>
+                                                                    </a>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <?php if (isset($task->assigned_to) && !empty($task->assigned_to)): ?>
+                                                                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                                                                            <?php if (isset($task->first_name) && isset($task->last_name)): ?>
+                                                                                <?= htmlspecialchars($task->first_name) ?> <?= htmlspecialchars($task->last_name) ?>
+                                                                            <?php else: ?>
+                                                                                <?php
+                                                                                // Fetch user details if not provided with task
+                                                                                $user = (new \App\Models\User())->find($task->assigned_to);
+                                                                                if ($user): ?>
+                                                                                    <?= htmlspecialchars($user->first_name) ?> <?= htmlspecialchars($user->last_name) ?>
+                                                                                <?php else: ?>
+                                                                                    ID: <?= $task->assigned_to ?>
+                                                                                <?php endif; ?>
+                                                                            <?php endif; ?>
+                                                                        </div>
+                                                                    <?php else: ?>
+                                                                        <span class="text-sm text-gray-500 dark:text-gray-400">Unassigned</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <span class="text-sm font-medium <?= $priorityClass ?>">
+                                                                        <?= ucfirst($priorityLevel) ?>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $taskStatus['class'] ?>">
+                                                                        <?= $taskStatus['label'] ?>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                                                    <?php if (isset($task->due_date) && !empty($task->due_date)): ?>
+                                                                        <?php
+                                                                        $dueDate = strtotime($task->due_date);
+                                                                        $today = strtotime('today');
+                                                                        $isDue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5);
+                                                                        ?>
+                                                                        <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?>">
+                                                                            <?= date('M j, Y', $dueDate) ?>
+                                                                        </span>
+                                                                    <?php else: ?>
+                                                                        <span class="text-gray-500 dark:text-gray-400">—</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="p-4 text-sm text-gray-500 dark:text-gray-400 italic">
+                                                No tasks associated with this sprint.
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <!-- Sprint Actions (only shown for active sprints) -->
+                                        <?php if ($statusId == 2): // Active sprint 
+                                        ?>
+                                            <div class="p-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex justify-end space-x-3">
+                                                <a href="/sprints/view/<?= $sprint->id ?>" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                    View Details
+                                                </a>
+                                                <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_sprints', $_SESSION['user']['permissions'])): ?>
+                                                    <a href="/sprints/edit/<?= $sprint->id ?>" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                                        Manage Tasks
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     <?php elseif ($viewByFilter === 'milestones' && isset($project->milestones) && !empty($project->milestones)): ?>
                         <!-- Milestone View -->
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Milestones</h3>
-                            <div class="space-y-4">
+                            <div class="space-y-6">
                                 <?php foreach ($project->milestones as $milestone): ?>
                                     <?php
+                                    // Get milestone tasks if not already loaded
+                                    if (!isset($milestone->tasks) || empty($milestone->tasks)) {
+                                        $milestoneTasks = (new \App\Models\Milestone())->getTasks($milestone->id);
+                                    } else {
+                                        $milestoneTasks = $milestone->tasks;
+                                    }
+
                                     $statusClass = '';
                                     switch ($milestone->status_id) {
-                                        case 1: $statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                        case 2: $statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                        case 3: $statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                        default: $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                                        case 1:
+                                            $statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                                            break;
+                                        case 2:
+                                            $statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                                            break;
+                                        case 3:
+                                            $statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                                            break;
+                                        default:
+                                            $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
                                     }
                                     ?>
-                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
-                                        <div class="flex justify-between items-start">
+                                    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
+                                        <div class="p-4 flex justify-between items-start border-b border-gray-200 dark:border-gray-700">
                                             <div>
                                                 <h4 class="text-base font-medium text-gray-900 dark:text-white">
                                                     <a href="/milestones/view/<?= $milestone->id ?>" class="hover:text-indigo-600 dark:hover:text-indigo-400">
                                                         <?= htmlspecialchars($milestone->title) ?>
                                                     </a>
+                                                    <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
+                                                        <?= isset($milestone->status_name) ? htmlspecialchars($milestone->status_name) : 'Unknown' ?>
+                                                    </span>
                                                 </h4>
                                                 <?php if (!empty($milestone->description)): ?>
-                                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                                    <?= htmlspecialchars($milestone->description) ?>
-                                                </p>
+                                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                                        <?= htmlspecialchars(substr($milestone->description, 0, 150)) ?>
+                                                        <?= strlen($milestone->description) > 150 ? '...' : '' ?>
+                                                    </p>
                                                 <?php endif; ?>
                                             </div>
-                                            <div class="flex items-center">
-                                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
-                                                    <?= isset($milestone->status_name) ? htmlspecialchars($milestone->status_name) : 'Unknown' ?>
-                                                </span>
+                                            <div class="flex space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <?php if (isset($milestone->start_date) && !empty($milestone->start_date)): ?>
+                                                    <span>Start: <?= date('M j, Y', strtotime($milestone->start_date)) ?></span>
+                                                <?php endif; ?>
                                                 <?php if (isset($milestone->due_date) && !empty($milestone->due_date)): ?>
-                                                <span class="ml-3 text-xs text-gray-500 dark:text-gray-400">
-                                                    Due: <?= date('M j, Y', strtotime($milestone->due_date)) ?>
-                                                </span>
+                                                    <span>Due: <?= date('M j, Y', strtotime($milestone->due_date)) ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
+
+                                        <!-- Display tasks associated with this milestone -->
+                                        <?php if (!empty($milestoneTasks)): ?>
+                                            <div class="overflow-x-auto">
+                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                                        <tr>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Task</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assignee</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                        <?php foreach ($milestoneTasks as $task): ?>
+                                                            <?php
+                                                            $priorityLevel = isset($task->priority) ? $task->priority : 'none';
+                                                            $priorityClasses = [
+                                                                'high' => 'text-red-600 dark:text-red-400',
+                                                                'medium' => 'text-yellow-600 dark:text-yellow-400',
+                                                                'low' => 'text-blue-600 dark:text-blue-400',
+                                                                'none' => 'text-gray-600 dark:text-gray-400'
+                                                            ];
+                                                            $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
+
+                                                            $taskStatusMap = [
+                                                                1 => ['label' => 'Open', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
+                                                                2 => ['label' => 'In Progress', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
+                                                                3 => ['label' => 'On Hold', 'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
+                                                                4 => ['label' => 'In Review', 'class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'],
+                                                                5 => ['label' => 'Closed', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'],
+                                                                6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200']
+                                                            ];
+                                                            $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'];
+                                                            ?>
+                                                            <tr>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <a href="/tasks/view/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                                                        <?= htmlspecialchars($task->title) ?>
+                                                                    </a>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <?php if (isset($task->assigned_to) && !empty($task->assigned_to)): ?>
+                                                                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                                                                            <?php if (isset($task->first_name) && isset($task->last_name)): ?>
+                                                                                <?= htmlspecialchars($task->first_name) ?> <?= htmlspecialchars($task->last_name) ?>
+                                                                            <?php else: ?>
+                                                                                <?php
+                                                                                // Fetch user details if not provided with task
+                                                                                $user = (new \App\Models\User())->find($task->assigned_to);
+                                                                                if ($user): ?>
+                                                                                    <?= htmlspecialchars($user->first_name) ?> <?= htmlspecialchars($user->last_name) ?>
+                                                                                <?php else: ?>
+                                                                                    ID: <?= $task->assigned_to ?>
+                                                                                <?php endif; ?>
+                                                                            <?php endif; ?>
+                                                                        </div>
+                                                                    <?php else: ?>
+                                                                        <span class="text-sm text-gray-500 dark:text-gray-400">Unassigned</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <span class="text-sm font-medium <?= $priorityClass ?>">
+                                                                        <?= ucfirst($priorityLevel) ?>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $taskStatus['class'] ?>">
+                                                                        <?= $taskStatus['label'] ?>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                                                    <?php if (isset($task->due_date) && !empty($task->due_date)): ?>
+                                                                        <?php
+                                                                        $dueDate = strtotime($task->due_date);
+                                                                        $today = strtotime('today');
+                                                                        $isDue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5);
+                                                                        ?>
+                                                                        <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?>">
+                                                                            <?= date('M j, Y', $dueDate) ?>
+                                                                        </span>
+                                                                    <?php else: ?>
+                                                                        <span class="text-gray-500 dark:text-gray-400">—</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="p-4 text-sm text-gray-500 dark:text-gray-400 italic">
+                                                No tasks associated with this milestone.
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -337,7 +646,7 @@ function formatTimeInSeconds($seconds) {
                                         <p class="text-sm text-gray-500 dark:text-gray-400">No description available.</p>
                                     <?php endif; ?>
                                 </div>
-                                
+
                                 <div class="w-full md:w-64">
                                     <h3 class="text-base font-medium text-gray-900 dark:text-white mb-2">Project Details</h3>
                                     <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
@@ -348,7 +657,7 @@ function formatTimeInSeconds($seconds) {
                                                     <?= isset($project->owner_firstname) ? htmlspecialchars($project->owner_firstname . ' ' . $project->owner_lastname) : 'Not assigned' ?>
                                                 </span>
                                             </div>
-                                            
+
                                             <?php if (isset($project->start_date) && !empty($project->start_date)): ?>
                                                 <div>
                                                     <span class="text-gray-500 dark:text-gray-400">Start Date:</span>
@@ -357,7 +666,7 @@ function formatTimeInSeconds($seconds) {
                                                     </span>
                                                 </div>
                                             <?php endif; ?>
-                                            
+
                                             <?php if (isset($project->end_date) && !empty($project->end_date)): ?>
                                                 <div>
                                                     <span class="text-gray-500 dark:text-gray-400">End Date:</span>
@@ -366,14 +675,14 @@ function formatTimeInSeconds($seconds) {
                                                     </span>
                                                 </div>
                                             <?php endif; ?>
-                                            
+
                                             <div>
                                                 <span class="text-gray-500 dark:text-gray-400">Tasks:</span>
                                                 <span class="text-gray-900 dark:text-white ml-2">
                                                     <?= $totalTasks ?> (<?= $completedTasks ?> completed)
                                                 </span>
                                             </div>
-                                            
+
                                             <div>
                                                 <span class="text-gray-500 dark:text-gray-400">Total Time:</span>
                                                 <span class="text-gray-900 dark:text-white ml-2">
@@ -414,7 +723,7 @@ function formatTimeInSeconds($seconds) {
     <div class="mt-6 flex justify-center">
         <nav class="inline-flex rounded-md shadow">
             <?php if ($page > 1): ?>
-                <a href="/projects/page/<?= $page - 1 ?>?view=<?= $activeTab ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-l-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                <a href="<?= getPaginationUrl($page - 1) ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-l-md hover:bg-gray-50 dark:hover:bg-gray-700">
                     Previous
                 </a>
             <?php else: ?>
@@ -429,14 +738,14 @@ function formatTimeInSeconds($seconds) {
                         <?= $i ?>
                     </span>
                 <?php else: ?>
-                    <a href="/projects/page/<?= $i ?>?view=<?= $activeTab ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <a href="<?= getPaginationUrl($i) ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <?= $i ?>
                     </a>
                 <?php endif; ?>
             <?php endfor; ?>
 
             <?php if ($page < $totalPages): ?>
-                <a href="/projects/page/<?= $page + 1 ?>?view=<?= $activeTab ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-r-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                <a href="<?= getPaginationUrl($page + 1) ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-r-md hover:bg-gray-50 dark:hover:bg-gray-700">
                     Next
                 </a>
             <?php else: ?>
@@ -447,55 +756,3 @@ function formatTimeInSeconds($seconds) {
         </nav>
     </div>
 <?php endif; ?>
-
-<script>
-// Delete confirmation function
-function confirmDelete(projectId, projectName) {
-    if (confirm(`Are you sure you want to delete the project "${projectName}"? This action cannot be undone.`)) {
-        // Create a form and submit it
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/projects/delete/${projectId}`;
-        
-        // Add CSRF token
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = 'csrf_token';
-        csrfToken.value = '<?= $_SESSION['csrf_token'] ?? '' ?>';
-        form.appendChild(csrfToken);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-// Dropdown functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const dropdownButtons = document.querySelectorAll('.dropdown button');
-    dropdownButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const menu = this.parentElement.querySelector('.dropdown-menu');
-            
-            // Close all other menus first
-            document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
-                if (otherMenu !== menu && !otherMenu.classList.contains('hidden')) {
-                    otherMenu.classList.add('hidden');
-                }
-            });
-            
-            // Toggle this menu
-            if (menu) {
-                menu.classList.toggle('hidden');
-            }
-        });
-    });
-    
-    // Close when clicking outside
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.classList.add('hidden');
-        });
-    });
-});
-</script>

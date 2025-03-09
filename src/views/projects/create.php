@@ -17,12 +17,14 @@ unset($_SESSION['form_data']);
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Project - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
     <!-- Header -->
@@ -54,7 +56,7 @@ unset($_SESSION['form_data']);
                 </button>
             </div>
         </div>
-        
+
         <div class="flex flex-row gap-4">
             <!-- Create Project Form -->
             <div class="w-3/4 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -80,7 +82,7 @@ unset($_SESSION['form_data']);
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a owner</option>
                                     <?php foreach ($users as $user): ?>
-                                        <option value="<?php echo $user->id; ?>" 
+                                        <option value="<?php echo $user->id; ?>"
                                             <?php echo (isset($formData['owner_id']) && $formData['owner_id'] == $user->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name); ?>
                                         </option>
@@ -95,7 +97,7 @@ unset($_SESSION['form_data']);
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a company</option>
                                     <?php foreach ($companies as $company): ?>
-                                        <option value="<?php echo $company->id; ?>" 
+                                        <option value="<?php echo $company->id; ?>"
                                             <?php echo (isset($formData['company_id']) && $formData['company_id'] == $company->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($company->name); ?>
                                         </option>
@@ -113,7 +115,7 @@ unset($_SESSION['form_data']);
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a status</option>
                                     <?php foreach ($statuses as $status): ?>
-                                        <option value="<?php echo $status->id; ?>" 
+                                        <option value="<?php echo $status->id; ?>"
                                             <?php echo (isset($formData['status_id']) && $formData['status_id'] == $status->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $status->name))); ?>
                                         </option>
@@ -139,6 +141,30 @@ unset($_SESSION['form_data']);
                         </div>
                     </div>
                     <div class="space-y-6">
+                        <!-- Template Selection -->
+                        <div>
+                            <label for="template_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description Template</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <select id="template_id" name="template_id"
+                                    class="block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Select a template or write your own</option>
+                                    <?php
+                                    // Load templates (we'll get these from the controller)
+                                    if (isset($templates) && !empty($templates)) {
+                                        foreach ($templates as $template) {
+                                            echo '<option value="' . $template->id . '"';
+                                            if (isset($formData['template_id']) && $formData['template_id'] == $template->id) {
+                                                echo ' selected';
+                                            }
+                                            echo '>' . htmlspecialchars($template->name) . '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select a template or create your own description</p>
+                        </div>
+
                         <!-- Description -->
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
@@ -149,7 +175,7 @@ unset($_SESSION['form_data']);
                     </div>
                 </form>
             </div>
-        
+
             <!-- Help Section -->
             <div class="w-1/4 bg-blue-50 dark:bg-blue-900 rounded-lg p-6">
                 <div class="flex">
@@ -183,7 +209,7 @@ unset($_SESSION['form_data']);
         document.addEventListener('DOMContentLoaded', function() {
             const startDateInput = document.getElementById('start_date');
             const endDateInput = document.getElementById('end_date');
-            
+
             endDateInput.addEventListener('change', function() {
                 if (startDateInput.value && endDateInput.value) {
                     if (new Date(endDateInput.value) < new Date(startDateInput.value)) {
@@ -192,6 +218,36 @@ unset($_SESSION['form_data']);
                     }
                 }
             });
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const templateSelect = document.getElementById('template_id');
+            const descriptionTextarea = document.getElementById('description');
+
+            if (templateSelect && descriptionTextarea) {
+                templateSelect.addEventListener('change', function() {
+                    const templateId = this.value;
+
+                    // If no template selected or description already has content, don't overwrite
+                    if (!templateId || (descriptionTextarea.value.trim() !== '' &&
+                            !confirm('This will replace your current description. Continue?'))) {
+                        return;
+                    }
+
+                    // Fetch template content
+                    fetch(`/project-templates/get/${templateId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.template) {
+                                descriptionTextarea.value = data.template.description;
+                            } else {
+                                console.error('Error loading template:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching template:', error);
+                        });
+                });
+            }
         });
     </script>
 </body>

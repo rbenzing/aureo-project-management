@@ -9,6 +9,9 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
+// Include helper functions
+include_once __DIR__ . '/inc/helpers.php';
 ?>
 
 <!DOCTYPE html>
@@ -433,41 +436,6 @@ use App\Core\Config;
 
     <!-- Footer -->
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
-
-    <?php
-// Helper functions for displaying status and priority classes
-function getSprintStatusLabel($statusId) {
-    return match((int)$statusId) {
-        1 => 'Planning',
-        2 => 'Active',
-        3 => 'Delayed',
-        4 => 'Completed',
-        5 => 'Cancelled',
-        default => 'Unknown'
-    };
-}
-
-function getTaskStatusClass($statusName) {
-    return match($statusName) {
-        'Open' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        'In Progress' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-        'On Hold' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-        'In Review' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-        'Closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        'Completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-        default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    };
-}
-
-function getPriorityClass($priority) {
-    return match($priority) {
-        'high' => 'text-red-600 dark:text-red-400 font-medium',
-        'medium' => 'text-yellow-600 dark:text-yellow-400',
-        'low' => 'text-blue-600 dark:text-blue-400',
-        default => 'text-gray-500 dark:text-gray-400'
-    };
-}
-?>
 
 <!-- Include Alpine.js for dropdown functionality -->
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>

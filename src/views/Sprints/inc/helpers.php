@@ -60,3 +60,18 @@ function getTaskStatusClass($statusName) {
         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     };
 }
+
+/**
+ * Gets the priority classes
+ * 
+ * @param string $priority
+ * @return string CSS class
+ */
+function getPriorityClass($priority) {
+    return match($priority) {
+        'high' => 'text-red-600 dark:text-red-400 font-medium',
+        'medium' => 'text-yellow-600 dark:text-yellow-400',
+        'low' => 'text-blue-600 dark:text-blue-400',
+        default => 'text-gray-500 dark:text-gray-400'
+    };
+}

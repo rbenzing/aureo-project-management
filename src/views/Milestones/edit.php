@@ -44,7 +44,7 @@ use App\Core\Config;
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
             <form action="/milestones/update" method="POST" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                <input type="hidden" name="id" value="<?= htmlspecialchars($milestone->id) ?>">
+                <input type="hidden" name="id" value="<?= htmlspecialchars((string)$milestone->id) ?>">
                 
                 <!-- Milestone Type Selection -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -94,7 +94,7 @@ use App\Core\Config;
                             <option value="">Select Project</option>
                             <?php foreach ($projects as $project): ?>
                                 <option 
-                                    value="<?= htmlspecialchars($project->id) ?>"
+                                    value="<?= htmlspecialchars((string)$project->id) ?>"
                                     <?= ($project->id == $milestone->project_id) ? 'selected' : '' ?>
                                 >
                                     <?= htmlspecialchars($project->name) ?>
@@ -119,7 +119,7 @@ use App\Core\Config;
                             <?php foreach ($epics as $epic): ?>
                                 <?php if ($epic->id != $milestone->id): // Prevent self-reference ?>
                                     <option 
-                                        value="<?= htmlspecialchars($epic->id) ?>"
+                                        value="<?= htmlspecialchars((string)$epic->id) ?>"
                                         <?= ($epic->id == $milestone->epic_id) ? 'selected' : '' ?>
                                     >
                                         <?= htmlspecialchars($epic->title) ?>

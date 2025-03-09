@@ -306,18 +306,6 @@ class Company extends BaseModel
             throw new RuntimeException("Failed to remove project from company: " . $e->getMessage());
         }
     }
-
-    /**
-     * Generate UUID for new companies
-     * 
-     * @return string UUID
-     */
-    public function generateUuid(): string
-    {
-        // This will be handled by MySQL's uuid() function in the schema
-        // Just a placeholder if you need to generate it in PHP
-        return ''; // \Ramsey\Uuid\Uuid::uuid4()->toString();
-    }
     
     /**
      * Validate company data before save

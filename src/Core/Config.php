@@ -25,7 +25,8 @@ class Config
         'DOMAIN' => 'slimbooks',
         'SCHEME' => 'http',
         'LOCALE' => 'en_US',
-        'CURRENCY_FORMAT' => '%i'
+        'CURRENCY_FORMAT' => '%i',
+        'DEFAULT_PROJECT_TEMPLATE' => '# Project Overview\nProvide a brief overview of the project.\n\n## Objectives\n- List key objectives\n- What are we trying to accomplish?\n\n## Scope\n- What\'s included\n- What\'s excluded\n\n## Timeline\n- Start date\n- Expected end date\n- Key milestones'
     ];
 
     /**

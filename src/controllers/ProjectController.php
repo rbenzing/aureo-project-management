@@ -9,6 +9,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Company;
+use App\Models\ProjectTemplate;
 use App\Models\User;
 use App\Utils\Validator;
 use RuntimeException;
@@ -21,6 +22,7 @@ class ProjectController
     private Task $taskModel;
     private Company $companyModel;
     private User $userModel;
+    private ProjectTemplate $templateModel;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class ProjectController
         $this->taskModel = new Task();
         $this->userModel = new User();
         $this->companyModel = new Company();
+        $this->templateModel = new ProjectTemplate();
     }
 
     /**
@@ -41,14 +44,53 @@ class ProjectController
     {
         try {
             $this->authMiddleware->hasPermission('view_projects');
-            
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            
-            $projects = $this->projectModel->getAllWithDetails($limit, $page);
-            $totalProjects = $this->projectModel->count(['is_deleted' => 0]);
+
+            // Extract filter parameters from request
+            $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $statusFilter = isset($_GET['status_id']) ? (int)$_GET['status_id'] : null;
+            $companyFilter = isset($_GET['company_id']) ? (int)$_GET['company_id'] : null;
+            $sortField = isset($_GET['sort']) ? $_GET['sort'] : 'updated_at';
+            $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
+            $viewBy = isset($_GET['by']) ? $_GET['by'] : 'tasks';
+
+            // Build filter array for BaseModel::getAll method
+            $filters = ['is_deleted' => 0];
+
+            if (!empty($searchQuery)) {
+                $filters['search'] = $searchQuery;
+            }
+
+            if (!empty($statusFilter)) {
+                $filters['status_id'] = $statusFilter;
+            }
+
+            if (!empty($companyFilter)) {
+                $filters['company_id'] = $companyFilter;
+            }
+
+            // Get paginated projects with filters and sorting
+            $results = $this->projectModel->getAll($filters, $page, $limit, $sortField, $sortDirection);
+            $totalProjects = $results['total'];
+
+            // Replace with projects with details for better display
+            $projectIds = array_map(function ($project) {
+                return $project->id;
+            }, $results['records']);
+
+            // Get detailed projects for the IDs we found
+            $projects = [];
+            foreach ($projectIds as $projectId) {
+                $projects[] = $this->projectModel->findWithDetails($projectId);
+            }
+
+            // Load companies for the filter dropdown
+            $companies = $this->companyModel->getAllCompanies();
+
             $totalPages = ceil($totalProjects / $limit);
-            
+
             include __DIR__ . '/../Views/Projects/index.php';
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::index: " . $e->getMessage());
@@ -80,7 +122,7 @@ class ProjectController
             }
 
             $tasksByStatus = $this->taskModel->getByProjectId($id);
-            
+
             include __DIR__ . '/../Views/Projects/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -104,11 +146,16 @@ class ProjectController
     {
         try {
             $this->authMiddleware->hasPermission('create_projects');
-            
+
             $users = $this->userModel->getAllUsers();
             $companies = $this->companyModel->getAllCompanies();
             $statuses = $this->projectModel->getAllStatuses();
-            
+
+            // Get company ID from user session if available
+            $companyId = $_SESSION['user']['profile']['company_id'] ?? null;
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates($companyId);
+
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::createForm: " . $e->getMessage());
@@ -141,11 +188,23 @@ class ProjectController
                 'owner_id' => 'required|integer|exists:users,id',
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
-                'end_date' => 'nullable|date|after:start_date'
+                'end_date' => 'nullable|date|after:start_date',
+                'template_id' => 'nullable|integer|exists:project_templates,id'
             ]);
 
             if ($validator->fails()) {
                 throw new InvalidArgumentException(implode(', ', $validator->errors()));
+            }
+
+            // If a template was selected but no description provided, load the template content
+            if (!empty($data['template_id']) && empty($data['description'])) {
+                $templateId = filter_var($data['template_id'], FILTER_VALIDATE_INT);
+                if ($templateId) {
+                    $template = $this->templateModel->find($templateId);
+                    if ($template && !$template->is_deleted) {
+                        $data['description'] = $template->description;
+                    }
+                }
             }
 
             $projectData = [
@@ -164,7 +223,6 @@ class ProjectController
             $_SESSION['success'] = 'Project created successfully.';
             header('Location: /projects/view/' . $projectId);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -201,6 +259,11 @@ class ProjectController
 
             $companies = $this->companyModel->getAll(['is_deleted' => 0]);
             $statuses = $this->projectModel->getAllStatuses();
+
+            // Get company ID from project
+            $companyId = $project->company_id ?? null;
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates($companyId);
 
             include __DIR__ . '/../Views/Projects/edit.php';
         } catch (InvalidArgumentException $e) {
@@ -242,16 +305,28 @@ class ProjectController
                 'status_id' => 'required|integer|exists:statuses_project,id',
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
-                'end_date' => 'nullable|date|after:start_date'
+                'end_date' => 'nullable|date|after:start_date',
+                'template_id' => 'nullable|integer|exists:project_templates,id'
             ]);
 
             if ($validator->fails()) {
                 throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
+            // If a template was selected but no description provided, load the template content
+            if (!empty($data['template_id']) && empty($data['description'])) {
+                $templateId = filter_var($data['template_id'], FILTER_VALIDATE_INT);
+                if ($templateId) {
+                    $template = $this->templateModel->find($templateId);
+                    if ($template && !$template->is_deleted) {
+                        $data['description'] = $template->description;
+                    }
+                }
+            }
+
             $projectData = [
                 'name' => htmlspecialchars($data['name']),
-                'description' => isset($data['description']) ? 
+                'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'company_id' => filter_var($data['company_id'], FILTER_VALIDATE_INT),
@@ -264,7 +339,6 @@ class ProjectController
             $_SESSION['success'] = 'Project updated successfully.';
             header('Location: /projects/view/' . $id);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -315,7 +389,6 @@ class ProjectController
             $_SESSION['success'] = 'Project deleted successfully.';
             header('Location: /projects');
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /projects');

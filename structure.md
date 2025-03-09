@@ -12,6 +12,7 @@ src/
         DashboardController.php
         MilestoneController.php
         ProjectController.php
+        ProjectTemplateController.php
         RoleController.php
         SprintController.php
         TaskController.php
@@ -34,6 +35,7 @@ src/
         Milestone.php
         Permission.php
         Project.php
+        ProjectTemplate.php
         Role.php
         Sprint.php
         Task.php
@@ -80,6 +82,11 @@ src/
                 pivot.php
                 table_header.php
                 table.php
+            create.php
+            edit.php
+            index.php
+            view.php
+        ProjectTemplates/
             create.php
             edit.php
             index.php

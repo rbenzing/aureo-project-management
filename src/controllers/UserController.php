@@ -80,7 +80,8 @@ class UserController
 
             // Get user's roles and permissions
             $userRoleData = $this->userModel->getRolesAndPermissions($id);
-            $recentProjects = $this->companyModel->getRecentProjectsByUser($id);
+            $user->roles = $userRoleData['roles'];
+            $user->permissions = $userRoleData['permissions'];
             
             include __DIR__ . '/../Views/Users/view.php';
         } catch (InvalidArgumentException $e) {
