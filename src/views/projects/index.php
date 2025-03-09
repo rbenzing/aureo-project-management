@@ -1,4 +1,7 @@
 <?php
+//file: Views/Projects/index.php
+declare(strict_types=1);
+
 // Ensure this view is not directly accessible via the web
 if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
@@ -16,10 +19,10 @@ $activeTab = $_GET['view'] ?? 'table';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects - <?= htmlspecialchars(Config::get('company_name', 'SlimBooks')) ?></title>
+    <title>Projects - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-white dark:text-gray-100 min-h-screen flex flex-col">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
     <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
 
@@ -32,8 +35,8 @@ $activeTab = $_GET['view'] ?? 'table';
 
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-center space-x-2">
-                <h1 class="text-2xl font-medium">Client Projects</h1>
-                <button class="text-gray-400 hover:text-gray-600">
+                <h1 class="text-2xl font-medium dark:text-white">Projects</h1>
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                     </svg>
@@ -52,22 +55,22 @@ $activeTab = $_GET['view'] ?? 'table';
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="flex items-center space-x-6 border-b border-gray-200 mb-6">
-            <a href="/projects?view=table" class="px-4 py-2 <?= $activeTab === 'table' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Table</a>
-            <a href="/projects?view=pivot" class="px-4 py-2 <?= $activeTab === 'pivot' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Pivot Board</a>
-            <a href="/projects?view=gantt" class="px-4 py-2 <?= $activeTab === 'gantt' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Gantt</a>
-            <a href="/projects?view=charts" class="px-4 py-2 <?= $activeTab === 'charts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-white' ?>">Charts</a>
+        <div class="flex items-center space-x-6 border-b border-gray-200 dark:border-gray-700 mb-6">
+            <a href="/projects?view=table" class="px-4 py-2 <?= $activeTab === 'table' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Table</a>
+            <a href="/projects?view=pivot" class="px-4 py-2 <?= $activeTab === 'pivot' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Pivot Board</a>
+            <a href="/projects?view=gantt" class="px-4 py-2 <?= $activeTab === 'gantt' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Gantt</a>
+            <a href="/projects?view=charts" class="px-4 py-2 <?= $activeTab === 'charts' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Charts</a>
         </div>
         
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <div class="bg-green-100 border border-green-400 text-green-700 dark:bg-green-800 dark:border-green-700 dark:text-green-200 px-4 py-3 rounded relative mb-4" role="alert">
                 <span class="block sm:inline"><?= $_SESSION['success'] ?></span>
                 <?php unset($_SESSION['success']); ?>
             </div>
         <?php endif; ?>
 
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <div class="bg-red-100 border border-red-400 text-red-700 dark:bg-red-800 dark:border-red-700 dark:text-red-200 px-4 py-3 rounded relative mb-4" role="alert">
                 <span class="block sm:inline"><?= $_SESSION['error'] ?></span>
                 <?php unset($_SESSION['error']); ?>
             </div>
@@ -105,16 +108,18 @@ $activeTab = $_GET['view'] ?? 'table';
                 const button = dropdown.querySelector('button');
                 const menu = dropdown.querySelector('.dropdown-menu');
                 
-                button.addEventListener('click', function() {
-                    menu.classList.toggle('hidden');
-                });
-                
-                // Close when clicking outside
-                document.addEventListener('click', function(event) {
-                    if (!dropdown.contains(event.target)) {
-                        menu.classList.add('hidden');
-                    }
-                });
+                if (button && menu) {
+                    button.addEventListener('click', function() {
+                        menu.classList.toggle('hidden');
+                    });
+                    
+                    // Close when clicking outside
+                    document.addEventListener('click', function(event) {
+                        if (!dropdown.contains(event.target)) {
+                            menu.classList.add('hidden');
+                        }
+                    });
+                }
             });
         });
     </script>

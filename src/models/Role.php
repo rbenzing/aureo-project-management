@@ -17,7 +17,7 @@ use InvalidArgumentException;
 class Role extends BaseModel
 {
     protected string $table = 'roles';
-    
+
     /**
      * Role properties
      */
@@ -28,21 +28,23 @@ class Role extends BaseModel
     public ?string $created_at = null;
     public ?string $updated_at = null;
     public array $permissions = [];
-    
+
     /**
      * Define fillable fields
      */
     protected array $fillable = [
-        'name', 'description'
+        'name',
+        'description'
     ];
-    
+
     /**
      * Define searchable fields
      */
     protected array $searchable = [
-        'name', 'description'
+        'name',
+        'description'
     ];
-    
+
     /**
      * Define validation rules
      */
@@ -61,7 +63,7 @@ class Role extends BaseModel
     {
         try {
             $role = $this->find($id);
-            
+
             if ($role) {
                 $role->permissions = $this->getPermissions($id);
             }
@@ -138,23 +140,22 @@ class Role extends BaseModel
             if (!empty($permissionIds)) {
                 $placeholders = [];
                 $params = [];
-                
+
                 foreach ($permissionIds as $index => $permissionId) {
                     $placeholders[] = "(:role_id, :permission_id_{$index})";
                     $params[":permission_id_{$index}"] = $permissionId;
                 }
-                
+
                 $params[':role_id'] = $roleId;
-                
-                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " . 
-                       implode(',', $placeholders);
-                
+
+                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " .
+                    implode(',', $placeholders);
+
                 $this->db->executeInsertUpdate($sql, $params);
             }
 
             $this->db->commit();
             return true;
-
         } catch (\Exception $e) {
             $this->db->rollBack();
             throw new RuntimeException("Failed to sync permissions: " . $e->getMessage());
@@ -206,7 +207,7 @@ class Role extends BaseModel
             throw new RuntimeException("Failed to remove permission: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get all roles with permission counts
      * 
@@ -229,7 +230,7 @@ class Role extends BaseModel
                     FROM roles r
                     WHERE r.is_deleted = 0
                     ORDER BY r.name ASC";
-                    
+
             $stmt = $this->db->executeQuery($sql);
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
@@ -249,18 +250,18 @@ class Role extends BaseModel
         try {
             $sql = "SELECT COUNT(*) FROM role_permissions 
                     WHERE role_id = :role_id AND permission_id = :permission_id";
-            
+
             $stmt = $this->db->executeQuery($sql, [
                 ':role_id' => $roleId,
                 ':permission_id' => $permissionId
             ]);
-            
+
             return (bool)$stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to check permission: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Check if a role has a specific permission by name
      * 
@@ -276,15 +277,55 @@ class Role extends BaseModel
                     WHERE rp.role_id = :role_id 
                     AND p.name = :permission_name
                     AND p.is_deleted = 0";
-            
+
             $stmt = $this->db->executeQuery($sql, [
                 ':role_id' => $roleId,
                 ':permission_name' => $permissionName
             ]);
-            
+
             return (bool)$stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to check permission by name: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get all roles with additional details and pagination
+     * 
+     * @param int $page Current page number
+     * @param int $limit Items per page
+     * @return array
+     */
+    public function getAllWithDetails(int $page = 1, int $limit = 10): array
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            $sql = "SELECT r.*,
+                    (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id AND u.is_deleted = 0) as user_count,
+                    (SELECT COUNT(*) FROM role_permissions rp WHERE rp.role_id = r.id) as permission_count
+                FROM roles r
+                WHERE r.is_deleted = 0
+                ORDER BY r.created_at DESC
+                LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':limit' => $limit,
+                ':offset' => $offset
+            ]);
+            $roles = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // Get total count for pagination
+            $countSql = "SELECT COUNT(*) FROM roles WHERE is_deleted = 0";
+            $totalStmt = $this->db->executeQuery($countSql);
+            $total = $totalStmt->fetchColumn();
+
+            return [
+                'records' => $roles,
+                'total' => $total
+            ];
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to get roles with details: " . $e->getMessage());
         }
     }
 
@@ -298,7 +339,7 @@ class Role extends BaseModel
     protected function validate(array $data, ?int $id = null): void
     {
         parent::validate($data, $id);
-        
+
         // Validate role name format
         if (isset($data['name']) && !preg_match('/^[a-zA-Z0-9_\- ]+$/', $data['name'])) {
             throw new InvalidArgumentException('Role name can only contain letters, numbers, spaces, underscores and hyphens');

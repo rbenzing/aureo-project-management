@@ -1,4 +1,7 @@
 <?php
+//file: Views/Users/edit.php
+declare(strict_types=1);
+
 // Ensure this view is not directly accessible via the web
 if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
@@ -16,9 +19,9 @@ if (!defined('BASE_PATH')) {
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
     <!-- Header -->
-    <?php include __DIR__ . '/../layouts/header.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
     <!-- Sidebar -->
-    <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
     <!-- Main Content -->
     <main class="container mx-auto p-6">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
@@ -88,6 +91,6 @@ if (!defined('BASE_PATH')) {
         </form>
     </main>
     <!-- Footer -->
-    <?php include __DIR__ . '/../layouts/footer.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
 </body>
 </html>

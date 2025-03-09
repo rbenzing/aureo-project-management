@@ -175,6 +175,8 @@ class Breadcrumb
     private static function replaceUrlParams(string $url, array $params): string
     {
         foreach ($params as $key => $value) {
+            // Ensure value is converted to string
+            $value = (string)$value;
             $url = str_replace("{{$key}}", $value, $url);
         }
         
@@ -198,12 +200,17 @@ class Breadcrumb
         foreach ($breadcrumbs as $index => $crumb) {
             $isLast = $index === count($breadcrumbs) - 1;
             
+            // Sanitize crumb data
+            $crumbName = htmlspecialchars((string)($crumb['name'] ?? ''));
+            $crumbUrl = htmlspecialchars((string)($crumb['url'] ?? ''));
+            $crumbIcon = $crumb['icon'] ?? '';
+            
             if ($index === 0) {
                 // First item (usually Dashboard)
                 $html .= '<li class="inline-flex items-center">
-                            ' . self::getIcon($crumb['icon']) . '
-                            <a href="' . $crumb['url'] . '" class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                ' . htmlspecialchars($crumb['name']) . '
+                            ' . self::getIcon($crumbIcon) . '
+                            <a href="' . $crumbUrl . '" class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                ' . $crumbName . '
                             </a>
                         </li>';
             } elseif ($isLast) {
@@ -213,7 +220,7 @@ class Breadcrumb
                                 <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                                 </svg>
-                                <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">' . htmlspecialchars($crumb['name']) . '</span>
+                                <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">' . $crumbName . '</span>
                             </div>
                         </li>';
             } else {
@@ -223,7 +230,7 @@ class Breadcrumb
                                 <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                                 </svg>
-                                <a href="' . $crumb['url'] . '" class="ml-1 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white md:ml-2">' . htmlspecialchars($crumb['name']) . '</a>
+                                <a href="' . $crumbUrl . '" class="ml-1 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white md:ml-2">' . $crumbName . '</a>
                             </div>
                         </li>';
             }

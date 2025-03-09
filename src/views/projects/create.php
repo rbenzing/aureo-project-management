@@ -1,4 +1,7 @@
 <?php
+//file: Views/Projects/create.php
+declare(strict_types=1);
+
 // Ensure this view is not directly accessible via the web
 if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
@@ -6,6 +9,10 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
+// Load form data from session if available (for validation errors)
+$formData = $_SESSION['form_data'] ?? [];
+unset($_SESSION['form_data']);
 ?>
 
 <!DOCTYPE html>
@@ -13,7 +20,7 @@ use App\Core\Config;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Project  - <?= htmlspecialchars(Config::get('company_name', 'SlimBooks')) ?></title>
+    <title>Create Project - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
@@ -41,23 +48,17 @@ use App\Core\Config;
                 <a href="/projects" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Cancel
                 </a>
-                <button type="submit" 
+                <button type="submit" form="createProjectForm"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Create Project
                 </button>
             </div>
         </div>
         
-        <!-- Error Message Display -->
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="p-4 my-6 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
-                <span class="font-medium">Error!</span> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
-            </div>
-        <?php endif; ?>
         <div class="flex flex-row gap-4">
             <!-- Create Project Form -->
             <div class="w-3/4 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <form method="POST" action="/projects/create" class="space-y-6">
+                <form id="createProjectForm" method="POST" action="/projects/create" class="space-y-6">
                     <!-- CSRF Token -->
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -68,19 +69,19 @@ use App\Core\Config;
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name <span class="text-red-500">*</span></label>
                                 <input type="text" id="name" name="name" required
-                                    value="<?php echo htmlspecialchars($_SESSION['form_data']['name'] ?? ''); ?>"
+                                    value="<?php echo htmlspecialchars($formData['name'] ?? ''); ?>"
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
 
                             <!-- Owner -->
                             <div>
                                 <label for="owner_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Owner <span class="text-red-500">*</span></label>
-                                <select id="owner_id" name="owner_id"
+                                <select id="owner_id" name="owner_id" required
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a owner</option>
                                     <?php foreach ($users as $user): ?>
                                         <option value="<?php echo $user->id; ?>" 
-                                            <?php echo (isset($_SESSION['form_data']['owner_id']) && $_SESSION['form_data']['owner_id'] == $user->id) ? 'selected' : ''; ?>>
+                                            <?php echo (isset($formData['owner_id']) && $formData['owner_id'] == $user->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -90,12 +91,12 @@ use App\Core\Config;
                             <!-- Company -->
                             <div>
                                 <label for="company_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Company <span class="text-red-500">*</span></label>
-                                <select id="company_id" name="company_id"
+                                <select id="company_id" name="company_id" required
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a company</option>
                                     <?php foreach ($companies as $company): ?>
                                         <option value="<?php echo $company->id; ?>" 
-                                            <?php echo (isset($_SESSION['form_data']['company_id']) && $_SESSION['form_data']['company_id'] == $company->id) ? 'selected' : ''; ?>>
+                                            <?php echo (isset($formData['company_id']) && $formData['company_id'] == $company->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($company->name); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -113,7 +114,7 @@ use App\Core\Config;
                                     <option value="">Select a status</option>
                                     <?php foreach ($statuses as $status): ?>
                                         <option value="<?php echo $status->id; ?>" 
-                                            <?php echo (isset($_SESSION['form_data']['status_id']) && $_SESSION['form_data']['status_id'] == $status->id) ? 'selected' : ''; ?>>
+                                            <?php echo (isset($formData['status_id']) && $formData['status_id'] == $status->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $status->name))); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -124,7 +125,7 @@ use App\Core\Config;
                             <div>
                                 <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
                                 <input type="date" id="start_date" name="start_date"
-                                    value="<?php echo htmlspecialchars($_SESSION['form_data']['start_date'] ?? ''); ?>"
+                                    value="<?php echo htmlspecialchars($formData['start_date'] ?? ''); ?>"
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
 
@@ -132,7 +133,7 @@ use App\Core\Config;
                             <div>
                                 <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Expected End Date</label>
                                 <input type="date" id="end_date" name="end_date"
-                                    value="<?php echo htmlspecialchars($_SESSION['form_data']['end_date'] ?? ''); ?>"
+                                    value="<?php echo htmlspecialchars($formData['end_date'] ?? ''); ?>"
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                         </div>
@@ -142,7 +143,7 @@ use App\Core\Config;
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                             <textarea id="description" name="description" rows="10"
-                                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"><?php echo htmlspecialchars($_SESSION['form_data']['description'] ?? ''); ?></textarea>
+                                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"><?php echo htmlspecialchars($formData['description'] ?? ''); ?></textarea>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Briefly describe the project scope and objectives.</p>
                         </div>
                     </div>
@@ -195,10 +196,3 @@ use App\Core\Config;
     </script>
 </body>
 </html>
-
-<?php
-// Clear form data after displaying
-if (isset($_SESSION['form_data'])) {
-    unset($_SESSION['form_data']);
-}
-?>

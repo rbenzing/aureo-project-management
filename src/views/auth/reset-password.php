@@ -1,4 +1,5 @@
 <?php
+//file: Views/Auth/reset-password.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web
@@ -18,7 +19,7 @@ if (!defined('BASE_PATH')) {
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
     <!-- Header -->
-    <?php include __DIR__ . '/../layouts/header.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
     <!-- Main Content -->
     <main class="container grow h-max mx-auto flex flex-col items-center justify-center">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-1/3 p-6">
@@ -54,6 +55,6 @@ if (!defined('BASE_PATH')) {
         </div>
     </main>
     <!-- Footer -->
-    <?php include __DIR__ . '/../layouts/footer.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
 </body>
 </html>

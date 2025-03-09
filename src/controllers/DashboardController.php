@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Milestone;
+use App\Models\Sprint;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -19,6 +20,7 @@ class DashboardController
     private Project $projectModel;
     private Task $taskModel;
     private Milestone $milestoneModel;
+    private Sprint $sprintModel;
 
     public function __construct()
     {
@@ -27,6 +29,7 @@ class DashboardController
         $this->projectModel = new Project();
         $this->taskModel = new Task();
         $this->milestoneModel = new Milestone();
+        $this->sprintModel = new Sprint();
     }
 
     /**
@@ -40,7 +43,7 @@ class DashboardController
         try {
             $this->authMiddleware->hasPermission('view_dashboard');
 
-            $userId = $_SESSION['user']['id'] ?? null;
+            $userId = $_SESSION['user']['profile']['id'] ?? null;
             if (!$userId) {
                 throw new RuntimeException('Session expired. Please log in again.');
             }
@@ -80,8 +83,8 @@ class DashboardController
             // Recent projects
             $recentProjects = $this->projectModel->getRecentByUser($userId, 5);
 
-            // Recent tasks
-            $recentTasks = $this->taskModel->getRecentByUser($userId, 5);
+            // Recent tasks - get more tasks to filter client-side
+            $recentTasks = $this->taskModel->getByUserId($userId, 15);
 
             // Upcoming milestones
             $upcomingMilestones = $this->milestoneModel->getAllWithProgress(5, 1, [
@@ -105,7 +108,7 @@ class DashboardController
                 'overdue' => $this->taskModel->count([
                     'assigned_to' => $userId,
                     'due_date' => ['<', date('Y-m-d')],
-                    'status_id' => ['NOT IN', [6, 7]], // Not completed or cancelled
+                    'status_id' => ['NOT IN', [5, 6]], // Not closed or completed
                     'is_deleted' => 0
                 ])
             ];
@@ -133,10 +136,18 @@ class DashboardController
                 ]),
                 'delayed' => $this->projectModel->count([
                     'owner_id' => $userId,
-                    'status_id' => 5, // Delayed status (updated to match schema)
+                    'status_id' => 6, // Delayed status
+                    'is_deleted' => 0
+                ]),
+                'on_hold' => $this->projectModel->count([
+                    'owner_id' => $userId,
+                    'status_id' => 4, // On Hold status
                     'is_deleted' => 0
                 ])
             ];
+
+            // Active sprints
+            $activeSprints = $this->sprintModel->getProjectSprints($userId, 'active');
 
             // Active timer check
             $activeTimer = $_SESSION['active_timer'] ?? null;
@@ -155,7 +166,8 @@ class DashboardController
                 'task_summary' => $taskSummary,
                 'time_tracking_summary' => $timeTrackingSummary,
                 'project_summary' => $projectSummary,
-                'active_timer' => $activeTimer
+                'active_timer' => $activeTimer,
+                'active_sprints' => $activeSprints
             ];
 
         } catch (\Exception $e) {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Core\Database;
 use PDO;
 use RuntimeException;
 use InvalidArgumentException;
@@ -200,6 +199,41 @@ class Permission extends BaseModel
             return $this->create($permissionData);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to create permission: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk create permissions
+     * 
+     * @param array $permissions Array of permission data
+     * @return array Created permission IDs
+     */
+    public function bulkCreate(array $permissions): array
+    {
+        try {
+            $this->db->beginTransaction();
+            
+            $createdIds = [];
+            foreach ($permissions as $permission) {
+                // Check if permission already exists
+                $existing = $this->getByName($permission['name']);
+                if ($existing) {
+                    $createdIds[] = $existing->id;
+                    continue;
+                }
+                
+                // Create new permission
+                $createdIds[] = $this->create([
+                    'name' => $permission['name'],
+                    'description' => $permission['description'] ?? null
+                ]);
+            }
+            
+            $this->db->commit();
+            return $createdIds;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw new RuntimeException("Failed to bulk create permissions: " . $e->getMessage());
         }
     }
 

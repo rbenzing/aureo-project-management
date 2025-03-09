@@ -1,4 +1,5 @@
 <?php
+//file: Views/Companies/index.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web

@@ -16,7 +16,7 @@ use InvalidArgumentException;
 class Sprint extends BaseModel
 {
     protected string $table = 'sprints';
-    
+
     /**
      * Sprint properties
      */
@@ -42,14 +42,15 @@ class Sprint extends BaseModel
         'end_date',
         'status_id'
     ];
-    
+
     /**
      * Define searchable fields
      */
     protected array $searchable = [
-        'name', 'description'
+        'name',
+        'description'
     ];
-    
+
     /**
      * Define validation rules
      */
@@ -71,7 +72,7 @@ class Sprint extends BaseModel
     public function getAllWithTasks(int $limit = 10, int $page = 1): array
     {
         $offset = ($page - 1) * $limit;
-        
+
         $sql = "SELECT s.*, 
                     p.name as project_name,
                     ss.name as status_name,
@@ -119,12 +120,12 @@ class Sprint extends BaseModel
 
         $stmt = $this->db->executeQuery($sql, [':id' => $id]);
         $sprint = $stmt->fetch(PDO::FETCH_OBJ);
-        
+
         if ($sprint) {
             $sprint->tasks = $this->getSprintTasks($id);
             $sprint->velocity = $this->getSprintVelocity($id);
         }
-        
+
         return $sprint ?: null;
     }
 
@@ -174,30 +175,29 @@ class Sprint extends BaseModel
     {
         try {
             $this->db->beginTransaction();
-            
+
             // Remove existing task associations
             $sql = "DELETE FROM sprint_tasks WHERE sprint_id = :sprint_id";
             $this->db->executeInsertUpdate($sql, [':sprint_id' => $sprintId]);
-            
+
             // Add new task associations
             if (!empty($taskIds)) {
                 $values = [];
                 $params = [];
-                
+
                 foreach ($taskIds as $index => $taskId) {
                     $values[] = "(:sprint_id, :task_id_{$index})";
                     $params[":task_id_{$index}"] = $taskId;
                 }
-                
+
                 $params[':sprint_id'] = $sprintId;
-                
+
                 $sql = "INSERT INTO sprint_tasks (sprint_id, task_id) VALUES " . implode(', ', $values);
                 $this->db->executeInsertUpdate($sql, $params);
             }
-            
+
             $this->db->commit();
             return true;
-            
         } catch (\Exception $e) {
             $this->db->rollBack();
             throw new RuntimeException("Failed to add tasks to sprint: " . $e->getMessage());
@@ -214,7 +214,7 @@ class Sprint extends BaseModel
     public function removeTask(int $sprintId, int $taskId): bool
     {
         $sql = "DELETE FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
-        
+
         return $this->db->executeInsertUpdate($sql, [
             ':sprint_id' => $sprintId,
             ':task_id' => $taskId
@@ -239,42 +239,45 @@ class Sprint extends BaseModel
 
         $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
         $sprint = $stmt->fetch(PDO::FETCH_OBJ);
-        
+
         return $sprint ?: null;
     }
 
     /**
-     * Get all sprints for a project
+     * Get active sprints for a user
      * 
-     * @param int $projectId
-     * @param string|null $status
+     * @param int $userId
+     * @param string|null $status Filter by status name (e.g., 'active')
      * @return array
-     * @throws RuntimeException
      */
-    public function getProjectSprints(int $projectId, ?string $status = null): array
+    public function getProjectSprints(int $userId, ?string $status = null): array
     {
         try {
             $sql = "SELECT s.*, 
-                   ss.name as status_name,
-                   (
-                       SELECT COUNT(st.task_id) 
-                       FROM sprint_tasks st 
-                       WHERE st.sprint_id = s.id
-                   ) as total_tasks,
-                   (
-                       SELECT COUNT(t.id) 
-                       FROM tasks t 
-                       JOIN sprint_tasks st ON t.id = st.task_id 
-                       WHERE st.sprint_id = s.id 
-                       AND t.status_id = 6 
-                       AND t.is_deleted = 0
-                   ) as completed_tasks
-            FROM sprints s
-            LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
-            WHERE s.project_id = :project_id 
-            AND s.is_deleted = 0";
+               ss.name as status_name,
+               p.name as project_name,
+               (
+                   SELECT COUNT(st.task_id) 
+                   FROM sprint_tasks st 
+                   JOIN tasks t ON st.task_id = t.id
+                   WHERE st.sprint_id = s.id
+                   AND t.is_deleted = 0
+               ) as total_tasks,
+               (
+                   SELECT COUNT(t.id) 
+                   FROM tasks t 
+                   JOIN sprint_tasks st ON t.id = st.task_id 
+                   WHERE st.sprint_id = s.id 
+                   AND t.status_id = 6 
+                   AND t.is_deleted = 0
+               ) as completed_tasks
+        FROM sprints s
+        JOIN projects p ON s.project_id = p.id
+        JOIN statuses_sprint ss ON s.status_id = ss.id
+        WHERE p.owner_id = :user_id 
+        AND s.is_deleted = 0";
 
-            $params = [':project_id' => $projectId];
+            $params = [':user_id' => $userId];
 
             if ($status) {
                 $sql .= " AND ss.name = :status";
@@ -286,7 +289,7 @@ class Sprint extends BaseModel
             $stmt = $this->db->executeQuery($sql, $params);
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get project sprints: " . $e->getMessage());
+            throw new RuntimeException("Failed to get user sprints: " . $e->getMessage());
         }
     }
 
@@ -307,13 +310,13 @@ class Sprint extends BaseModel
 
         $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         $totalTasks = (int)($result['total_tasks'] ?? 0);
         $completedTasks = (int)($result['completed_tasks'] ?? 0);
-        
-        $velocityPercentage = $totalTasks > 0 ? 
+
+        $velocityPercentage = $totalTasks > 0 ?
             round(($completedTasks / $totalTasks) * 100, 2) : 0;
-            
+
         return [
             'total_tasks' => $totalTasks,
             'completed_tasks' => $completedTasks,
@@ -334,12 +337,12 @@ class Sprint extends BaseModel
         if (!$sprint) {
             throw new RuntimeException("Sprint not found");
         }
-        
+
         $activeSprintExists = $this->getActiveSprintForProject($sprint->project_id);
         if ($activeSprintExists && $activeSprintExists->id != $sprintId) {
             throw new RuntimeException("Another sprint is already active for this project");
         }
-        
+
         // Update status to active (2)
         return $this->update($sprintId, ['status_id' => 2]);
     }
@@ -365,7 +368,7 @@ class Sprint extends BaseModel
     protected function validate(array $data, ?int $id = null): void
     {
         parent::validate($data, $id);
-        
+
         // Validate dates
         if (isset($data['start_date']) && isset($data['end_date'])) {
             if (strtotime($data['end_date']) < strtotime($data['start_date'])) {
@@ -379,37 +382,37 @@ class Sprint extends BaseModel
                     WHERE project_id = :project_id 
                     AND status_id = 2 
                     AND is_deleted = 0";
-            
+
             $params = [':project_id' => $data['project_id']];
-            
+
             if ($id) {
                 $sql .= " AND id != :id";
                 $params[':id'] = $id;
             }
-            
+
             $stmt = $this->db->executeQuery($sql, $params);
             if ($stmt->fetchColumn() > 0) {
                 throw new InvalidArgumentException('Another sprint is already active for this project');
             }
         }
-        
+
         // Check sprint name uniqueness within project
         if (isset($data['name']) && isset($data['project_id'])) {
             $sql = "SELECT COUNT(*) FROM sprints 
                     WHERE name = :name 
                     AND project_id = :project_id 
                     AND is_deleted = 0";
-                    
+
             $params = [
                 ':name' => $data['name'],
                 ':project_id' => $data['project_id']
             ];
-            
+
             if ($id) {
                 $sql .= " AND id != :id";
                 $params[':id'] = $id;
             }
-            
+
             $stmt = $this->db->executeQuery($sql, $params);
             if ($stmt->fetchColumn() > 0) {
                 throw new InvalidArgumentException('A sprint with this name already exists in this project');

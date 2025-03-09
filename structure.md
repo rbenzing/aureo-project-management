@@ -44,10 +44,10 @@ src/
         Validator.php
     Views/
         Auth/
-            forgot_password.php
+            forgot-password.php
             login.php
             registe.php
-            reset_password.php
+            reset-password.php
         Companies/
             create.php
             edit.php
@@ -56,10 +56,19 @@ src/
         Dashboard/
             index.php
         Layouts/
+            breadcrumb.php
             footer.php
             header.php
+            notifications.php
             sidebar.php
         Milestones/
+            inc/
+                cards.php
+                helpers.php
+                pagination.php
+                table_header.php
+                table.php
+                timeline.php
             create.php
             edit.php
             index.php
@@ -68,9 +77,9 @@ src/
             inc/
                 charts.php
                 gantt.php
+                pivot.php
                 table_header.php
                 table.php
-                timeline.php
             create.php
             edit.php
             index.php
@@ -81,11 +90,26 @@ src/
             index.php
             view.php
         Sprints/
+            inc/
+                active_sprint.php
+                helpers.php
+                project_header.php
+                project_selection.php
+                sprint_list.php
+                sprint_stats.php
             create.php
             edit.php
             index.php
             view.php
         Tasks/
+            inc/
+                filters.php
+                helper_functions.php
+                pagination.php
+                stats.php
+                table_header.php
+                table.php
+                task_filtering.js
             create.php
             edit.php
             index.php

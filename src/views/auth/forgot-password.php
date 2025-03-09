@@ -1,4 +1,5 @@
 <?php
+//file: Views/Auth/forgot-password.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web
@@ -20,7 +21,7 @@ use \App\Core\Config;
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
     <!-- Header -->
-    <?php include __DIR__ . '/../layouts/header.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
 
     <!-- Main Content -->
     <main class="container grow h-max mx-auto flex items-center justify-center">
@@ -124,6 +125,6 @@ use \App\Core\Config;
     </main>
 
     <!-- Footer -->
-    <?php include __DIR__ . '/../layouts/footer.php'; ?>
+    <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
 </body>
 </html>

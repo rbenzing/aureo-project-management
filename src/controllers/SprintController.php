@@ -8,6 +8,7 @@ use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Sprint;
 use App\Models\Project;
+use App\Models\Role;
 use App\Models\Task;
 use App\Utils\Validator;
 use RuntimeException;
@@ -19,6 +20,7 @@ class SprintController
     private Sprint $sprintModel;
     private Project $projectModel;
     private Task $taskModel;
+    private Role $roleModel;
 
     public function __construct()
     {
@@ -27,6 +29,7 @@ class SprintController
         $this->sprintModel = new Sprint();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
+        $this->roleModel = new Role();
     }
 
     /**
@@ -38,27 +41,26 @@ class SprintController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            $this->authMiddleware->hasPermission('view_roles');
             
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-
-            if (!empty($project_id)) {
-                $project = $this->projectModel->findWithDetails($project_id);
-                
-            } else {
-                $projects = $this->projectModel->getAllWithDetails($limit, $page);
+            
+            // Use getAllWithDetails to get role information
+            $results = $this->roleModel->getAllWithDetails($page, $limit);
+            $roles = $results['records'];
+            $totalRoles = $results['total'];
+            $totalPages = ceil($totalRoles / $limit);
+            
+            // Fetch permissions for each role
+            foreach ($roles as &$role) {
+                $role->permissions = $this->roleModel->getPermissions($role->id);
             }
-            $sprints = $this->sprintModel->getAllWithTasks($limit, $page);
-
-            include __DIR__ . '/../Views/Sprints/index.php';
-        } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints');
-            exit;
+            
+            include __DIR__ . '/../Views/Roles/index.php';
         } catch (\Exception $e) {
-            error_log("Exception in SprintController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching sprints.';
+            error_log("Exception in RoleController::index: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching roles.';
             header('Location: /dashboard');
             exit;
         }
@@ -87,7 +89,7 @@ class SprintController
 
             $tasks = $this->sprintModel->getSprintTasks($id);
             $project = $this->projectModel->find($sprint->project_id);
-            
+
             include __DIR__ . '/../Views/Sprints/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -111,17 +113,17 @@ class SprintController
     {
         try {
             $this->authMiddleware->hasPermission('create_sprints');
-            
+
             $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {
                 throw new InvalidArgumentException('Project ID is required');
             }
-            
+
             $project = $this->projectModel->find($projectId);
             if (!$project || $project->is_deleted) {
                 throw new InvalidArgumentException('Project not found');
             }
-            
+
             include __DIR__ . '/../Views/Sprints/create.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -166,7 +168,7 @@ class SprintController
 
             $sprintData = [
                 'name' => htmlspecialchars($data['name']),
-                'description' => isset($data['description']) ? 
+                'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
                 'start_date' => $data['start_date'],
@@ -185,7 +187,6 @@ class SprintController
             $_SESSION['success'] = 'Sprint created successfully.';
             header('Location: /sprints/view/' . $sprintId);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -198,7 +199,7 @@ class SprintController
             exit;
         }
     }
-    
+
     /**
      * Display sprint edit form
      * @param string $requestMethod
@@ -227,10 +228,10 @@ class SprintController
 
             // Get all tasks from the project that could be added to the sprint
             $projectTasks = $this->taskModel->getByProjectId($sprint->project_id);
-            
+
             // Get tasks that are already in the sprint
             $sprintTasks = $this->sprintModel->getSprintTasks($id);
-            $sprintTaskIds = array_map(function($task) {
+            $sprintTaskIds = array_map(function ($task) {
                 return $task->id;
             }, $sprintTasks);
 
@@ -288,7 +289,7 @@ class SprintController
 
             $sprintData = [
                 'name' => htmlspecialchars($data['name']),
-                'description' => isset($data['description']) ? 
+                'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'project_id' => $sprint->project_id, // Preserve project_id
                 'start_date' => $data['start_date'],
@@ -307,7 +308,6 @@ class SprintController
             $_SESSION['success'] = 'Sprint updated successfully.';
             header('Location: /sprints/view/' . $id);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
@@ -353,7 +353,7 @@ class SprintController
 
             // Get sprint tasks to check for active tasks
             $sprintTasks = $this->sprintModel->getSprintTasks($id);
-            $activeTasks = array_filter($sprintTasks, function($task) {
+            $activeTasks = array_filter($sprintTasks, function ($task) {
                 return $task->status_id != 6 && $task->status_id != 7; // Not completed or cancelled
             });
 
@@ -367,7 +367,6 @@ class SprintController
             $_SESSION['success'] = 'Sprint deleted successfully.';
             header('Location: /sprints/view/' . $projectId);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints/view/' . ($id ?? ''));
@@ -412,7 +411,6 @@ class SprintController
             $_SESSION['success'] = 'Tasks added to sprint successfully.';
             header('Location: /sprints/view/' . $sprintId);
             exit;
-
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints/view/' . ($sprintId ?? ''));

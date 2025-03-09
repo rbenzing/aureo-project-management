@@ -17,7 +17,7 @@ use InvalidArgumentException;
 class Project extends BaseModel
 {
     protected string $table = 'projects';
-    
+
     /**
      * Project properties
      */
@@ -32,22 +32,29 @@ class Project extends BaseModel
     public ?string $created_at = null;
     public ?string $updated_at = null;
     public bool $is_deleted = false;
-    
+
     /**
      * Define fillable fields
      */
     protected array $fillable = [
-        'company_id', 'owner_id', 'name', 'description', 
-        'start_date', 'end_date', 'status_id', 'key_code'
+        'company_id',
+        'owner_id',
+        'name',
+        'description',
+        'start_date',
+        'end_date',
+        'status_id',
+        'key_code'
     ];
-    
+
     /**
      * Define searchable fields
      */
     protected array $searchable = [
-        'name', 'description'
+        'name',
+        'description'
     ];
-    
+
     /**
      * Define validation rules
      */
@@ -89,10 +96,14 @@ class Project extends BaseModel
             $project = $stmt->fetch(PDO::FETCH_OBJ);
 
             if ($project) {
+                // Enrich project with additional details
                 $project->tasks = $this->getProjectTasks($id);
                 $project->milestones = $this->getProjectMilestones($id);
                 $project->sprints = $this->getProjectSprints($id);
                 $project->team_members = $this->getProjectTeamMembers($id);
+
+                // Calculate project health metrics
+                $project->health_metrics = $this->calculateProjectHealth($id);
             }
 
             return $project ?: null;
@@ -106,26 +117,12 @@ class Project extends BaseModel
      * 
      * @param int $limit
      * @param int $page
-     * @param array $filters
      * @return array
      */
-    public function getAllWithDetails(int $limit = 10, int $page = 1, array $filters = []): array
+    public function getAllWithDetails(int $limit = 10, int $page = 1): array
     {
         try {
             $offset = ($page - 1) * $limit;
-            
-            // Build WHERE clause from filters
-            $whereClauses = ['p.is_deleted = 0'];
-            $params = [];
-            
-            foreach ($filters as $key => $value) {
-                if (in_array($key, $this->fillable)) {
-                    $whereClauses[] = "p.$key = :$key";
-                    $params[":$key"] = $value;
-                }
-            }
-            
-            $whereClause = implode(' AND ', $whereClauses);
 
             $sql = "SELECT 
                     p.*,
@@ -150,21 +147,98 @@ class Project extends BaseModel
                 LEFT JOIN 
                     users u ON u.id = p.owner_id
                 WHERE 
-                    $whereClause
+                    p.is_deleted = 0
                 ORDER BY 
                     p.updated_at DESC
                 LIMIT :limit OFFSET :offset";
 
-            $params[':limit'] = $limit;
-            $params[':offset'] = $offset;
-            
-            $stmt = $this->db->executeQuery($sql, $params);
-            $projects = $stmt->fetchAll(PDO::FETCH_OBJ);
-            
-            return $projects;
+            $stmt = $this->db->executeQuery($sql, [
+                ':limit' => $limit,
+                ':offset' => $offset
+            ]);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get projects: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Calculate project health metrics
+     * 
+     * @param int $projectId
+     * @return array
+     */
+    public function calculateProjectHealth(int $projectId): array
+    {
+        try {
+            // Task completion rate
+            $taskSql = "SELECT 
+                COUNT(*) as total_tasks,
+                SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) as completed_tasks,
+                SUM(CASE WHEN due_date < CURDATE() AND status_id != 6 THEN 1 ELSE 0 END) as overdue_tasks
+            FROM tasks 
+            WHERE project_id = :project_id AND is_deleted = 0";
+
+            $taskStmt = $this->db->executeQuery($taskSql, [':project_id' => $projectId]);
+            $taskMetrics = $taskStmt->fetch(PDO::FETCH_ASSOC);
+
+            // Milestone completion rate
+            $milestoneSql = "SELECT 
+                COUNT(*) as total_milestones,
+                SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) as completed_milestones,
+                SUM(CASE WHEN due_date < CURDATE() AND status_id != 3 THEN 1 ELSE 0 END) as overdue_milestones
+            FROM milestones 
+            WHERE project_id = :project_id AND is_deleted = 0";
+
+            $milestoneStmt = $this->db->executeQuery($milestoneSql, [':project_id' => $projectId]);
+            $milestoneMetrics = $milestoneStmt->fetch(PDO::FETCH_ASSOC);
+
+            // Calculate percentages
+            $taskCompletionRate = $taskMetrics['total_tasks'] > 0
+                ? round(($taskMetrics['completed_tasks'] / $taskMetrics['total_tasks']) * 100, 2)
+                : 0;
+
+            $milestoneCompletionRate = $milestoneMetrics['total_milestones'] > 0
+                ? round(($milestoneMetrics['completed_milestones'] / $milestoneMetrics['total_milestones']) * 100, 2)
+                : 0;
+
+            return [
+                'task_completion_rate' => $taskCompletionRate,
+                'milestone_completion_rate' => $milestoneCompletionRate,
+                'total_tasks' => $taskMetrics['total_tasks'],
+                'completed_tasks' => $taskMetrics['completed_tasks'],
+                'overdue_tasks' => $taskMetrics['overdue_tasks'],
+                'total_milestones' => $milestoneMetrics['total_milestones'],
+                'completed_milestones' => $milestoneMetrics['completed_milestones'],
+                'overdue_milestones' => $milestoneMetrics['overdue_milestones'],
+                'overall_health' => $this->calculateOverallProjectHealth(
+                    $taskCompletionRate,
+                    $milestoneCompletionRate
+                )
+            ];
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to calculate project health: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Calculate overall project health score
+     * 
+     * @param float $taskCompletionRate
+     * @param float $milestoneCompletionRate
+     * @return string
+     */
+    private function calculateOverallProjectHealth(float $taskCompletionRate, float $milestoneCompletionRate): string
+    {
+        $averageCompletionRate = ($taskCompletionRate + $milestoneCompletionRate) / 2;
+
+        return match (true) {
+            $averageCompletionRate >= 85 => 'Excellent',
+            $averageCompletionRate >= 70 => 'Good',
+            $averageCompletionRate >= 50 => 'At Risk',
+            default => 'Critical'
+        };
     }
 
     /**
@@ -200,7 +274,7 @@ class Project extends BaseModel
             throw new RuntimeException("Failed to get project tasks: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get project milestones
      * 
@@ -229,7 +303,7 @@ class Project extends BaseModel
             throw new RuntimeException("Failed to get project milestones: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get project sprints
      * 
@@ -263,7 +337,7 @@ class Project extends BaseModel
             throw new RuntimeException("Failed to get project sprints: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get project team members
      * 
@@ -299,7 +373,7 @@ class Project extends BaseModel
             $stmt = $this->db->executeQuery($sql, [
                 ':project_id' => $projectId
             ]);
-            
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get project team members: " . $e->getMessage());
@@ -307,230 +381,41 @@ class Project extends BaseModel
     }
 
     /**
-     * Get project statuses
-     * 
-     * @return array
-     */
-    public function getAllStatuses(): array
-    {
-        try {
-            $sql = "SELECT * FROM statuses_project WHERE is_deleted = 0";
-            $stmt = $this->db->executeQuery($sql);
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get project statuses: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get projects by company
-     * 
-     * @param int $companyId
-     * @return array
-     */
-    public function getByCompanyId(int $companyId): array
-    {
-        try {
-            // Get both directly associated projects and those through company_projects
-            $sql = "SELECT DISTINCT p.*, ps.name as status_name
-                    FROM projects p
-                    LEFT JOIN statuses_project ps ON p.status_id = ps.id
-                    WHERE (
-                        p.company_id = :company_id
-                        OR p.id IN (
-                            SELECT project_id FROM company_projects 
-                            WHERE company_id = :company_id
-                        )
-                    )
-                    AND p.is_deleted = 0
-                    ORDER BY p.name ASC";
-                    
-            $stmt = $this->db->executeQuery($sql, [':company_id' => $companyId]);
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get company projects: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get project users
-     * 
-     * @return array
-     */
-    public function getUsers(): array
-    {
-        try {
-            if (!$this->id) {
-                throw new RuntimeException("Project ID is not set");
-            }
-
-            $sql = "SELECT DISTINCT u.* 
-                    FROM users u
-                    WHERE (
-                        u.id IN (
-                            SELECT assigned_to FROM tasks
-                            WHERE project_id = :project_id AND is_deleted = 0
-                        )
-                        OR
-                        u.id IN (
-                            SELECT user_id FROM user_projects
-                            WHERE project_id = :project_id
-                        )
-                    )
-                    AND u.is_deleted = 0
-                    ORDER BY u.first_name, u.last_name";
-
-            $stmt = $this->db->executeQuery($sql, [':project_id' => $this->id]);
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get project users: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get recent projects by user
+     * Get recent tasks by user
      * 
      * @param int $userId
      * @param int $limit
      * @return array
      */
-    public function getRecentByUser(int $userId, int $limit = 5): array
+    public function getRecentByUser(int $userId, int $limit = 15): array
     {
         try {
-            $sql = "SELECT DISTINCT p.*, ps.name as status_name
-                    FROM projects p
-                    LEFT JOIN statuses_project ps ON p.status_id = ps.id
-                    WHERE (
-                        p.owner_id = :owner_id
-                        OR p.id IN (
-                            SELECT project_id FROM user_projects WHERE user_id = :project_user_id
-                        )
-                        OR p.id IN (
-                            SELECT DISTINCT project_id FROM tasks 
-                            WHERE assigned_to = :assigned_to AND is_deleted = 0
-                        )
-                    )
-                    AND p.is_deleted = 0
-                    ORDER BY 
-                        CASE WHEN p.owner_id = :user_id THEN 0 ELSE 1 END,
-                        p.updated_at DESC
-                    LIMIT :limit";
+            $sql = "SELECT t.*, 
+                   p.name as project_name,
+                   ts.name as status_name
+            FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
+            WHERE t.assigned_to = :user_id 
+            AND t.is_deleted = 0
+            ORDER BY 
+                CASE 
+                    WHEN t.due_date < CURDATE() THEN 0  -- Overdue
+                    WHEN t.due_date = CURDATE() THEN 1  -- Due today
+                    ELSE 2                             -- Due later
+                END,
+                t.due_date ASC,
+                t.priority DESC
+            LIMIT :limit";
 
             $stmt = $this->db->executeQuery($sql, [
-                ':owner_id' => $userId,
-                ':project_user_id' => $userId,
-                ':assigned_to' => $userId,
                 ':user_id' => $userId,
                 ':limit' => $limit
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to get recent projects: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Add a user to the project team
-     * 
-     * @param int $userId
-     * @return bool
-     */
-    public function addTeamMember(int $userId): bool
-    {
-        try {
-            if (!$this->id) {
-                throw new RuntimeException("Project ID is not set");
-            }
-            
-            $sql = "INSERT INTO user_projects (user_id, project_id) 
-                    VALUES (:user_id, :project_id)
-                    ON DUPLICATE KEY UPDATE user_id = :user_id";
-                    
-            return $this->db->executeInsertUpdate($sql, [
-                ':user_id' => $userId,
-                ':project_id' => $this->id
-            ]);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to add team member: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Remove a user from the project team
-     * 
-     * @param int $userId
-     * @return bool
-     */
-    public function removeTeamMember(int $userId): bool
-    {
-        try {
-            if (!$this->id) {
-                throw new RuntimeException("Project ID is not set");
-            }
-            
-            $sql = "DELETE FROM user_projects 
-                    WHERE user_id = :user_id AND project_id = :project_id";
-                    
-            return $this->db->executeInsertUpdate($sql, [
-                ':user_id' => $userId,
-                ':project_id' => $this->id
-            ]);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to remove team member: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Transforms a string into key code format
-     * 
-     * @param string $input
-     * @return string
-     */
-    public function transformKeyCodeFormat(string $input): string
-    {
-        // 1. Remove all non-alphabetic characters (this includes spaces)
-        $filtered = preg_replace('/[^A-Za-z]/', '', $input);
-    
-        // 2. Extract the first 4 characters
-        $firstFour = substr($filtered, 0, 4);
-    
-        // 3. Convert the result to uppercase
-        $result = strtoupper($firstFour);
-    
-        return $result;
-    }
-    
-    /**
-     * Get project progress percentage
-     * 
-     * @return float
-     */
-    public function getProgressPercentage(): float
-    {
-        try {
-            if (!$this->id) {
-                throw new RuntimeException("Project ID is not set");
-            }
-            
-            // Calculate based on completed tasks
-            $sql = "SELECT 
-                    COUNT(*) as total_tasks,
-                    SUM(CASE WHEN status_id = 6 THEN 1 ELSE 0 END) as completed_tasks
-                    FROM tasks
-                    WHERE project_id = :project_id
-                    AND is_deleted = 0";
-                    
-            $stmt = $this->db->executeQuery($sql, [':project_id' => $this->id]);
-            $taskStats = $stmt->fetch(PDO::FETCH_OBJ);
-            
-            if (!$taskStats || $taskStats->total_tasks == 0) {
-                return 0;
-            }
-            
-            return round(($taskStats->completed_tasks / $taskStats->total_tasks) * 100, 2);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to calculate project progress: " . $e->getMessage());
+            throw new RuntimeException("Error fetching recent tasks: " . $e->getMessage());
         }
     }
 
@@ -544,32 +429,34 @@ class Project extends BaseModel
     protected function validate(array $data, ?int $id = null): void
     {
         parent::validate($data, $id);
-        
+
         // Validate dates
-        if (isset($data['start_date']) && isset($data['end_date']) && 
-            !empty($data['start_date']) && !empty($data['end_date'])) {
+        if (
+            isset($data['start_date']) && isset($data['end_date']) &&
+            !empty($data['start_date']) && !empty($data['end_date'])
+        ) {
             if (strtotime($data['end_date']) < strtotime($data['start_date'])) {
                 throw new InvalidArgumentException('End date cannot be earlier than start date');
             }
         }
-        
+
         // Validate name uniqueness within a company if company_id is provided
         if (isset($data['name']) && isset($data['company_id'])) {
             $sql = "SELECT COUNT(*) FROM projects 
                     WHERE name = :name 
                     AND company_id = :company_id 
                     AND is_deleted = 0";
-            
+
             $params = [
                 ':name' => $data['name'],
                 ':company_id' => $data['company_id']
             ];
-            
+
             if ($id !== null) {
                 $sql .= " AND id != :id";
                 $params[':id'] = $id;
             }
-            
+
             $stmt = $this->db->executeQuery($sql, $params);
             if ($stmt->fetchColumn() > 0) {
                 throw new InvalidArgumentException('A project with this name already exists in this company');
