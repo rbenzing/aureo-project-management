@@ -363,7 +363,7 @@ class Project extends BaseModel
                         OR
                         u.id IN (
                             SELECT user_id FROM user_projects 
-                            WHERE project_id = :project_id
+                            WHERE project_id = :project_id_2
                         )
                     )
                     AND u.is_deleted = 0
@@ -371,7 +371,8 @@ class Project extends BaseModel
                     u.first_name, u.last_name";
 
             $stmt = $this->db->executeQuery($sql, [
-                ':project_id' => $projectId
+                ':project_id' => $projectId,
+                ':project_id_2' => $projectId
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
