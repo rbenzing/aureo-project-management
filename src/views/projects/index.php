@@ -61,20 +61,6 @@ $activeTab = $_GET['view'] ?? 'table';
             <a href="/projects?view=gantt" class="px-4 py-2 <?= $activeTab === 'gantt' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Gantt</a>
             <a href="/projects?view=charts" class="px-4 py-2 <?= $activeTab === 'charts' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400' : 'text-gray-700 dark:text-gray-300' ?>">Charts</a>
         </div>
-        
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 dark:bg-green-800 dark:border-green-700 dark:text-green-200 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline"><?= $_SESSION['success'] ?></span>
-                <?php unset($_SESSION['success']); ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 dark:bg-red-800 dark:border-red-700 dark:text-red-200 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline"><?= $_SESSION['error'] ?></span>
-                <?php unset($_SESSION['error']); ?>
-            </div>
-        <?php endif; ?>
 
         <?php
         // Include the appropriate view based on the active tab

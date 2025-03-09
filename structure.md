@@ -42,6 +42,7 @@ src/
         User.php
     Utils/
         Breadcrumb.php
+        Time.php
         Email.php
         Validator.php
     Views/

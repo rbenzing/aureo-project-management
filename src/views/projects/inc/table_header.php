@@ -247,6 +247,22 @@ $statusOptions = [
             </div>
         </div>
     </div>
+
+        <!-- Toggle All Projects Control -->
+    <div class="dropdown relative">
+        <button class="accordion-dropdown-toggle text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+            </svg>
+        </button>
+        <div class="accordion-dropdown-menu hidden absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10">
+            <div class="py-1">         
+                <button id="toggle-all-projects" type="button" class="sort-dropdown-toggle w-full flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                    <span class="toggle-all-text">Collapse All</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -278,16 +294,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDropdown('view-dropdown-toggle', 'view-dropdown-menu');
     setupDropdown('filter-dropdown-toggle', 'filter-dropdown-menu');
     setupDropdown('sort-dropdown-toggle', 'sort-dropdown-menu');
+    setupDropdown('accordion-dropdown-toggle', 'accordion-dropdown-menu');
     
     // Close all dropdowns when clicking outside
     document.addEventListener('click', function() {
-        document.querySelectorAll('.view-dropdown-menu, .filter-dropdown-menu, .sort-dropdown-menu').forEach(menu => {
+        document.querySelectorAll('.view-dropdown-menu, .filter-dropdown-menu, .sort-dropdown-menu, .accordion-dropdown-menu').forEach(menu => {
             menu.classList.add('hidden');
         });
     });
     
     // Prevent click inside dropdown from closing it
-    document.querySelectorAll('.view-dropdown-menu, .filter-dropdown-menu, .sort-dropdown-menu').forEach(menu => {
+    document.querySelectorAll('.view-dropdown-menu, .filter-dropdown-menu, .sort-dropdown-menu, .accordion-dropdown-menu').forEach(menu => {
         menu.addEventListener('click', function(e) {
             e.stopPropagation();
         });

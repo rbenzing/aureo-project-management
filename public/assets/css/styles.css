@@ -1720,12 +1720,12 @@ button,
   height: 2.5rem;
 }
 
-.h-12 {
-  height: 3rem;
+.h-11 {
+  height: 2.75rem;
 }
 
-.h-14 {
-  height: 3.5rem;
+.h-12 {
+  height: 3rem;
 }
 
 .h-2 {
@@ -1809,12 +1809,12 @@ button,
   width: 2.5rem;
 }
 
-.w-12 {
-  width: 3rem;
+.w-11 {
+  width: 2.75rem;
 }
 
-.w-14 {
-  width: 3.5rem;
+.w-12 {
+  width: 3rem;
 }
 
 .w-16 {
@@ -3388,10 +3388,6 @@ button,
     margin-top: 0px;
   }
 
-  .sm\:inline {
-    display: inline;
-  }
-
   .sm\:flex {
     display: flex;
   }
@@ -3660,11 +3656,6 @@ button,
     border-color: rgb(22 163 74 / var(--tw-border-opacity, 1));
   }
 
-  .dark\:border-green-700 {
-    --tw-border-opacity: 1;
-    border-color: rgb(21 128 61 / var(--tw-border-opacity, 1));
-  }
-
   .dark\:border-green-800 {
     --tw-border-opacity: 1;
     border-color: rgb(22 101 52 / var(--tw-border-opacity, 1));
@@ -3673,11 +3664,6 @@ button,
   .dark\:border-indigo-600 {
     --tw-border-opacity: 1;
     border-color: rgb(79 70 229 / var(--tw-border-opacity, 1));
-  }
-
-  .dark\:border-red-700 {
-    --tw-border-opacity: 1;
-    border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
   }
 
   .dark\:bg-blue-500 {
@@ -3788,11 +3774,6 @@ button,
   .dark\:bg-red-600 {
     --tw-bg-opacity: 1;
     background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
-  }
-
-  .dark\:bg-red-800 {
-    --tw-bg-opacity: 1;
-    background-color: rgb(153 27 27 / var(--tw-bg-opacity, 1));
   }
 
   .dark\:bg-red-900 {

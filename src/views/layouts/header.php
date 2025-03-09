@@ -52,8 +52,8 @@ if (!defined('BASE_PATH')) {
 
                 <a href="/logout" class="hover:text-indigo-200">🔓 Logout</a>
 
-                <div class="h-14 w-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex-shrink-0 flex items-center justify-center">
-                    <span class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                <div class="h-11 w-11 rounded-full bg-indigo-100 dark:bg-indigo-900 flex-shrink-0 flex items-center justify-center">
+                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                         <?= htmlspecialchars(substr($_SESSION['user']['profile']['first_name'], 0, 1) . substr($_SESSION['user']['profile']['last_name'], 0, 1)) ?>
                     </span>
                 </div>

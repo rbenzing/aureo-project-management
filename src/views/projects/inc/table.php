@@ -102,6 +102,12 @@ function getPaginationUrl($page)
                     <div class="flex justify-between items-center w-full">
                         <div class="flex items-center">
                             <div class="w-1 h-12 <?= $statusInfo['color'] ?> mr-4"></div>
+                            <!-- Chevron for toggle -->
+                            <button type="button" class="project-toggle mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 project-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
                             <h2 class="inline-block text-lg font-medium">
                                 <a href="/projects/view/<?= $project->id ?>" class="hover:text-blue-500 dark:hover:text-blue-400"><?= htmlspecialchars($project->name ?? '') ?></a>
                             </h2>
@@ -113,15 +119,6 @@ function getPaginationUrl($page)
                             <?php endif; ?>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
-                                <a href="/tasks/create?project_id=<?= $project->id ?>" class="px-3 py-1 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    New Task
-                                </a>
-                            <?php endif; ?>
-
                             <div class="dropdown relative">
                                 <button class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -136,6 +133,11 @@ function getPaginationUrl($page)
                                         <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_projects', $_SESSION['user']['permissions'])): ?>
                                             <a href="/projects/edit/<?= $project->id ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 Edit Project
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
+                                            <a href="/tasks/create?project_id=<?= $project->id ?>"  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                Add Task
                                             </a>
                                         <?php endif; ?>
                                         <?php if (isset($_SESSION['user']['permissions']) && in_array('create_milestones', $_SESSION['user']['permissions'])): ?>
