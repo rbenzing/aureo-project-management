@@ -45,7 +45,8 @@ class Validator
         'json',
         'array',
         'exists',
-        'after'
+        'after',
+        'strong_password'
     ];
 
     /**
@@ -70,7 +71,8 @@ class Validator
         'json' => ':field must be valid JSON.',
         'array' => ':field must be an array.',
         'exists' => ':field does not exist in the database.',
-        'after' => ':field must be a date after :param.'
+        'after' => ':field must be a date after :param.',
+        'strong_password' => ':field must be at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char.'
     ];
 
     public function __construct(array $data, array $rules)
@@ -403,6 +405,17 @@ class Validator
 
         if (!$date1 || !$date2 || $date1 <= $date2) {
             $this->addError($field, 'after', $parameters);
+        }
+    }
+
+    private function validateStrongPassword(string $field, $value): void
+    {
+        if (!is_null($value)) {
+            // Check for at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+            $pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/';
+            if (!preg_match($pattern, $value)) {
+                $this->addError($field, 'strong_password');
+            }
         }
     }
 }

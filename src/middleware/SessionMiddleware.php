@@ -16,13 +16,35 @@ class SessionMiddleware
         self::$db = Database::getInstance();
     }
 
+    private static function startSecureSession() {
+        ini_set('session.cookie_httponly', 1);
+        ini_set('session.use_only_cookies', 1);
+        
+        // If site is using HTTPS
+        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+            ini_set('session.cookie_secure', 1);
+        }
+        
+        // Add SameSite attribute 
+        session_set_cookie_params([
+            'lifetime' => 3600,
+            'path' => '/',
+            'domain' => $_SERVER['HTTP_HOST'],
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+        
+        session_start();
+    }
+
     /**
      * Handle session management.
      */
     public static function handle()
     {
         // Start the session
-        session_start();
+        self::startSecureSession();
 
         // Ensure the database instance is initialized
         if (self::$db === null) {

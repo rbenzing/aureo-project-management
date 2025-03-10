@@ -149,7 +149,7 @@ class AuthController
                 'first_name' => 'required|string|max:100',
                 'last_name' => 'required|string|max:100',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|string|min:8',
+                'password' => 'required|string|min:8|strong_password',
                 'confirm_password' => 'required|string|same:password'
             ]);
 
@@ -199,17 +199,17 @@ class AuthController
         try {
             $token = filter_var($data['token'] ?? '', FILTER_SANITIZE_STRING);
             if (!$token) {
-                throw new InvalidArgumentException('Invalid or missing token');
+                throw new InvalidArgumentException('Invalid or expired password reset link');
             }
 
             $user = $this->userModel->findByResetToken($token);
             if (!$user || strtotime($user->reset_password_token_expires_at) < time()) {
-                throw new InvalidArgumentException('Invalid or expired token');
+                throw new InvalidArgumentException('Invalid or expired password reset link');
             }
 
             if ($requestMethod === 'POST') {
                 $validator = new Validator($data, [
-                    'password' => 'required|string|min:8',
+                    'password' => 'required|string|min:8|strong_password',
                     'confirm_password' => 'required|string|same:password'
                 ]);
 

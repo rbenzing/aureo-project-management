@@ -6,7 +6,7 @@ namespace App\Middleware;
 
 use App\Core\Database;
 use Exception;
-use IPTools\IP;
+use App\Core\Config;
 
 class ActivityMiddleware
 {

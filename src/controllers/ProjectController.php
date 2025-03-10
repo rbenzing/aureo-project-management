@@ -109,8 +109,6 @@ class ProjectController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
-
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
                 throw new InvalidArgumentException('Invalid project ID');
@@ -119,6 +117,15 @@ class ProjectController
             $project = $this->projectModel->findWithDetails($id);
             if (!$project || $project->is_deleted) {
                 throw new InvalidArgumentException('Project not found');
+            }
+
+            // Check if user has permission for this specific project
+            $userId = $_SESSION['user']['id'] ?? 0;
+            $hasAccess = $project->owner_id === $userId || 
+                        $this->authMiddleware->hasPermission('view_projects');
+                        
+            if (!$hasAccess) {
+                throw new InvalidArgumentException('You do not have permission to view this project');
             }
 
             $tasksByStatus = $this->taskModel->getByProjectId($id);
