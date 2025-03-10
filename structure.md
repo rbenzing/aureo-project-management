@@ -82,6 +82,10 @@ src/
                 gantt.php
                 pivot.php
                 table_header.php
+                table_milestones.php
+                table_projects.php
+                table_sprints.php
+                table_tasks.php
                 table.php
             create.php
             edit.php
