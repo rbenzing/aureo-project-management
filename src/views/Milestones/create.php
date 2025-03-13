@@ -80,8 +80,8 @@ use App\Core\Config;
                             required
                             data-epic-url="/api/projects/{id}/epics">
                             <option value="">Select Project</option>
-                            <?php foreach ($projects as $project): ?>
-                                <option value="<?= htmlspecialchars($project->id) ?>"><?= htmlspecialchars($project->name) ?></option>
+                            <?php foreach ($projects['records'] as $project): ?>
+                                <option value="<?= htmlspecialchars((string)$project->id) ?>"><?= htmlspecialchars($project->name) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -99,7 +99,7 @@ use App\Core\Config;
                         <option value="">None (Top-level milestone)</option>
                         <?php if (!empty($epics)): ?>
                             <?php foreach ($epics as $epic): ?>
-                                <option value="<?= htmlspecialchars($epic->id) ?>"><?= htmlspecialchars($epic->title) ?></option>
+                                <option value="<?= htmlspecialchars((string)$epic->id) ?>"><?= htmlspecialchars($epic->title) ?></option>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </select>
@@ -132,7 +132,7 @@ use App\Core\Config;
                             class="form-select block w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white py-2 px-3"
                             required>
                             <?php foreach ($statuses as $status): ?>
-                                <option value="<?= htmlspecialchars($status->id) ?>"><?= htmlspecialchars($status->name) ?></option>
+                                <option value="<?= htmlspecialchars((string)$status->id) ?>"><?= htmlspecialchars($status->name) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

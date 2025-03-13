@@ -82,7 +82,7 @@ unset($_SESSION['form_data']);
                                     class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a owner</option>
                                     <?php foreach ($users as $user): ?>
-                                        <option value="<?php echo $user->id; ?>"
+                                        <option value="<?php echo htmlspecialchars((string)$user->id); ?>"
                                             <?php echo (isset($formData['owner_id']) && $formData['owner_id'] == $user->id) ? 'selected' : ''; ?>>
                                             <?php echo htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name); ?>
                                         </option>

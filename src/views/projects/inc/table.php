@@ -83,7 +83,7 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
     ?>
         <div class="text-gray-900 dark:text-white">
             <div class="py-2">
-                <div class="flex justify-between items-center w-full">
+                <div class="flex justify-between items-center w-full hover:bg-indigo-800">
                     <div class="flex items-center">
                         <div class="w-1 h-12 <?= $statusInfo['color'] ?> mr-4"></div>
                         <!-- Chevron for toggle -->
@@ -104,7 +104,7 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                     </div>
                     <div class="flex items-center space-x-2">
                         <div class="dropdown relative">
-                            <button class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                            <button class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 mr-2">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                                 </svg>
@@ -143,13 +143,13 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
 
             <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg" data-project-details>
                 <?php if ($viewByFilter === 'tasks'): 
-                        include_once BASE_PATH . '/../src/Views/Projects/inc/table_tasks.php';
+                        include BASE_PATH . '/../src/Views/Projects/inc/table_tasks.php';
                     elseif ($viewByFilter === 'sprints' && isset($project->sprints) && !empty($project->sprints)):
-                        include_once BASE_PATH . '/../src/Views/Projects/inc/table_sprints.php';
+                        include BASE_PATH . '/../src/Views/Projects/inc/table_sprints.php';
                     elseif ($viewByFilter === 'milestones' && isset($project->milestones) && !empty($project->milestones)):
-                        include_once BASE_PATH . '/../src/Views/Projects/inc/table_milestones.php';
+                        include BASE_PATH . '/../src/Views/Projects/inc/table_milestones.php';
                     else:
-                        include_once BASE_PATH . '/../src/Views/Projects/inc/table_projects.php';
+                        include BASE_PATH . '/../src/Views/Projects/inc/table_projects.php';
                     endif; ?>
             </div>
         </div>
@@ -237,8 +237,6 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
 
         // Handle project accordions
         const projectToggles = document.querySelectorAll('.project-toggle');
-        console.log('Found', projectToggles.length, 'project toggles');
-
         const toggleAllBtn = document.getElementById('toggle-all-projects');
         const toggleAllText = toggleAllBtn ? toggleAllBtn.querySelector('.toggle-all-text') : null;
 
@@ -248,22 +246,40 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
         }
 
         let allExpanded = true; // Start with all expanded
+        
+        // Load saved state from localStorage
+        const loadSavedStates = () => {
+            const savedStates = JSON.parse(localStorage.getItem('projectExpandedStates') || '{}');
+            return savedStates;
+        }
+        
+        // Save state to localStorage
+        const saveState = (projectId, isExpanded) => {
+            const savedStates = loadSavedStates();
+            savedStates[projectId] = isExpanded;
+            localStorage.setItem('projectExpandedStates', JSON.stringify(savedStates));
+        }
 
         // Function to toggle a single project
         function toggleProject(toggle) {
             const projectSection = toggle.closest('.text-gray-900');
             const detailsSection = projectSection.querySelector('[data-project-details]');
             const chevron = toggle.querySelector('.project-chevron');
+            
+            // Get project ID from the detailsSection if possible
+            const projectId = projectSection.dataset.projectId || '';
 
             if (detailsSection) {
                 if (detailsSection.classList.contains('hidden')) {
                     // Expanding
                     detailsSection.classList.remove('hidden');
                     chevron.style.transform = 'rotate(0deg)';
+                    if (projectId) saveState(projectId, true);
                 } else {
                     // Collapsing
                     detailsSection.classList.add('hidden');
                     chevron.style.transform = 'rotate(-90deg)';
+                    if (projectId) saveState(projectId, false);
                 }
             } else {
                 console.error('Details section not found for project', projectSection);
@@ -283,12 +299,32 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
             const detailsSection = projectSection.querySelector('[data-project-details]');
 
             if (detailsSection) {
-                console.log('Found details section for project');
-
-                // Start expanded by default (don't add hidden class initially)
-                // But set up the rotation for consistency
-                if (chevron) {
-                    chevron.style.transform = 'rotate(0deg)';
+                // Add project ID to section for state persistence
+                const projectId = projectSection.querySelector('a[href^="/projects/view/"]')?.href.split('/').pop() || '';
+                if (projectId) {
+                    projectSection.dataset.projectId = projectId;
+                    
+                    // Load saved state for this project
+                    const savedStates = loadSavedStates();
+                    const savedState = savedStates[projectId];
+                    
+                    // Apply saved state if it exists
+                    if (savedState === false) {
+                        detailsSection.classList.add('hidden');
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(-90deg)';
+                        }
+                    } else {
+                        // Default expanded
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(0deg)';
+                        }
+                    }
+                } else {
+                    // No project ID found, default to expanded
+                    if (chevron) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
                 }
             } else {
                 console.error('Could not find details section for project');
@@ -310,10 +346,12 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                     const projectSection = toggle.closest('.text-gray-900');
                     const detailsSection = projectSection.querySelector('[data-project-details]');
                     const chevron = toggle.querySelector('.project-chevron');
+                    const projectId = projectSection.dataset.projectId || '';
 
                     if (detailsSection && !detailsSection.classList.contains('hidden')) {
                         detailsSection.classList.add('hidden');
                         chevron.style.transform = 'rotate(-90deg)';
+                        if (projectId) saveState(projectId, false);
                     }
                 });
                 toggleAllText.textContent = 'Expand All';
@@ -324,10 +362,12 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                     const projectSection = toggle.closest('.text-gray-900');
                     const detailsSection = projectSection.querySelector('[data-project-details]');
                     const chevron = toggle.querySelector('.project-chevron');
+                    const projectId = projectSection.dataset.projectId || '';
 
                     if (detailsSection && detailsSection.classList.contains('hidden')) {
                         detailsSection.classList.remove('hidden');
                         chevron.style.transform = 'rotate(0deg)';
+                        if (projectId) saveState(projectId, true);
                     }
                 });
                 toggleAllText.textContent = 'Collapse All';
@@ -359,6 +399,12 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                 allExpanded = true;
             }
         }
+        
+        // Initial state setup - check if we have any saved states
+        function initializeProjectStates() {
+            // Update toggle all button based on current state
+            updateToggleAllState();
+        }
 
         // Add click handler for toggle all button
         if (toggleAllBtn) {
@@ -370,5 +416,8 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
         } else {
             console.error('Toggle all button not found!');
         }
+        
+        // Initialize project states from saved data
+        initializeProjectStates();
     });
 </script>

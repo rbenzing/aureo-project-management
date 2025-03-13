@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\ProjectTemplate;
 use App\Models\User;
 use App\Utils\Validator;
+use App\Utils\Sort;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -56,6 +57,10 @@ class ProjectController
             $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
             $viewBy = isset($_GET['by']) ? $_GET['by'] : 'tasks';
 
+            // For task sorting within projects
+            $taskSortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'priority';
+            $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
+
             // Build filter array for BaseModel::getAll method
             $filters = ['is_deleted' => 0];
 
@@ -83,7 +88,14 @@ class ProjectController
             // Get detailed projects for the IDs we found
             $projects = [];
             foreach ($projectIds as $projectId) {
-                $projects[] = $this->projectModel->findWithDetails($projectId);
+                $project = $this->projectModel->findWithDetails($projectId);
+                
+                // Sort tasks if in tasks view
+                if ($viewBy === 'tasks' && isset($project->tasks) && is_array($project->tasks)) {
+                    $project->tasks = Sort::sortObjects($project->tasks, $taskSortField, $taskSortDir);
+                }
+                
+                $projects[] = $project;
             }
 
             // Load companies for the filter dropdown
@@ -109,6 +121,8 @@ class ProjectController
     public function view(string $requestMethod, array $data): void
     {
         try {
+            $this->authMiddleware->hasPermission('view_projects');
+
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
                 throw new InvalidArgumentException('Invalid project ID');
@@ -119,13 +133,13 @@ class ProjectController
                 throw new InvalidArgumentException('Project not found');
             }
 
-            // Check if user has permission for this specific project
-            $userId = $_SESSION['user']['id'] ?? 0;
-            $hasAccess = $project->owner_id === $userId || 
-                        $this->authMiddleware->hasPermission('view_projects');
-                        
-            if (!$hasAccess) {
-                throw new InvalidArgumentException('You do not have permission to view this project');
+            // For task sorting within project view
+            $taskSortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'priority';
+            $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
+            
+            // Sort tasks if needed
+            if (isset($project->tasks) && is_array($project->tasks)) {
+                $project->tasks = Sort::sortObjects($project->tasks, $taskSortField, $taskSortDir);
             }
 
             $tasksByStatus = $this->taskModel->getByProjectId($id);

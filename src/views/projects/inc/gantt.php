@@ -292,7 +292,7 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                         // Skip if selectedProject is set and this isn't it
                         if ($selectedProjectId !== null && $selectedProjectId != $project->id) continue;
                     ?>
-                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-indigo-800 dark:hover:bg-gray-750">
                             <div class="w-48 p-3">
                                 <a href="/projects/view/<?= $project->id ?>" class="group">
                                     <div class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">

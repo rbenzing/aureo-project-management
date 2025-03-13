@@ -9,18 +9,53 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Utils\Time;
+use App\Utils\Sort;
+
+// Get current sort parameters
+$taskSortField = isset($_GET['task_sort']) ? htmlspecialchars($_GET['task_sort']) : 'priority';
+$taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
 ?>
 <!-- Tasks View -->
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Task</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assignee</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time Spent</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('title', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Task
+                        <?= Sort::getIndicator('title', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('assigned_to', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Assignee
+                        <?= Sort::getIndicator('assigned_to', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('priority', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Priority
+                        <?= Sort::getIndicator('priority', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('status_id', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Status
+                        <?= Sort::getIndicator('status_id', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('due_date', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Due Date
+                        <?= Sort::getIndicator('due_date', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <a href="<?= Sort::getUrl('time_spent', $taskSortField, $taskSortDir, 'task_sort', 'task_dir') ?>" class="group inline-flex items-center">
+                        Time Spent
+                        <?= Sort::getIndicator('time_spent', $taskSortField, $taskSortDir) ?>
+                    </a>
+                </th>
             </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">

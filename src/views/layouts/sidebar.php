@@ -11,8 +11,8 @@ if (!defined('BASE_PATH')) {
 // Define menu items with required permissions
 $mainItems = [
     [
-        'label' => 'Dashboard', 
-        'path' => '/dashboard', 
+        'label' => 'Dashboard',
+        'path' => '/dashboard',
         'icon' => '🏠',
         'permission' => 'view_dashboard'
     ]
@@ -20,41 +20,35 @@ $mainItems = [
 
 $projectItems = [
     [
-        'label' => 'Projects', 
-        'path' => '/projects', 
+        'label' => 'Projects',
+        'path' => '/projects',
         'icon' => '📋',
         'permission' => 'view_projects'
     ],
     [
-        'label' => 'Sprints', 
-        'path' => '/sprints', 
+        'label' => 'Sprints',
+        'path' => '/sprints',
         'icon' => '🏃',
         'permission' => 'view_sprints'
     ],
     [
-        'label' => 'Milestones', 
-        'path' => '/milestones', 
+        'label' => 'Milestones',
+        'path' => '/milestones',
         'icon' => '📍',
         'permission' => 'view_milestones'
-    ],
-    [
-        'label' => 'Project Templates', 
-        'path' => '/project-templates', 
-        'icon' => '📝',
-        'permission' => 'view_project_templates'
     ]
 ];
 
 $taskItems = [
     [
-        'label' => 'Backlog', 
-        'path' => '/tasks', 
+        'label' => 'Backlog',
+        'path' => '/tasks',
         'icon' => '📝',
         'permission' => 'view_tasks'
     ],
     [
-        'label' => 'My Tasks', 
-        'path' => '/tasks/assigned/'.$_SESSION['user']['profile']['id'], 
+        'label' => 'My Tasks',
+        'path' => '/tasks/assigned/' . $_SESSION['user']['profile']['id'],
         'icon' => '📌',
         'permission' => 'view_tasks'
     ]
@@ -62,40 +56,48 @@ $taskItems = [
 
 $adminItems = [
     [
-        'label' => 'Companies', 
-        'path' => '/companies', 
+        'label' => 'Project Templates',
+        'path' => '/project-templates',
+        'icon' => '📝',
+        'permission' => 'view_project_templates'
+    ],
+    [
+        'label' => 'Companies',
+        'path' => '/companies',
         'icon' => '🏢',
         'permission' => 'view_companies'
     ],
     [
-        'label' => 'Users', 
-        'path' => '/users', 
+        'label' => 'Users',
+        'path' => '/users',
         'icon' => '👥',
         'permission' => 'view_users'
     ],
     [
-        'label' => 'Roles', 
-        'path' => '/roles', 
+        'label' => 'Roles',
+        'path' => '/roles',
         'icon' => '🔑',
         'permission' => 'view_roles'
     ]
 ];
 
 // Function to check if the user has permission
-function hasPermission($permission) {
+function hasPermission($permission)
+{
     if (empty($permission)) {
         return true; // No permission required
     }
-    
+
     // Get user permissions from session
     $userPermissions = $_SESSION['user']['permissions'] ?? [];
-    
+
     return in_array($permission, $userPermissions, true);
 }
 
 // Function to filter menu items by permission
-function filterMenuByPermission($items) {
-    return array_filter($items, function($item) {
+function filterMenuByPermission($items)
+{
+    return array_filter($items, function ($item) {
         return hasPermission($item['permission'] ?? '');
     });
 }
@@ -126,84 +128,84 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <nav class="space-y-6">
             <!-- Main Items -->
             <?php if (!empty($mainItems)): ?>
-            <div>
-                <ul class="space-y-1">
-                    <?php
-                    foreach ($mainItems as $item) {
-                        $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
-                        echo '<li>';
-                        echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                        echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                        echo '<span>' . htmlspecialchars($item['label']) . '</span>';
-                        echo '</a>';
-                        echo '</li>';
-                    }
-                    ?>
-                </ul>
-            </div>
+                <div>
+                    <ul class="space-y-1">
+                        <?php
+                        foreach ($mainItems as $item) {
+                            $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
+                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '</a>';
+                            echo '</li>';
+                        }
+                        ?>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <!-- Project Management Section -->
             <?php if (!empty($projectItems)): ?>
-            <div>
-                <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Project Management</p>
-                <div class="mt-2 border-t border-gray-700"></div>
-                <ul class="mt-2 space-y-1">
-                    <?php
-                    foreach ($projectItems as $item) {
-                        $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
-                        echo '<li>';
-                        echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                        echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                        echo '<span>' . htmlspecialchars($item['label']) . '</span>';
-                        echo '</a>';
-                        echo '</li>';
-                    }
-                    ?>
-                </ul>
-            </div>
+                <div>
+                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Project Management</p>
+                    <div class="mt-2 border-t border-gray-700"></div>
+                    <ul class="mt-2 space-y-1">
+                        <?php
+                        foreach ($projectItems as $item) {
+                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
+                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '</a>';
+                            echo '</li>';
+                        }
+                        ?>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <!-- Task Management Section -->
             <?php if (!empty($taskItems)): ?>
-            <div>
-                <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Task Management</p>
-                <div class="mt-2 border-t border-gray-700"></div>
-                <ul class="mt-2 space-y-1">
-                    <?php
-                    foreach ($taskItems as $item) {
-                        $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
-                        echo '<li>';
-                        echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                        echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                        echo '<span>' . htmlspecialchars($item['label']) . '</span>';
-                        echo '</a>';
-                        echo '</li>';
-                    }
-                    ?>
-                </ul>
-            </div>
+                <div>
+                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Task Management</p>
+                    <div class="mt-2 border-t border-gray-700"></div>
+                    <ul class="mt-2 space-y-1">
+                        <?php
+                        foreach ($taskItems as $item) {
+                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
+                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '</a>';
+                            echo '</li>';
+                        }
+                        ?>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <!-- Administration Section -->
             <?php if (!empty($adminItems)): ?>
-            <div>
-                <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administration</p>
-                <div class="mt-2 border-t border-gray-700"></div>
-                <ul class="mt-2 space-y-1">
-                    <?php
-                    foreach ($adminItems as $item) {
-                        $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
-                        echo '<li>';
-                        echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                        echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                        echo '<span>' . htmlspecialchars($item['label']) . '</span>';
-                        echo '</a>';
-                        echo '</li>';
-                    }
-                    ?>
-                </ul>
-            </div>
+                <div>
+                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administration</p>
+                    <div class="mt-2 border-t border-gray-700"></div>
+                    <ul class="mt-2 space-y-1">
+                        <?php
+                        foreach ($adminItems as $item) {
+                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
+                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '</a>';
+                            echo '</li>';
+                        }
+                        ?>
+                    </ul>
+                </div>
             <?php endif; ?>
         </nav>
     </div>
