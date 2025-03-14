@@ -9,12 +9,13 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+use App\Utils\Time;
 
 // Determine the context based on URL
 $isMyTasksView = isset($userId); // This would be set in the controller when /:user_id is present
-$currentUserId = $_SESSION['user']['id'] ?? null;
+$currentUserId = $_SESSION['user']['profile']['id'] ?? null;
 $viewingOwnTasks = $isMyTasksView && $userId == $currentUserId;
-$viewTitle = $isMyTasksView ? ($viewingOwnTasks ? 'My Tasks' : 'User Tasks') : 'Task Backlog';
+$viewTitle = $isMyTasksView ? ($viewingOwnTasks ? 'My Tasks' : 'User Tasks') : 'All Tasks';
 
 // Set up filter options based on context
 $filterOptions = [
@@ -45,16 +46,13 @@ include __DIR__ . '/inc/helper_functions.php';
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-    <!-- Header -->
+    <!-- Header and Sidebar -->
     <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
-
-    <!-- Sidebar -->
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
     <main class="container mx-auto p-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
-
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
         <!-- Task Stats Summary -->
@@ -62,13 +60,15 @@ include __DIR__ . '/inc/helper_functions.php';
 
         <!-- Page Header with Filters -->
         <?php include __DIR__ . '/inc/filters.php'; ?>
-
+        
         <!-- Tasks Table -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
-            <table class="w-full">
-                <?php include __DIR__ . '/inc/table_header.php'; ?>
-                <?php include __DIR__ . '/inc/table.php'; ?>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <?php include __DIR__ . '/inc/table_header.php'; ?>
+                    <?php include __DIR__ . '/inc/table.php'; ?>
+                </table>
+            </div>
         </div>
 
         <!-- Pagination -->
@@ -81,6 +81,26 @@ include __DIR__ . '/inc/helper_functions.php';
     <!-- JavaScript for Task Filtering -->
     <script>
         <?php include __DIR__ . '/inc/task_filtering.js'; ?>
+        
+        // Additional script for active timer if needed
+        <?php if (isset($activeTimer)): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            const timerDisplay = document.getElementById('timer-display');
+            let seconds = <?= $activeTimer['duration'] ?? 0 ?>;
+            
+            setInterval(function() {
+                seconds++;
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                timerDisplay.textContent = 
+                    (hours < 10 ? '0' + hours : hours) + ':' +
+                    (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                    (secs < 10 ? '0' + secs : secs);
+            }, 1000);
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>

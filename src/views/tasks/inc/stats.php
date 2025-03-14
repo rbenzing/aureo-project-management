@@ -7,9 +7,34 @@ if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
     exit;
 }
+
+// Calculate stats
+$totalTaskCount = 0;
+$inProgressCount = 0;
+$overdueCount = 0;
+$completedCount = 0;
+
+if (!empty($tasks)) {
+    $totalTaskCount = count($tasks);
+    
+    foreach ($tasks as $task) {
+        if ($task->status_name === 'In Progress') {
+            $inProgressCount++;
+        }
+        
+        if (!empty($task->due_date) && strtotime($task->due_date) < time() && 
+            $task->status_name !== 'Completed' && $task->status_name !== 'Closed') {
+            $overdueCount++;
+        }
+        
+        if ($task->status_name === 'Completed') {
+            $completedCount++;
+        }
+    }
+}
 ?>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
         <div class="rounded-full bg-blue-100 dark:bg-blue-900 p-3 mr-4">
             <svg class="w-6 h-6 text-blue-500 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,7 +43,7 @@ if (!defined('BASE_PATH')) {
         </div>
         <div>
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tasks</div>
-            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100"><?= $totalTasks ?? 0 ?></div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100"><?= $totalTaskCount ?></div>
         </div>
     </div>
     
@@ -30,19 +55,7 @@ if (!defined('BASE_PATH')) {
         </div>
         <div>
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">In Progress</div>
-            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <?php 
-                $inProgressCount = 0;
-                if (!empty($tasks)) {
-                    foreach ($tasks as $task) {
-                        if ($task->status_name === 'In Progress') {
-                            $inProgressCount++;
-                        }
-                    }
-                }
-                echo $inProgressCount;
-                ?>
-            </div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100"><?= $inProgressCount ?></div>
         </div>
     </div>
     
@@ -54,19 +67,7 @@ if (!defined('BASE_PATH')) {
         </div>
         <div>
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Overdue</div>
-            <div class="text-xl font-semibold text-red-600 dark:text-red-400">
-                <?php 
-                $overdueCount = 0;
-                if (!empty($tasks)) {
-                    foreach ($tasks as $task) {
-                        if (!empty($task->due_date) && strtotime($task->due_date) < time() && $task->status_name !== 'Completed' && $task->status_name !== 'Closed') {
-                            $overdueCount++;
-                        }
-                    }
-                }
-                echo $overdueCount;
-                ?>
-            </div>
+            <div class="text-xl font-semibold text-red-600 dark:text-red-400"><?= $overdueCount ?></div>
         </div>
     </div>
     
@@ -78,19 +79,7 @@ if (!defined('BASE_PATH')) {
         </div>
         <div>
             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Completed</div>
-            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <?php 
-                $completedCount = 0;
-                if (!empty($tasks)) {
-                    foreach ($tasks as $task) {
-                        if ($task->status_name === 'Completed') {
-                            $completedCount++;
-                        }
-                    }
-                }
-                echo $completedCount;
-                ?>
-            </div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100"><?= $completedCount ?></div>
         </div>
     </div>
 </div>

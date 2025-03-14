@@ -7,16 +7,22 @@ if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
     exit;
 }
+
+use App\Utils\Time;
 ?>
 
 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
     <?php if (!empty($tasks)): ?>
         <?php foreach ($tasks as $task): ?>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors task-row" 
+                data-task-id="<?= $task->id ?>"
+                data-priority="<?= $task->priority ?>"
+                data-status="<?= $task->status_name ?>"
+                data-due-date="<?= $task->due_date ?? '' ?>">
                 <td class="px-6 py-4">
                     <div class="flex items-center">
                         <?php if ($task->is_subtask): ?>
-                            <div class="ml-2 mr-3">↳</div>
+                            <div class="ml-2 mr-3 text-gray-400 dark:text-gray-500">↳</div>
                         <?php endif; ?>
                         <div>
                             <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
@@ -33,8 +39,13 @@ if (!defined('BASE_PATH')) {
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm text-gray-900 dark:text-gray-200">
-                        <?= htmlspecialchars($task->project_name ?? 'N/A') ?>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-indigo-500 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-900 dark:text-gray-200">
+                            <?= htmlspecialchars($task->project_name ?? 'N/A') ?>
+                        </span>
                     </div>
                 </td>
                 <?php if (!$isMyTasksView): // Only show assignee column in backlog view ?>
@@ -54,33 +65,41 @@ if (!defined('BASE_PATH')) {
                         </div>
                     <?php else: ?>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                             Unassigned
                         </span>
                     <?php endif; ?>
                 </td>
                 <?php endif; ?>
                 <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getPriorityClasses($task->priority) ?>">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getPriorityClasses($task->priority) ?>">
+                        <?= getPriorityIcon($task->priority) ?>
                         <?= ucfirst(htmlspecialchars($task->priority)) ?>
                     </span>
                 </td>
                 <td class="px-6 py-4">
-                    <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getStatusClasses($task->status_name) ?>">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getStatusClasses($task->status_name) ?>">
+                        <?= getStatusIcon($task->status_name) ?>
                         <?= htmlspecialchars($task->status_name ?? 'Unknown') ?>
                     </span>
                 </td>
                 <td class="px-6 py-4">
                     <?php if (!empty($task->due_date)): ?>
-                        <div class="text-sm <?= isDueDateOverdue($task->due_date, $task->status_name) ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-200' ?>">
+                        <?php $dueDateInfo = getDueDateDisplay($task->due_date, $task->status_name); ?>
+                        <div class="text-sm <?= $dueDateInfo['class'] ?>">
+                            <?= $dueDateInfo['icon'] ?>
                             <?= date('M j, Y', strtotime($task->due_date)) ?>
-                            <?php if (isDueDateOverdue($task->due_date, $task->status_name)): ?>
-                                <span class="ml-2 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded">Overdue</span>
-                            <?php elseif (isDueToday($task->due_date)): ?>
-                                <span class="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded">Today</span>
-                            <?php endif; ?>
+                            <?= $dueDateInfo['badge'] ?>
                         </div>
                     <?php else: ?>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">No Due Date</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                            <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-dasharray="2"></path>
+                            </svg>
+                            No Due Date
+                        </span>
                     <?php endif; ?>
                 </td>
                 <td class="px-6 py-4">
@@ -90,15 +109,23 @@ if (!defined('BASE_PATH')) {
                                 <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <?= formatTimeSpent($task->time_spent) ?>
+                                <?= Time::formatSeconds($task->time_spent) ?>
                             </div>
                         <?php else: ?>
-                            <span class="text-gray-500 dark:text-gray-400">0h 0m</span>
+                            <span class="text-gray-500 dark:text-gray-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-dasharray="2"></path>
+                                </svg>
+                                0h 0m
+                            </span>
                         <?php endif; ?>
                         
                         <?php if (!empty($task->estimated_time)): ?>
-                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Est: <?= formatTimeSpent($task->estimated_time) ?>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Est: <?= Time::formatSeconds($task->estimated_time) ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -108,8 +135,8 @@ if (!defined('BASE_PATH')) {
                         <?php 
                         // Only show timer button if viewing own tasks or have permission to manage tasks
                         $canTimeTrack = $viewingOwnTasks || 
-                                       ($task->assigned_to == $currentUserId) || 
-                                       (isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions']));
+                                      ($task->assigned_to == $currentUserId) || 
+                                      (isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions']));
                         
                         if (!isset($activeTimer) && $canTimeTrack && $task->status_name !== 'Completed' && $task->status_name !== 'Closed'): 
                         ?>
@@ -131,14 +158,21 @@ if (!defined('BASE_PATH')) {
                         <a 
                             href="/tasks/view/<?= $task->id ?>" 
                             class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            title="View Task"
                         >
-                            View
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
                         </a>
                         <a 
                             href="/tasks/edit/<?= $task->id ?>" 
                             class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                            title="Edit Task"
                         >
-                            Edit
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                         </a>
                         <form 
                             action="/tasks/delete/<?= $task->id ?>" 
@@ -150,8 +184,11 @@ if (!defined('BASE_PATH')) {
                             <button 
                                 type="submit" 
                                 class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                title="Delete Task"
                             >
-                                Delete
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                             </button>
                         </form>
                     </div>
@@ -161,7 +198,21 @@ if (!defined('BASE_PATH')) {
     <?php else: ?>
         <tr>
             <td colspan="<?= $isMyTasksView ? '7' : '8' ?>" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                No tasks found. <a href="/tasks/create<?= $isMyTasksView && !$viewingOwnTasks ? '?assign_to=' . htmlspecialchars($userId) : '' ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Create your first task</a>.
+                <div class="flex flex-col items-center py-6">
+                    <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    <p class="text-lg font-medium">No tasks found</p>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Get started by creating your first task
+                    </p>
+                    <a href="/tasks/create<?= $isMyTasksView && !$viewingOwnTasks ? '?assign_to=' . htmlspecialchars($userId) : '' ?>" class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Create Task
+                    </a>
+                </div>
             </td>
         </tr>
     <?php endif; ?>

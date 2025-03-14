@@ -8,7 +8,9 @@ use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Task;
 use App\Models\Project;
+use App\Models\User;
 use App\Utils\Validator;
+use App\Utils\Time;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -17,6 +19,7 @@ class TaskController
     private AuthMiddleware $authMiddleware;
     private Task $taskModel;
     private Project $projectModel;
+    private User $userModel;
 
     public function __construct()
     {
@@ -25,6 +28,7 @@ class TaskController
 
         $this->taskModel = new Task();
         $this->projectModel = new Project();
+        $this->userModel = new User();
     }
 
     /**
@@ -228,6 +232,7 @@ class TaskController
             }
 
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $users = $this->userModel->getAll(['is_deleted' => 0]);
             $statuses = $this->taskModel->getTaskStatuses();
 
             include __DIR__ . '/../Views/Tasks/edit.php';
@@ -263,6 +268,8 @@ class TaskController
             if (!$id) {
                 throw new InvalidArgumentException('Invalid task ID');
             }
+
+            $data['estimated_time'] = Time::parseTimeToSeconds($data['estimated_time']);
 
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',

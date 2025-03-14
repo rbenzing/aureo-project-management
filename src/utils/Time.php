@@ -28,7 +28,7 @@ class Time
 
         return "{$hours}h {$minutes}m";
     }
-    
+
     /**
      * Format duration between two timestamps
      * 
@@ -39,11 +39,11 @@ class Time
     public static function formatDuration(int $startTime, int $endTime): array
     {
         $duration = $endTime - $startTime;
-        
+
         $hours = floor($duration / 3600);
         $minutes = floor(($duration % 3600) / 60);
         $seconds = $duration % 60;
-        
+
         return [
             'hours' => $hours,
             'minutes' => $minutes,
@@ -52,7 +52,7 @@ class Time
             'formatted' => self::formatSeconds($duration)
         ];
     }
-    
+
     /**
      * Calculate time remaining until a given date
      * 
@@ -64,13 +64,13 @@ class Time
         if (empty($dueDate)) {
             return null;
         }
-        
+
         $now = new \DateTime();
         $due = new \DateTime($dueDate);
-        
+
         return (int)$now->diff($due)->format('%r%a');
     }
-    
+
     /**
      * Check if a task is overdue
      * 
@@ -84,41 +84,45 @@ class Time
         if (empty($dueDate)) {
             return false;
         }
-        
+
         // Not overdue if task is completed
         if (in_array($statusId, $completedStatusIds)) {
             return false;
         }
-        
+
         $now = new \DateTime();
         $due = new \DateTime($dueDate);
-        
+
         return $due < $now;
     }
-    
+
     /**
-     * Parse seconds from formatted time string
+     * Parse seconds from various formatted time strings
      * 
-     * @param string $timeString Time string (e.g. "2h 30m", "2.5h", "150m")
+     * @param string $timeString Time string (e.g. "2h 30m", "2.5h", "150m", "02:30")
      * @return int Seconds
      */
     public static function parseTimeToSeconds(string $timeString): int
     {
         $seconds = 0;
-        
+
         // Pattern for "Xh Ym" format
-        if (preg_match('/(\d+)h\s*(\d+)m/', $timeString, $matches)) {
-            $seconds = ($matches[1] * 3600) + ($matches[2] * 60);
+        if (preg_match('/^(\d+)h\s*(\d+)m$/', $timeString, $matches)) {
+            $seconds = ((int)$matches[1] * 3600) + ((int)$matches[2] * 60);
         }
         // Pattern for "X.Yh" format
-        elseif (preg_match('/(\d+\.?\d*)h/', $timeString, $matches)) {
+        elseif (preg_match('/^(\d+(\.\d+)?)h$/', $timeString, $matches)) {
             $seconds = (float)$matches[1] * 3600;
         }
         // Pattern for "Xm" format
-        elseif (preg_match('/(\d+)m/', $timeString, $matches)) {
-            $seconds = $matches[1] * 60;
+        elseif (preg_match('/^(\d+)m$/', $timeString, $matches)) {
+            $seconds = (int)$matches[1] * 60;
         }
-        
+        // Pattern for "mm:ss" format
+        elseif (preg_match('/^(\d{1,2}):(\d{1,2})$/', $timeString, $matches)) {
+            $seconds = ((int)$matches[1] * 60) + (int)$matches[2];
+        }
+
         return (int)$seconds;
     }
 }
