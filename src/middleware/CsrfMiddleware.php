@@ -65,12 +65,10 @@ class CsrfMiddleware
     {
         if (empty($requestToken) || !isset($_SESSION['csrf_token'])) {
             throw new Exception('CSRF token is missing');
-            return false;
         }
 
         if (!$this->isValidTokenFormat($requestToken)) {
             throw new Exception('Invalid token format');
-            return false;
         }
 
         $stmt = $this->db->executeQuery(
@@ -87,12 +85,10 @@ class CsrfMiddleware
         if(empty($storedToken)) {
             $this->cleanupExpiredTokens();
             throw new Exception('Missing or expired CSRF token');
-            return false;
         }
 
         if (!hash_equals($_SESSION['csrf_token'], $requestToken)) {
             throw new Exception('Invalid CSRF token');
-            return false;
         }
 
         return true;
