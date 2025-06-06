@@ -26,6 +26,7 @@ class Project extends BaseModel
     public int $owner_id;
     public string $name;
     public ?string $description = null;
+    public ?string $key_code = null;
     public ?string $start_date = null;
     public ?string $end_date = null;
     public int $status_id;

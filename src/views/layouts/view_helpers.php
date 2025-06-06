@@ -87,15 +87,16 @@ function isDueSoon(?string $dueDate): bool
  */
 function getTaskStatusClass(int $statusId): string
 {
+    // Based on schema: 1=open, 2=in_progress, 3=on_hold, 4=in_review, 5=closed, 6=completed
     $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // New
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // In Progress
-        3 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // On Hold
-        4 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', // Under Review
-        5 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // Closed
-        6 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
+        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // open
+        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // in_progress
+        3 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // on_hold
+        4 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', // in_review
+        5 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // closed
+        6 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
     ];
-    
+
     return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 }
 
@@ -104,14 +105,16 @@ function getTaskStatusClass(int $statusId): string
  */
 function getProjectStatusClass(int $statusId): string
 {
+    // Based on schema: 1=ready, 2=in_progress, 3=completed, 4=on_hold, 6=delayed, 7=cancelled
     $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Planning
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // Active
-        3 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // On Hold
-        4 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
-        5 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // Cancelled
+        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // ready
+        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // in_progress
+        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
+        4 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // on_hold
+        6 => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', // delayed
+        7 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // cancelled
     ];
-    
+
     return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 }
 
@@ -120,13 +123,13 @@ function getProjectStatusClass(int $statusId): string
  */
 function getMilestoneStatusClass(int $statusId): string
 {
+    // Based on schema: 1=Not Started, 2=In Progress, 3=Completed
     $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Planning
+        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Not Started
         2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // In Progress
         3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
-        4 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // Cancelled
     ];
-    
+
     return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 }
 
@@ -135,13 +138,15 @@ function getMilestoneStatusClass(int $statusId): string
  */
 function getSprintStatusClass(int $statusId): string
 {
+    // Based on schema: 1=planning, 2=active, 3=completed, 4=cancelled, 5=delayed
     $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Planning
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // Active
-        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
-        4 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // Cancelled
+        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // planning
+        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // active
+        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
+        4 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // cancelled
+        5 => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', // delayed
     ];
-    
+
     return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 }
 

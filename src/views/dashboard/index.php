@@ -235,8 +235,8 @@ use \App\Utils\Breadcrumb;
                 <div class="p-4 task-content" id="upcoming-tasks">
                     <?php 
                     $upcomingTasks = array_filter($dashboardData['recent_tasks'], function($task) {
-                        return !empty($task->due_date) && 
-                              strtotime($task->due_date) >= time() && 
+                        return !empty($task->due_date) &&
+                              strtotime($task->due_date) >= time() &&
                               $task->status_id != 5 && $task->status_id != 6; // Not closed or completed
                     });
                     
@@ -331,8 +331,8 @@ use \App\Utils\Breadcrumb;
                 <div class="p-4 task-content hidden" id="overdue-tasks">
                     <?php 
                     $overdueTasks = array_filter($dashboardData['recent_tasks'], function($task) {
-                        return !empty($task->due_date) && 
-                              strtotime($task->due_date) < time() && 
+                        return !empty($task->due_date) &&
+                              strtotime($task->due_date) < time() &&
                               $task->status_id != 5 && $task->status_id != 6; // Not closed or completed
                     });
                     

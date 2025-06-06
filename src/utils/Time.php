@@ -73,10 +73,10 @@ class Time
 
     /**
      * Check if a task is overdue
-     * 
+     *
      * @param string $dueDate Due date (YYYY-MM-DD)
      * @param int $statusId Current task status ID
-     * @param array $completedStatusIds Array of status IDs considered "complete"
+     * @param array $completedStatusIds Array of status IDs considered "complete" (5=closed, 6=completed)
      * @return bool True if task is overdue
      */
     public static function isOverdue(?string $dueDate, int $statusId, array $completedStatusIds = [5, 6]): bool

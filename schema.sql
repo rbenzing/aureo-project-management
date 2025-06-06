@@ -181,7 +181,17 @@ INSERT INTO `permissions` (`name`, `description`) VALUES
 ('create_sprints', 'Can create sprints'),
 ('edit_sprints', 'Can edit sprints'),
 ('delete_sprints', 'Can delete sprints'),
-('manage_sprints', 'Can manage all sprints');
+('manage_sprints', 'Can manage all sprints'),
+('view_time_tracking', 'Can view time tracking'),
+('create_time_tracking', 'Can create time entries'),
+('edit_time_tracking', 'Can edit time entries'),
+('delete_time_tracking', 'Can delete time entries'),
+('manage_time_tracking', 'Can manage all time tracking'),
+('view_project_templates', 'Can view project templates'),
+('create_project_templates', 'Can create project templates'),
+('edit_project_templates', 'Can edit project templates'),
+('delete_project_templates', 'Can delete project templates'),
+('manage_project_templates', 'Can manage all project templates');
 
 -- --------------------------------------------------------
 
@@ -335,6 +345,7 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `status_id` int(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
+  `key_code` varchar(10) DEFAULT NULL COMMENT 'Project key code (e.g., PMS)',
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `is_deleted` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
