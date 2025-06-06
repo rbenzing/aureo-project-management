@@ -6,7 +6,6 @@ namespace App\Middleware;
 
 use App\Core\Database;
 use Exception;
-use App\Core\Config;
 
 class ActivityMiddleware
 {

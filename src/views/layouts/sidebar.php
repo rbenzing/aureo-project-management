@@ -54,6 +54,15 @@ $taskItems = [
     ]
 ];
 
+$timeTrackingItems = [
+    [
+        'label' => 'Time Tracking',
+        'path' => '/time-tracking',
+        'icon' => '⏱️',
+        'permission' => 'view_time_tracking'
+    ]
+];
+
 $adminItems = [
     [
         'label' => 'Project Templates',
@@ -106,6 +115,7 @@ function filterMenuByPermission($items)
 $mainItems = filterMenuByPermission($mainItems);
 $projectItems = filterMenuByPermission($projectItems);
 $taskItems = filterMenuByPermission($taskItems);
+$timeTrackingItems = filterMenuByPermission($timeTrackingItems);
 $adminItems = filterMenuByPermission($adminItems);
 
 // Get the current path
@@ -174,6 +184,27 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     <ul class="mt-2 space-y-1">
                         <?php
                         foreach ($taskItems as $item) {
+                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                            echo '<li>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
+                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '</a>';
+                            echo '</li>';
+                        }
+                        ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <!-- Time Tracking Section -->
+            <?php if (!empty($timeTrackingItems)): ?>
+                <div>
+                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Time Tracking</p>
+                    <div class="mt-2 border-t border-gray-700"></div>
+                    <ul class="mt-2 space-y-1">
+                        <?php
+                        foreach ($timeTrackingItems as $item) {
                             $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
                             echo '<li>';
                             echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';

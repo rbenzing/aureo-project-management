@@ -9,7 +9,9 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
-use App\Utils\Time;
+
+// Include helper functions
+include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
 
 // Determine the context based on URL
 $isMyTasksView = isset($userId); // This would be set in the controller when /:user_id is present
@@ -33,8 +35,10 @@ if ($isMyTasksView && !$viewingOwnTasks) {
     $filterOptions['unassigned'] = 'Unassigned';
 }
 
-// Include helper functions
-include __DIR__ . '/inc/helper_functions.php';
+// Include task-specific helper functions if they exist
+if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
+    include __DIR__ . '/inc/helper_functions.php';
+}
 ?>
 
 <!DOCTYPE html>
