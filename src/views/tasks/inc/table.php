@@ -9,6 +9,40 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Utils\Time;
+
+include_once __DIR__ . '/helper_functions.php';
+
+// Define task status labels and colors to match projects style
+$taskStatusMap = [
+    1 => [
+        'label' => 'OPEN',
+        'color' => 'bg-blue-600'
+    ],
+    2 => [
+        'label' => 'IN PROGRESS',
+        'color' => 'bg-yellow-500'
+    ],
+    3 => [
+        'label' => 'ON HOLD',
+        'color' => 'bg-purple-500'
+    ],
+    4 => [
+        'label' => 'IN REVIEW',
+        'color' => 'bg-indigo-500'
+    ],
+    5 => [
+        'label' => 'CLOSED',
+        'color' => 'bg-gray-500'
+    ],
+    6 => [
+        'label' => 'COMPLETED',
+        'color' => 'bg-green-500'
+    ],
+    7 => [
+        'label' => 'CANCELLED',
+        'color' => 'bg-red-500'
+    ]
+];
 ?>
 
 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -80,9 +114,13 @@ use App\Utils\Time;
                     </span>
                 </td>
                 <td class="px-6 py-4">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getStatusClasses($task->status_name) ?>">
-                        <?= getStatusIcon($task->status_name) ?>
-                        <?= htmlspecialchars($task->status_name ?? 'Unknown') ?>
+                    <?php
+                    // Get status info using the same style as projects
+                    $statusId = $task->status_id ?? 1;
+                    $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                    ?>
+                    <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $statusInfo['color'] ?>">
+                        <?= $statusInfo['label'] ?>
                     </span>
                 </td>
                 <td class="px-6 py-4">
@@ -132,18 +170,38 @@ use App\Utils\Time;
                 </td>
                 <td class="px-6 py-4 text-right">
                     <div class="flex justify-end space-x-3">
-                        <?php 
+                        <?php
                         // Only show timer button if viewing own tasks or have permission to manage tasks
-                        $canTimeTrack = $viewingOwnTasks || 
-                                      ($task->assigned_to == $currentUserId) || 
+                        $canTimeTrack = $viewingOwnTasks ||
+                                      ($task->assigned_to == $currentUserId) ||
                                       (isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions']));
-                        
-                        if (!isset($activeTimer) && $canTimeTrack && $task->status_name !== 'Completed' && $task->status_name !== 'Closed'): 
+
+                        // Check if this specific task has an active timer
+                        $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+
+                        if ($canTimeTrack && $task->status_name !== 'Completed' && $task->status_name !== 'Closed'):
+                            if ($isTimerActiveForThisTask):
                         ?>
+                            <!-- Stop Timer Button -->
+                            <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button
+                                    type="submit"
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                    title="Stop Timer"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                    </svg>
+                                </button>
+                            </form>
+                        <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                            <!-- Start Timer Button -->
                             <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                                     title="Start Timer"
                                 >
@@ -153,6 +211,7 @@ use App\Utils\Time;
                                     </svg>
                                 </button>
                             </form>
+                        <?php endif; ?>
                         <?php endif; ?>
                         
                         <a 

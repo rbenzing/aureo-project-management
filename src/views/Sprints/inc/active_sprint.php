@@ -144,8 +144,22 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getTaskStatusClass($task->status_name ?? 'Open') ?>">
-                                            <?= htmlspecialchars($task->status_name ?? 'Open') ?>
+                                        <?php
+                                        // Use consistent status styling
+                                        $statusMap = [
+                                            1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
+                                            2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
+                                            3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
+                                            4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
+                                            5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
+                                            6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+                                            7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+                                        ];
+                                        $statusId = $task->status_id ?? 1;
+                                        $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                                        ?>
+                                        <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $status['color'] ?>">
+                                            <?= $status['label'] ?>
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">

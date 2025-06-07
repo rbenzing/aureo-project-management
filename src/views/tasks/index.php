@@ -18,6 +18,7 @@ $isMyTasksView = isset($userId); // This would be set in the controller when /:u
 $currentUserId = $_SESSION['user']['profile']['id'] ?? null;
 $viewingOwnTasks = $isMyTasksView && $userId == $currentUserId;
 $viewTitle = $isMyTasksView ? ($viewingOwnTasks ? 'My Tasks' : 'User Tasks') : 'All Tasks';
+$isBacklogView = isset($viewType) && $viewType === 'backlog';
 
 // Set up filter options based on context
 $filterOptions = [

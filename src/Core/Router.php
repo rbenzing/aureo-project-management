@@ -29,6 +29,8 @@ class Router
      */
     private array $patterns = [
         ':id' => '([0-9]+)',
+        ':task_id' => '([0-9]+)',
+        ':time_entry_id' => '([0-9]+)',
         ':slug' => '([a-zA-Z0-9-]+)',
         ':page' => '([0-9]+)',
         ':any' => '(.*)'
@@ -107,7 +109,7 @@ class Router
         
         // Match route
         $match = $this->matchRoute($requestMethod, $uri);
-        
+
         if (!$match) {
             throw new \Exception('Page not found', 404);
         }
@@ -135,19 +137,21 @@ class Router
         
         // Build request data
         $requestData = [];
-        if ($requestMethod === 'POST') {
-            $requestData = $_POST;
-        } else {
-            // Map route parameters to names if defined
-            if (isset($params['params']) && !empty($matches)) {
-                $paramNames = $params['params'];
-                
-                foreach ($matches as $index => $value) {
-                    if (isset($paramNames[$index])) {
-                        $requestData[$paramNames[$index]] = $value;
-                    }
+
+        // Map route parameters to names if defined
+        if (isset($params['params']) && !empty($matches)) {
+            $paramNames = $params['params'];
+
+            foreach ($matches as $index => $value) {
+                if (isset($paramNames[$index])) {
+                    $requestData[$paramNames[$index]] = $value;
                 }
             }
+        }
+
+        // For POST requests, merge POST data with URL parameters
+        if ($requestMethod === 'POST') {
+            $requestData = array_merge($requestData, $_POST);
         }
 
         

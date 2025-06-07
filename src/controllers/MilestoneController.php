@@ -8,6 +8,7 @@ use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Milestone;
 use App\Models\Project;
+use App\Models\Template;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
@@ -17,12 +18,14 @@ class MilestoneController
     private AuthMiddleware $authMiddleware;
     private Milestone $milestoneModel;
     private Project $projectModel;
+    private Template $templateModel;
 
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
         $this->milestoneModel = new Milestone();
         $this->projectModel = new Project();
+        $this->templateModel = new Template();
     }
 
     /**
@@ -119,6 +122,11 @@ class MilestoneController
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $epics = $this->milestoneModel->getProjectEpics($data['project_id'] ?? 0);
+
+            // Get company ID from user session if available
+            $companyId = $_SESSION['user']['profile']['company_id'] ?? null;
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
             include __DIR__ . '/../Views/Milestones/create.php';
         } catch (\Exception $e) {
@@ -220,6 +228,15 @@ class MilestoneController
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $epics = $this->milestoneModel->getProjectEpics($milestone->project_id);
+
+            // Get company ID from milestone's project
+            $companyId = null;
+            if ($milestone->project_id) {
+                $project = $this->projectModel->find($milestone->project_id);
+                $companyId = $project->company_id ?? null;
+            }
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
             include __DIR__ . '/../Views/Milestones/edit.php';
         } catch (InvalidArgumentException $e) {

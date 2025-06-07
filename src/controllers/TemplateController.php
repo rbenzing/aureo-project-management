@@ -1,33 +1,32 @@
 <?php
-// file: Controllers/ProjectTemplateController.php
+// file: Controllers/TemplateController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
 use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Models\ProjectTemplate;
+use App\Models\Template;
 use App\Models\Company;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
 
-class ProjectTemplateController
+class TemplateController
 {
     private AuthMiddleware $authMiddleware;
-    private ProjectTemplate $templateModel;
+    private Template $templateModel;
     private Company $companyModel;
 
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
-        $this->templateModel = new ProjectTemplate();
+        $this->templateModel = new Template();
         $this->companyModel = new Company();
     }
 
     /**
      * Display paginated list of templates
-     * 
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -35,28 +34,53 @@ class ProjectTemplateController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_project_templates');
-            
+            $this->authMiddleware->hasPermission('view_templates');
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
             
-            $results = $this->templateModel->getAll(['is_deleted' => 0], $page, $limit);
-            $templates = $results['records'];
-            $totalTemplates = $results['total'];
+            // Get filter parameters
+            $templateType = $data['type'] ?? '';
+            $filters = [];
+            if (!empty($templateType) && array_key_exists($templateType, Template::TEMPLATE_TYPES)) {
+                $filters['template_type'] = $templateType;
+            }
+
+            // Debug: Test each step individually
+            error_log("TemplateController: Starting to fetch templates");
+
+            try {
+                $templates = $this->templateModel->getAllTemplates($filters, $limit, $page);
+                error_log("TemplateController: Successfully got templates, count: " . count($templates));
+            } catch (\Exception $e) {
+                error_log("TemplateController: Error getting templates: " . $e->getMessage());
+                throw $e;
+            }
+
+            try {
+                $countFilters = $filters;
+                $countFilters['is_deleted'] = 0;
+                $totalTemplates = $this->templateModel->count($countFilters);
+                error_log("TemplateController: Successfully got count: " . $totalTemplates);
+            } catch (\Exception $e) {
+                error_log("TemplateController: Error getting count: " . $e->getMessage());
+                throw $e;
+            }
+
             $totalPages = ceil($totalTemplates / $limit);
-            
-            include __DIR__ . '/../Views/ProjectTemplates/index.php';
+
+            include __DIR__ . '/../Views/Templates/index.php';
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching templates.';
+            error_log("Exception in TemplateController::index: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            $_SESSION['error'] = 'An error occurred while fetching templates: ' . $e->getMessage();
             header('Location: /dashboard');
             exit;
         }
     }
 
     /**
-     * View template details
-     * 
+     * Display template details
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -64,7 +88,7 @@ class ProjectTemplateController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_project_templates');
+            $this->authMiddleware->hasPermission('view_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -76,15 +100,15 @@ class ProjectTemplateController
                 throw new InvalidArgumentException('Template not found');
             }
 
-            include __DIR__ . '/../Views/ProjectTemplates/view.php';
+            include __DIR__ . '/../Views/Templates/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::view: " . $e->getMessage());
+            error_log("Exception in TemplateController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching template details.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         }
     }
@@ -99,21 +123,21 @@ class ProjectTemplateController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_project_templates');
+            $this->authMiddleware->hasPermission('create_templates');
             
             $companies = $this->companyModel->getAllCompanies();
             
-            include __DIR__ . '/../Views/ProjectTemplates/create.php';
+            include __DIR__ . '/../Views/Templates/create.php';
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::createForm: " . $e->getMessage());
+            error_log("Exception in TemplateController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         }
     }
 
     /**
-     * Create new template
+     * Handle template creation
      * 
      * @param string $requestMethod
      * @param array $data
@@ -122,16 +146,17 @@ class ProjectTemplateController
     public function create(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $this->createForm($requestMethod, $data);
-            return;
+            header('Location: /templates/create');
+            exit;
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_project_templates');
+            $this->authMiddleware->hasPermission('create_templates');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'required|string',
+                'template_type' => 'required|in:project,task,milestone,sprint',
                 'company_id' => 'nullable|integer|exists:companies,id',
                 'is_default' => 'boolean'
             ]);
@@ -143,6 +168,7 @@ class ProjectTemplateController
             $templateData = [
                 'name' => htmlspecialchars($data['name']),
                 'description' => $data['description'],
+                'template_type' => $data['template_type'],
                 'company_id' => !empty($data['company_id']) ? 
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
                 'is_default' => isset($data['is_default']) ? true : false
@@ -154,15 +180,15 @@ class ProjectTemplateController
             try {
                 $templateId = $this->templateModel->create($templateData);
                 
-                // If this is set as default, update other templates
+                // If this is set as default, update other templates of the same type
                 if ($templateData['is_default']) {
-                    $this->templateModel->setDefaultTemplate($templateId, $templateData['company_id']);
+                    $this->templateModel->setDefaultTemplate($templateId, $templateData['template_type'], $templateData['company_id']);
                 }
                 
                 $this->templateModel->commit();
                 
                 $_SESSION['success'] = 'Template created successfully.';
-                header('Location: /project-templates');
+                header('Location: /templates');
                 exit;
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
@@ -171,12 +197,13 @@ class ProjectTemplateController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /project-templates/create');
+            header('Location: /templates/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::create: " . $e->getMessage());
+            error_log("Exception in TemplateController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the template.';
-            header('Location: /project-templates/create');
+            $_SESSION['form_data'] = $data;
+            header('Location: /templates/create');
             exit;
         }
     }
@@ -191,7 +218,7 @@ class ProjectTemplateController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_project_templates');
+            $this->authMiddleware->hasPermission('edit_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -205,21 +232,21 @@ class ProjectTemplateController
 
             $companies = $this->companyModel->getAllCompanies();
 
-            include __DIR__ . '/../Views/ProjectTemplates/edit.php';
+            include __DIR__ . '/../Views/Templates/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::editForm: " . $e->getMessage());
+            error_log("Exception in TemplateController::editForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         }
     }
 
     /**
-     * Update existing template
+     * Handle template update
      * 
      * @param string $requestMethod
      * @param array $data
@@ -228,12 +255,12 @@ class ProjectTemplateController
     public function update(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $this->editForm($requestMethod, $data);
-            return;
+            header('Location: /templates');
+            exit;
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_project_templates');
+            $this->authMiddleware->hasPermission('edit_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -243,6 +270,7 @@ class ProjectTemplateController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
                 'description' => 'required|string',
+                'template_type' => 'required|in:project,task,milestone,sprint',
                 'company_id' => 'nullable|integer|exists:companies,id',
                 'is_default' => 'boolean'
             ]);
@@ -254,6 +282,7 @@ class ProjectTemplateController
             $templateData = [
                 'name' => htmlspecialchars($data['name']),
                 'description' => $data['description'],
+                'template_type' => $data['template_type'],
                 'company_id' => !empty($data['company_id']) ? 
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
                 'is_default' => isset($data['is_default']) ? true : false
@@ -265,15 +294,15 @@ class ProjectTemplateController
             try {
                 $this->templateModel->update($id, $templateData);
                 
-                // If this is set as default, update other templates
+                // If this is set as default, update other templates of the same type
                 if ($templateData['is_default']) {
-                    $this->templateModel->setDefaultTemplate($id, $templateData['company_id']);
+                    $this->templateModel->setDefaultTemplate($id, $templateData['template_type'], $templateData['company_id']);
                 }
                 
                 $this->templateModel->commit();
                 
                 $_SESSION['success'] = 'Template updated successfully.';
-                header('Location: /project-templates');
+                header('Location: /templates');
                 exit;
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
@@ -281,20 +310,19 @@ class ProjectTemplateController
             }
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            $_SESSION['form_data'] = $data;
-            header("Location: /project-templates/edit/{$id}");
+            header("Location: /templates/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::update: " . $e->getMessage());
+            error_log("Exception in TemplateController::update: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while updating the template.';
-            header("Location: /project-templates/edit/{$id}");
+            header("Location: /templates/edit/{$id}");
             exit;
         }
     }
 
     /**
-     * Delete template (soft delete)
-     * 
+     * Handle template deletion
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -302,13 +330,12 @@ class ProjectTemplateController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_project_templates');
+            $this->authMiddleware->hasPermission('delete_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -323,23 +350,23 @@ class ProjectTemplateController
             $this->templateModel->update($id, ['is_deleted' => true]);
 
             $_SESSION['success'] = 'Template deleted successfully.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectTemplateController::delete: " . $e->getMessage());
+            error_log("Exception in TemplateController::delete: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while deleting the template.';
-            header('Location: /project-templates');
+            header('Location: /templates');
             exit;
         }
     }
 
     /**
      * Return template JSON for AJAX requests
-     * 
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -347,7 +374,7 @@ class ProjectTemplateController
     public function getTemplate(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
+            $this->authMiddleware->hasPermission('view_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -364,15 +391,24 @@ class ProjectTemplateController
                 'success' => true,
                 'template' => [
                     'name' => $template->name,
-                    'description' => $template->description
+                    'description' => $template->description,
+                    'template_type' => $template->template_type
                 ]
             ]);
             exit;
-        } catch (\Exception $e) {
+        } catch (InvalidArgumentException $e) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
+            ]);
+            exit;
+        } catch (\Exception $e) {
+            error_log("Exception in TemplateController::getTemplate: " . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'An error occurred while fetching the template.'
             ]);
             exit;
         }

@@ -1,28 +1,43 @@
 <?php
-// file: Utils/TimeUtil.php
+// file: Utils/Time.php
 declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Services\SettingsService;
+
 /**
  * Time Utility Class
- * 
- * Provides common time formatting and calculation methods
+ *
+ * Provides common time formatting and calculation methods with settings support
  */
 class Time
 {
     /**
-     * Format time in seconds to human-readable format
-     * 
+     * Format time in seconds to human-readable format using settings
+     *
      * @param int|null $seconds
-     * @return string Formatted time (e.g. "2h 30m")
+     * @param bool $useSettings Whether to use settings for formatting
+     * @return string Formatted time (e.g. "2h 30m" or "150m" based on settings)
      */
-    public static function formatSeconds(?int $seconds): string
+    public static function formatSeconds(?int $seconds, bool $useSettings = true): string
     {
         if ($seconds === null || $seconds == 0) {
+            if ($useSettings) {
+                $settingsService = SettingsService::getInstance();
+                $unit = $settingsService->getTimeUnitLabel();
+                return "0 {$unit}";
+            }
             return '0h 0m';
         }
 
+        if ($useSettings) {
+            $settingsService = SettingsService::getInstance();
+            $converted = $settingsService->convertTime($seconds);
+            return $converted['formatted'];
+        }
+
+        // Default formatting (backward compatibility)
         $hours = floor($seconds / 3600);
         $minutes = floor(($seconds % 3600) / 60);
 
@@ -97,8 +112,64 @@ class Time
     }
 
     /**
+     * Convert time value from settings unit to seconds
+     *
+     * @param float $value Time value in the configured unit
+     * @param string|null $unit Override unit (if null, uses settings)
+     * @return int Seconds
+     */
+    public static function convertToSeconds(float $value, ?string $unit = null): int
+    {
+        if ($unit === null) {
+            $settingsService = SettingsService::getInstance();
+            $timeSettings = $settingsService->getTimeIntervalSettings();
+            $unit = $timeSettings['time_unit'];
+        }
+
+        switch ($unit) {
+            case 'seconds':
+                return (int)$value;
+            case 'hours':
+                return (int)($value * 3600);
+            case 'days':
+                return (int)($value * 86400);
+            case 'minutes':
+            default:
+                return (int)($value * 60);
+        }
+    }
+
+    /**
+     * Convert seconds to settings unit
+     *
+     * @param int $seconds
+     * @param string|null $unit Override unit (if null, uses settings)
+     * @return float Value in the specified unit
+     */
+    public static function convertFromSeconds(int $seconds, ?string $unit = null): float
+    {
+        if ($unit === null) {
+            $settingsService = SettingsService::getInstance();
+            $timeSettings = $settingsService->getTimeIntervalSettings();
+            $unit = $timeSettings['time_unit'];
+        }
+
+        switch ($unit) {
+            case 'seconds':
+                return (float)$seconds;
+            case 'hours':
+                return round($seconds / 3600, 2);
+            case 'days':
+                return round($seconds / 86400, 2);
+            case 'minutes':
+            default:
+                return round($seconds / 60, 2);
+        }
+    }
+
+    /**
      * Parse seconds from various formatted time strings
-     * 
+     *
      * @param string $timeString Time string (e.g. "2h 30m", "2.5h", "150m", "02:30")
      * @return int Seconds
      */

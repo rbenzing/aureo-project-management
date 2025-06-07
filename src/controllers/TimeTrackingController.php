@@ -60,6 +60,9 @@ class TimeTrackingController
                 'start_time' => time()
             ];
 
+            // Add timer start history entry
+            $this->taskModel->addTimerStartHistory($taskId, $userId);
+
             $_SESSION['success'] = 'Timer started successfully.';
             header("Location: /tasks/view/{$taskId}");
             exit;
@@ -125,6 +128,12 @@ class TimeTrackingController
 
             // Create time entry record
             $this->createTimeEntry($taskId, $startTime, time(), $duration, $task->is_hourly);
+
+            // Add timer stop history entry
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($userId) {
+                $this->taskModel->addTimerStopHistory($taskId, $userId, $duration);
+            }
 
             // Clear the active timer
             unset($_SESSION['active_timer']);

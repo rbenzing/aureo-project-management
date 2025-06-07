@@ -42,6 +42,13 @@ class Task extends BaseModel
     public ?string $created_at = null;
     public ?string $updated_at = null;
 
+    // New Scrum fields
+    public ?int $story_points = null;
+    public ?string $acceptance_criteria = null;
+    public string $task_type = 'task';
+    public ?int $backlog_priority = null;
+    public bool $is_ready_for_sprint = false;
+
     /**
      * Define fillable fields
      */
@@ -61,7 +68,12 @@ class Task extends BaseModel
         'hourly_rate',
         'is_hourly',
         'is_subtask',
-        'parent_task_id'
+        'parent_task_id',
+        'story_points',
+        'acceptance_criteria',
+        'task_type',
+        'backlog_priority',
+        'is_ready_for_sprint'
     ];
 
     /**
@@ -69,7 +81,8 @@ class Task extends BaseModel
      */
     protected array $searchable = [
         'title',
-        'description'
+        'description',
+        'acceptance_criteria'
     ];
 
     /**
@@ -78,7 +91,12 @@ class Task extends BaseModel
     protected array $validationRules = [
         'title' => ['required', 'string'],
         'project_id' => ['required'],
-        'status_id' => ['required']
+        'status_id' => ['required'],
+        'story_points' => ['nullable', 'integer', 'min:1', 'max:13'],
+        'acceptance_criteria' => ['nullable', 'string'],
+        'task_type' => ['required', 'in:story,bug,task,epic'],
+        'backlog_priority' => ['nullable', 'integer', 'min:1'],
+        'is_ready_for_sprint' => ['boolean']
     ];
 
     /**
@@ -304,7 +322,7 @@ class Task extends BaseModel
 
     /**
      * Get recent tasks by user
-     * 
+     *
      * @param int $userId
      * @param int $limit
      * @return array
@@ -312,15 +330,15 @@ class Task extends BaseModel
     public function getRecentByUser(int $userId, int $limit = 5): array
     {
         try {
-            $sql = "SELECT t.*, 
+            $sql = "SELECT t.*,
                        p.name as project_name,
                        ts.name as status_name
                 FROM tasks t
                 LEFT JOIN projects p ON t.project_id = p.id
                 LEFT JOIN statuses_task ts ON t.status_id = ts.id
-                WHERE t.assigned_to = :user_id 
+                WHERE t.assigned_to = :user_id
                 AND t.is_deleted = 0
-                ORDER BY t.updated_at DESC 
+                ORDER BY t.updated_at DESC
                 LIMIT :limit";
 
             $stmt = $this->db->executeQuery($sql, [
@@ -331,6 +349,128 @@ class Task extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching recent tasks: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get product backlog tasks (not assigned to any sprint)
+     *
+     * @param int $limit
+     * @param int $page
+     * @param int|null $projectId Optional project filter
+     * @return array
+     */
+    public function getProductBacklog(int $limit = 10, int $page = 1, ?int $projectId = null): array
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            $whereClause = "WHERE t.is_deleted = 0 AND p.is_deleted = 0
+                           AND t.id NOT IN (
+                               SELECT st.task_id FROM sprint_tasks st
+                               JOIN sprints s ON st.sprint_id = s.id
+                               WHERE s.status_id IN (1, 2) AND s.is_deleted = 0
+                           )";
+
+            $params = [':limit' => $limit, ':offset' => $offset];
+
+            if ($projectId) {
+                $whereClause .= " AND t.project_id = :project_id";
+                $params[':project_id'] = $projectId;
+            }
+
+            $sql = "SELECT t.*,
+                p.name as project_name,
+                ts.name as status_name,
+                u.first_name,
+                u.last_name
+            FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN users u ON t.assigned_to = u.id
+            {$whereClause}
+            ORDER BY
+                CASE WHEN t.backlog_priority IS NULL THEN 1 ELSE 0 END,
+                t.backlog_priority ASC,
+                t.priority DESC,
+                t.created_at DESC
+            LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->executeQuery($sql, $params);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching product backlog: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count product backlog tasks
+     *
+     * @param int|null $projectId Optional project filter
+     * @return int
+     */
+    public function countProductBacklog(?int $projectId = null): int
+    {
+        try {
+            $whereClause = "WHERE t.is_deleted = 0 AND p.is_deleted = 0
+                           AND t.id NOT IN (
+                               SELECT st.task_id FROM sprint_tasks st
+                               JOIN sprints s ON st.sprint_id = s.id
+                               WHERE s.status_id IN (1, 2) AND s.is_deleted = 0
+                           )";
+
+            $params = [];
+
+            if ($projectId) {
+                $whereClause .= " AND t.project_id = :project_id";
+                $params[':project_id'] = $projectId;
+            }
+
+            $sql = "SELECT COUNT(*)
+                    FROM tasks t
+                    LEFT JOIN projects p ON t.project_id = p.id
+                    {$whereClause}";
+
+            $stmt = $this->db->executeQuery($sql, $params);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error counting product backlog: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get tasks available for sprint planning
+     *
+     * @param int $projectId
+     * @return array
+     */
+    public function getAvailableForSprint(int $projectId): array
+    {
+        try {
+            $sql = "SELECT t.*,
+                ts.name as status_name,
+                u.first_name,
+                u.last_name
+            FROM tasks t
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE t.project_id = :project_id
+            AND t.is_deleted = 0
+            AND t.is_ready_for_sprint = 1
+            AND t.id NOT IN (
+                SELECT st.task_id FROM sprint_tasks st
+                JOIN sprints s ON st.sprint_id = s.id
+                WHERE s.status_id IN (1, 2) AND s.is_deleted = 0
+            )
+            ORDER BY
+                CASE WHEN t.backlog_priority IS NULL THEN 1 ELSE 0 END,
+                t.backlog_priority ASC,
+                t.priority DESC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching tasks available for sprint: " . $e->getMessage());
         }
     }
 
@@ -496,7 +636,7 @@ class Task extends BaseModel
 
     /**
      * Get task history
-     * 
+     *
      * @param int $taskId
      * @return array
      */
@@ -516,6 +656,261 @@ class Task extends BaseModel
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching task history: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Override update method to include history tracking
+     *
+     * @param int $id Record ID
+     * @param array $data Updated record data
+     * @param int|null $userId User ID for history tracking (if null, uses session)
+     * @return bool Success status
+     * @throws RuntimeException
+     */
+    public function update(int $id, array $data, ?int $userId = null): bool
+    {
+        try {
+            // Get current task data for history tracking
+            $currentTask = $this->find($id);
+            if (!$currentTask) {
+                throw new RuntimeException("Task not found for update");
+            }
+
+            // Get user ID for history tracking
+            if ($userId === null) {
+                $userId = $_SESSION['user']['id'] ?? null;
+            }
+
+            // Track changes for history before updating
+            if ($userId) {
+                $this->trackTaskChanges($id, $userId, $currentTask, $data);
+            }
+
+            // Call parent update method
+            return parent::update($id, $data);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error updating task: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Track task changes for history
+     *
+     * @param int $taskId
+     * @param int $userId
+     * @param object $currentTask
+     * @param array $newData
+     */
+    private function trackTaskChanges(int $taskId, int $userId, object $currentTask, array $newData): void
+    {
+        $fieldMappings = [
+            'title' => 'Title',
+            'description' => 'Description',
+            'priority' => 'Priority',
+            'status_id' => 'Status',
+            'project_id' => 'Project',
+            'assigned_to' => 'Assigned To',
+            'due_date' => 'Due Date',
+            'estimated_time' => 'Estimated Time',
+            'hourly_rate' => 'Hourly Rate',
+            'is_hourly' => 'Billable',
+            'parent_task_id' => 'Parent Task',
+            'story_points' => 'Story Points',
+            'acceptance_criteria' => 'Acceptance Criteria',
+            'task_type' => 'Task Type',
+            'backlog_priority' => 'Backlog Priority',
+            'is_ready_for_sprint' => 'Ready for Sprint'
+        ];
+
+        foreach ($newData as $field => $newValue) {
+            if (!isset($fieldMappings[$field])) {
+                continue;
+            }
+
+            $oldValue = $currentTask->$field ?? null;
+
+            // Skip if values are the same
+            if ($oldValue == $newValue) {
+                continue;
+            }
+
+            // Format values for display
+            $formattedOldValue = $this->formatFieldValue($field, $oldValue);
+            $formattedNewValue = $this->formatFieldValue($field, $newValue);
+
+            $this->addHistoryEntry(
+                $taskId,
+                $userId,
+                'updated',
+                $fieldMappings[$field],
+                $formattedOldValue,
+                $formattedNewValue
+            );
+        }
+    }
+
+    /**
+     * Format field values for history display
+     *
+     * @param string $field
+     * @param mixed $value
+     * @return string
+     */
+    private function formatFieldValue(string $field, $value): string
+    {
+        if ($value === null) {
+            return 'None';
+        }
+
+        switch ($field) {
+            case 'status_id':
+                return $this->getStatusName($value);
+            case 'project_id':
+                return $this->getProjectName($value);
+            case 'assigned_to':
+                return $this->getUserName($value);
+            case 'parent_task_id':
+                return $this->getTaskTitle($value);
+            case 'priority':
+                return ucfirst($value);
+            case 'is_hourly':
+                return $value ? 'Yes' : 'No';
+            case 'estimated_time':
+                return Time::formatSeconds($value);
+            default:
+                return (string) $value;
+        }
+    }
+
+    /**
+     * Get status name by ID
+     */
+    private function getStatusName(int $statusId): string
+    {
+        try {
+            $sql = "SELECT name FROM statuses_task WHERE id = :id";
+            $stmt = $this->db->executeQuery($sql, [':id' => $statusId]);
+            return $stmt->fetchColumn() ?: 'Unknown Status';
+        } catch (\Exception $e) {
+            return 'Unknown Status';
+        }
+    }
+
+    /**
+     * Get project name by ID
+     */
+    private function getProjectName(int $projectId): string
+    {
+        try {
+            $sql = "SELECT name FROM projects WHERE id = :id";
+            $stmt = $this->db->executeQuery($sql, [':id' => $projectId]);
+            return $stmt->fetchColumn() ?: 'Unknown Project';
+        } catch (\Exception $e) {
+            return 'Unknown Project';
+        }
+    }
+
+    /**
+     * Get user name by ID
+     */
+    private function getUserName(int $userId): string
+    {
+        try {
+            $sql = "SELECT CONCAT(first_name, ' ', last_name) as name FROM users WHERE id = :id";
+            $stmt = $this->db->executeQuery($sql, [':id' => $userId]);
+            return $stmt->fetchColumn() ?: 'Unknown User';
+        } catch (\Exception $e) {
+            return 'Unknown User';
+        }
+    }
+
+    /**
+     * Get task title by ID
+     */
+    private function getTaskTitle(int $taskId): string
+    {
+        try {
+            $sql = "SELECT title FROM tasks WHERE id = :id";
+            $stmt = $this->db->executeQuery($sql, [':id' => $taskId]);
+            return $stmt->fetchColumn() ?: 'Unknown Task';
+        } catch (\Exception $e) {
+            return 'Unknown Task';
+        }
+    }
+
+    /**
+     * Override create method to include history tracking
+     *
+     * @param array $data Record data
+     * @param int|null $userId User ID for history tracking (if null, uses session)
+     * @return int The new record ID
+     * @throws RuntimeException
+     */
+    public function create(array $data, ?int $userId = null): int
+    {
+        try {
+            // Get user ID for history tracking
+            if ($userId === null) {
+                $userId = $_SESSION['user']['id'] ?? null;
+            }
+
+            // Call parent create method
+            $taskId = parent::create($data);
+
+            // Add creation history entry
+            if ($userId && $taskId) {
+                $this->addHistoryEntry(
+                    $taskId,
+                    $userId,
+                    'created',
+                    null,
+                    null,
+                    'Task created'
+                );
+            }
+
+            return $taskId;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error creating task: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Add timer start history entry
+     *
+     * @param int $taskId
+     * @param int $userId
+     */
+    public function addTimerStartHistory(int $taskId, int $userId): void
+    {
+        $this->addHistoryEntry(
+            $taskId,
+            $userId,
+            'timer_started',
+            null,
+            null,
+            'Timer started at ' . date('Y-m-d H:i:s')
+        );
+    }
+
+    /**
+     * Add timer stop history entry
+     *
+     * @param int $taskId
+     * @param int $userId
+     * @param int $duration Duration in seconds
+     */
+    public function addTimerStopHistory(int $taskId, int $userId, int $duration): void
+    {
+        $formattedDuration = Time::formatSeconds($duration);
+        $this->addHistoryEntry(
+            $taskId,
+            $userId,
+            'timer_stopped',
+            null,
+            null,
+            "Timer stopped at " . date('Y-m-d H:i:s') . " (Duration: {$formattedDuration})"
+        );
     }
 
     /**

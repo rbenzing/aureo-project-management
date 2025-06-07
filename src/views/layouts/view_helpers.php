@@ -9,17 +9,34 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Utils\Time;
+use App\Services\SettingsService;
 
 /**
  * Common view helper functions for consistent UI across all views
  */
 
 /**
- * Format time duration for display
+ * Format time duration for display using settings
  */
-function formatTime(?int $seconds): string
+function formatTime(?int $seconds, bool $useSettings = true): string
 {
-    return Time::formatSeconds($seconds);
+    return Time::formatSeconds($seconds, $useSettings);
+}
+
+/**
+ * Format time duration for display with settings-aware formatting
+ */
+function formatTimeWithSettings(?int $seconds): string
+{
+    if ($seconds === null || $seconds == 0) {
+        $settingsService = SettingsService::getInstance();
+        $unit = $settingsService->getTimeUnitLabel();
+        return "0 {$unit}";
+    }
+
+    $settingsService = SettingsService::getInstance();
+    $converted = $settingsService->convertTime($seconds);
+    return $converted['formatted'];
 }
 
 /**
@@ -83,21 +100,23 @@ function isDueSoon(?string $dueDate): bool
 }
 
 /**
- * Get CSS classes for task status
+ * Get CSS classes for task status - Updated for consistency
  */
 function getTaskStatusClass(int $statusId): string
 {
-    // Based on schema: 1=open, 2=in_progress, 3=on_hold, 4=in_review, 5=closed, 6=completed
-    $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // open
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // in_progress
-        3 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // on_hold
-        4 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', // in_review
-        5 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // closed
-        6 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
+    // Updated to match new consistent styling across all pages
+    $statusMap = [
+        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
+        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
+        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
+        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
+        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
     ];
 
-    return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+    return $status['color'] . ' bg-opacity-20 text-white';
 }
 
 /**
@@ -298,10 +317,14 @@ function renderActionButtons(string $entityType, int $id, array $permissions = [
 /**
  * Generate timer controls for tasks
  */
-function renderTimerControls(int $taskId, bool $hasActiveTimer = false): string
+function renderTimerControls(int $taskId): string
 {
-    if ($hasActiveTimer) {
-        return '<form action="/timer/stop" method="POST" class="inline">
+    // Check if this specific task has an active timer
+    $activeTimer = $_SESSION['active_timer'] ?? null;
+    $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $taskId;
+
+    if ($isTimerActiveForThisTask) {
+        return '<form action="/tasks/stop-timer/' . $taskId . '" method="POST" class="inline">
                     <input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">
                     <button type="submit" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,19 +334,21 @@ function renderTimerControls(int $taskId, bool $hasActiveTimer = false): string
                         Stop
                     </button>
                 </form>';
+    } elseif (!isset($activeTimer)) { // Only show start timer if no timer is running at all
+        return '<form action="/tasks/start-timer/' . $taskId . '" method="POST" class="inline">
+                    <input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Start
+                    </button>
+                </form>';
     }
-    
-    return '<form action="/timer/start" method="POST" class="inline">
-                <input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">
-                <input type="hidden" name="task_id" value="' . $taskId . '">
-                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Start
-                </button>
-            </form>';
+
+    // Return empty string if another timer is running
+    return '';
 }
 
 /**

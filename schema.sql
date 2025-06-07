@@ -187,11 +187,13 @@ INSERT INTO `permissions` (`name`, `description`) VALUES
 ('edit_time_tracking', 'Can edit time entries'),
 ('delete_time_tracking', 'Can delete time entries'),
 ('manage_time_tracking', 'Can manage all time tracking'),
-('view_project_templates', 'Can view project templates'),
-('create_project_templates', 'Can create project templates'),
-('edit_project_templates', 'Can edit project templates'),
-('delete_project_templates', 'Can delete project templates'),
-('manage_project_templates', 'Can manage all project templates');
+('view_templates', 'Can view templates'),
+('create_templates', 'Can create templates'),
+('edit_templates', 'Can edit templates'),
+('delete_templates', 'Can delete templates'),
+('manage_templates', 'Can manage all templates'),
+('view_settings', 'Can view application settings'),
+('manage_settings', 'Can manage application settings');
 
 -- --------------------------------------------------------
 
@@ -387,6 +389,11 @@ CREATE TABLE IF NOT EXISTS `tasks` (
   `start_date` date DEFAULT NULL,
   `due_date` date DEFAULT NULL,
   `complete_date` date DEFAULT NULL,
+  `story_points` tinyint(3) UNSIGNED DEFAULT NULL COMMENT 'Story points for estimation (1-13 Fibonacci)',
+  `acceptance_criteria` text DEFAULT NULL COMMENT 'Definition of done criteria',
+  `task_type` enum('story','bug','task','epic') NOT NULL DEFAULT 'task' COMMENT 'Scrum task type',
+  `backlog_priority` int(10) UNSIGNED DEFAULT NULL COMMENT 'Priority order in product backlog',
+  `is_ready_for_sprint` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Ready for sprint planning',
   `is_deleted` tinyint(1) UNSIGNED DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -396,6 +403,9 @@ CREATE TABLE IF NOT EXISTS `tasks` (
   KEY `fk_tasks_project` (`project_id`),
   KEY `fk_tasks_assigned_to` (`assigned_to`),
   KEY `fk_tasks_parent` (`parent_task_id`),
+  KEY `idx_backlog_priority` (`backlog_priority`),
+  KEY `idx_task_type` (`task_type`),
+  KEY `idx_ready_for_sprint` (`is_ready_for_sprint`),
   CONSTRAINT `fk_tasks_assigned_to` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_tasks_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_tasks_status` FOREIGN KEY (`status_id`) REFERENCES `statuses_task` (`id`)
@@ -713,12 +723,13 @@ CREATE TABLE IF NOT EXISTS `task_history` (
 -- Table structure for project templates
 --
 
-DROP TABLE IF EXISTS `project_templates`;
-CREATE TABLE IF NOT EXISTS `project_templates` (
+DROP TABLE IF EXISTS `templates`;
+CREATE TABLE IF NOT EXISTS `templates` (
   `id` int(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `guid` uuid NOT NULL DEFAULT uuid(),
   `name` varchar(255) NOT NULL,
   `description` text NOT NULL,
+  `template_type` enum('project','task','milestone','sprint') NOT NULL DEFAULT 'project',
   `company_id` int(20) UNSIGNED DEFAULT NULL COMMENT 'Can be organization-specific or null for global',
   `is_default` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
   `is_deleted` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
@@ -726,9 +737,48 @@ CREATE TABLE IF NOT EXISTS `project_templates` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `guid` (`guid`),
+  KEY `template_type` (`template_type`),
   KEY `fk_templates_company` (`company_id`),
   CONSTRAINT `fk_templates_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `settings`
+--
+
+DROP TABLE IF EXISTS `settings`;
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category` varchar(50) NOT NULL,
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` text DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_setting` (`category`, `setting_key`),
+  KEY `idx_category` (`category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Insert default settings
+--
+INSERT INTO `settings` (`category`, `setting_key`, `setting_value`, `description`) VALUES
+('time_intervals', 'time_unit', 'minutes', 'Default time unit for time tracking (minutes, seconds, hours, days)'),
+('time_intervals', 'time_precision', '15', 'Time precision/increment for time inputs'),
+('projects', 'default_task_type', 'task', 'Default task type when creating new tasks'),
+('projects', 'auto_assign_creator', '1', 'Automatically assign task creator as assignee'),
+('projects', 'require_project_for_tasks', '0', 'Require project selection when creating tasks'),
+('tasks', 'default_priority', 'medium', 'Default priority for new tasks'),
+('tasks', 'auto_estimate_enabled', '0', 'Enable automatic time estimation based on similar tasks'),
+('tasks', 'story_points_enabled', '1', 'Enable story points for agile estimation'),
+('milestones', 'auto_create_from_sprints', '0', 'Automatically create milestones from sprint completions'),
+('milestones', 'milestone_notification_days', '7', 'Days before milestone due date to send notifications'),
+('sprints', 'default_sprint_length', '14', 'Default sprint length in days'),
+('sprints', 'auto_start_next_sprint', '0', 'Automatically start next sprint when current ends'),
+('sprints', 'sprint_planning_enabled', '1', 'Enable sprint planning features');
 
 -- --------------------------------------------------------
 

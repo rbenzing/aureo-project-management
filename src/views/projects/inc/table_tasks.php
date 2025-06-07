@@ -11,6 +11,9 @@ if (!defined('BASE_PATH')) {
 use App\Utils\Time;
 use App\Utils\Sort;
 
+// Include helper functions for consistent styling
+include_once BASE_PATH . '/../src/Views/Tasks/inc/helper_functions.php';
+
 // Get current sort parameters
 $taskSortField = isset($_GET['task_sort']) ? htmlspecialchars($_GET['task_sort']) : 'priority';
 $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
@@ -62,26 +65,20 @@ $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' :
             <?php if (isset($project->tasks) && !empty($project->tasks)): ?>
                 <?php foreach ($project->tasks as $task): ?>
                     <?php
-                    // Priority level mapping
+                    // Priority level - use helper functions for consistency
                     $priorityLevel = isset($task->priority) ? $task->priority : 'none';
-                    $priorityClasses = [
-                        'high' => 'text-red-600 dark:text-red-400',
-                        'medium' => 'text-yellow-600 dark:text-yellow-400',
-                        'low' => 'text-blue-600 dark:text-blue-400',
-                        'none' => 'text-gray-600 dark:text-gray-400'
-                    ];
-                    $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
 
-                    // Status mapping
+                    // Status mapping to match tasks page style
                     $taskStatusMap = [
-                        1 => ['label' => 'Open', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
-                        2 => ['label' => 'In Progress', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
-                        3 => ['label' => 'On Hold', 'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
-                        4 => ['label' => 'In Review', 'class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'],
-                        5 => ['label' => 'Closed', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'],
-                        6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200']
+                        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
+                        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
+                        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
+                        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
+                        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
+                        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+                        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
                     ];
-                    $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'];
+                    $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
                     ?>
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -110,12 +107,13 @@ $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' :
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium <?= $priorityClass ?>">
-                                <?= ucfirst($priorityLevel) ?>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getPriorityClasses($priorityLevel) ?>">
+                                <?= getPriorityIcon($priorityLevel) ?>
+                                <?= ucfirst(htmlspecialchars($priorityLevel)) ?>
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $taskStatus['class'] ?>">
+                            <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $taskStatus['color'] ?>">
                                 <?= $taskStatus['label'] ?>
                             </span>
                         </td>

@@ -9,6 +9,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Sprint;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\Template;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
@@ -19,6 +20,7 @@ class SprintController
     private Sprint $sprintModel;
     private Project $projectModel;
     private Task $taskModel;
+    private Template $templateModel;
 
     public function __construct()
     {
@@ -27,6 +29,7 @@ class SprintController
         $this->sprintModel = new Sprint();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
+        $this->templateModel = new Template();
     }
 
     /**
@@ -120,6 +123,14 @@ class SprintController
             if (!$project || $project->is_deleted) {
                 throw new InvalidArgumentException('Project not found');
             }
+
+            // Get all tasks from the project that could be added to the sprint
+            $project_tasks = $this->taskModel->getByProjectId($projectId);
+
+            // Get company ID from project
+            $companyId = $project->company_id ?? null;
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
             include __DIR__ . '/../Views/Sprints/create.php';
         } catch (InvalidArgumentException $e) {
@@ -231,6 +242,11 @@ class SprintController
             $sprintTaskIds = array_map(function ($task) {
                 return $task->id;
             }, $sprintTasks);
+
+            // Get company ID from project
+            $companyId = $project->company_id ?? null;
+            // Load templates available for this company or global templates
+            $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
             include __DIR__ . '/../Views/Sprints/edit.php';
         } catch (InvalidArgumentException $e) {

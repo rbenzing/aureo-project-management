@@ -17,39 +17,12 @@ use \App\Core\Config;
     </div>
 </footer>
 
+<!-- Include Floating Timer -->
+<?php include BASE_PATH . '/../src/Views/Layouts/floating_timer.php'; ?>
+
 <script type="text/javascript" src="/assets/js/scripts.js"></script>
 
-<!-- Active Timer JavaScript -->
-<?php if (!empty($_SESSION['active_timer'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const timerDisplay = document.getElementById('active-timer');
-    if (timerDisplay) {
-        const startTime = <?= $_SESSION['active_timer']['start_time'] ?? time() ?>;
 
-        function updateTimer() {
-            const now = Math.floor(Date.now() / 1000);
-            const elapsed = now - startTime;
-
-            const hours = Math.floor(elapsed / 3600);
-            const minutes = Math.floor((elapsed % 3600) / 60);
-            const seconds = elapsed % 60;
-
-            const timeString =
-                (hours < 10 ? '0' + hours : hours) + ':' +
-                (minutes < 10 ? '0' + minutes : minutes) + ':' +
-                (seconds < 10 ? '0' + seconds : seconds);
-
-            timerDisplay.textContent = timeString;
-        }
-
-        // Update immediately and then every second
-        updateTimer();
-        setInterval(updateTimer, 1000);
-    }
-});
-</script>
-<?php endif; ?>
 
 <!-- Common JavaScript Functions -->
 <script>
@@ -78,25 +51,5 @@ function deleteEntity(entityType, id) {
     }
 }
 
-// Sidebar toggle functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
 
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('-translate-x-full');
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth < 768 &&
-                !sidebar.contains(event.target) &&
-                !sidebarToggle.contains(event.target) &&
-                !sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.add('-translate-x-full');
-            }
-        });
-    }
-});
 </script>

@@ -26,7 +26,55 @@ class Config
         'SCHEME' => 'http',
         'LOCALE' => 'en_US',
         'CURRENCY_FORMAT' => '%i',
-        'DEFAULT_PROJECT_TEMPLATE' => '# Project Overview\nProvide a brief overview of the project.\n\n## Objectives\n- List key objectives\n- What are we trying to accomplish?\n\n## Scope\n- What\'s included\n- What\'s excluded\n\n## Timeline\n- Start date\n- Expected end date\n- Key milestones'
+        'DEFAULT_PROJECT_TEMPLATE' => '# Project Overview\nProvide a brief overview of the project.\n\n## Objectives\n- List key objectives\n- What are we trying to accomplish?\n\n## Scope\n- What\'s included\n- What\'s excluded\n\n## Timeline\n- Start date\n- Expected end date\n- Key milestones\n\n## Resources\n- Team members\n- Budget\n- Tools and technologies',
+        'DEFAULT_TASK_TEMPLATE' => '# Task Description\nProvide a detailed description of what needs to be done.\n\n## Acceptance Criteria\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n## Notes\n- Any additional notes or considerations\n- Dependencies or blockers\n\n## Definition of Done\n- [ ] Code is written and tested\n- [ ] Documentation is updated\n- [ ] Code review is completed',
+        'DEFAULT_MILESTONE_TEMPLATE' => '# Milestone Overview\nDescribe what this milestone represents and its significance.\n\n## Goals\n- Primary goal of this milestone\n- Secondary objectives\n\n## Deliverables\n- List of expected deliverables\n- Quality criteria\n\n## Success Criteria\n- How will we measure success?\n- Key performance indicators\n\n## Dependencies\n- What needs to be completed before this milestone?\n- External dependencies',
+        'DEFAULT_SPRINT_TEMPLATE' => '# Sprint Goal\nDefine the main objective for this sprint.\n\n## Sprint Backlog\n- List of user stories/tasks to be completed\n- Priority order\n\n## Sprint Planning Notes\n- Team capacity\n- Estimated story points\n- Known risks or blockers\n\n## Definition of Done\n- [ ] All planned stories are completed\n- [ ] Code is reviewed and tested\n- [ ] Sprint demo is prepared\n- [ ] Retrospective feedback is collected',
+
+        // Quick Template Options (3 defaults for each type)
+        'QUICK_PROJECT_TEMPLATES' => [
+            'Basic Project' => '# Project Overview\nBrief description of the project goals and objectives.\n\n## Key Deliverables\n- Deliverable 1\n- Deliverable 2\n- Deliverable 3\n\n## Timeline\n- Start Date: [Date]\n- End Date: [Date]',
+            'Software Development' => '# Software Project\nDeveloping [Application Name] to solve [Problem Statement].\n\n## Technical Requirements\n- Frontend: [Technology]\n- Backend: [Technology]\n- Database: [Technology]\n\n## Features\n- [ ] Feature 1\n- [ ] Feature 2\n- [ ] Feature 3',
+            'Marketing Campaign' => '# Marketing Campaign\nCampaign to promote [Product/Service] to [Target Audience].\n\n## Campaign Goals\n- Increase brand awareness by [%]\n- Generate [Number] leads\n- Achieve [Metric] conversion rate\n\n## Channels\n- Social Media\n- Email Marketing\n- Content Marketing'
+        ],
+
+        'QUICK_TASK_TEMPLATES' => [
+            'User Story' => '## User Story\nAs a [type of user], I want [goal] so that [reason].\n\n## Acceptance Criteria\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n## Definition of Done\n- [ ] Code complete\n- [ ] Tests written and passing\n- [ ] Code reviewed',
+            'Bug Report' => '## Bug Description\nBrief description of the issue.\n\n## Steps to Reproduce\n1. Step 1\n2. Step 2\n3. Step 3\n\n## Expected vs Actual\n**Expected:** What should happen\n**Actual:** What actually happens\n\n## Environment\n- Browser/OS: [Details]\n- Version: [Version]',
+            'Research Task' => '## Research Objective\nWhat needs to be researched and why.\n\n## Research Questions\n- Question 1\n- Question 2\n- Question 3\n\n## Deliverables\n- [ ] Research findings document\n- [ ] Recommendations\n- [ ] Next steps proposal'
+        ],
+
+        'QUICK_MILESTONE_TEMPLATES' => [
+            'Release Milestone' => '# Release [Version]\nMajor release milestone with new features and improvements.\n\n## Release Goals\n- Feature 1 completion\n- Performance improvements\n- Bug fixes\n\n## Success Criteria\n- [ ] All planned features implemented\n- [ ] Performance benchmarks met\n- [ ] Quality assurance passed',
+            'Project Phase' => '# [Phase Name] Completion\nCompletion of a major project phase.\n\n## Phase Objectives\n- Objective 1\n- Objective 2\n- Objective 3\n\n## Deliverables\n- [ ] Deliverable 1\n- [ ] Deliverable 2\n- [ ] Phase review completed',
+            'Compliance Checkpoint' => '# Compliance Review\nEnsuring project meets regulatory and compliance requirements.\n\n## Compliance Areas\n- Security standards\n- Data protection\n- Industry regulations\n\n## Review Items\n- [ ] Security audit completed\n- [ ] Documentation updated\n- [ ] Compliance certification obtained'
+        ],
+
+        'QUICK_SPRINT_TEMPLATES' => [
+            'Development Sprint' => '# Development Sprint [Number]\nFocus on implementing core features and functionality.\n\n## Sprint Goal\nComplete [specific feature/functionality]\n\n## Capacity\n- Team size: [Number] developers\n- Sprint duration: [Duration]\n- Estimated velocity: [Points]\n\n## Focus Areas\n- Feature development\n- Code quality\n- Testing',
+            'Bug Fix Sprint' => '# Bug Fix Sprint\nDedicated sprint to address technical debt and critical bugs.\n\n## Sprint Goal\nResolve high-priority bugs and improve system stability\n\n## Targets\n- [ ] Critical bugs: [Number]\n- [ ] High priority bugs: [Number]\n- [ ] Technical debt items: [Number]\n\n## Success Metrics\n- Bug count reduction\n- System stability improvement',
+            'Research Sprint' => '# Research & Discovery Sprint\nExploring new technologies and approaches.\n\n## Sprint Goal\nInvestigate [technology/approach] for [purpose]\n\n## Research Areas\n- Technology evaluation\n- Proof of concept development\n- Feasibility assessment\n\n## Deliverables\n- [ ] Research findings\n- [ ] Prototype/POC\n- [ ] Recommendations'
+        ],
+
+        // Template visibility settings (default: quick templates enabled, custom templates enabled)
+        'TEMPLATE_SETTINGS' => [
+            'project' => [
+                'show_quick_templates' => true,
+                'show_custom_templates' => true
+            ],
+            'task' => [
+                'show_quick_templates' => true,
+                'show_custom_templates' => true
+            ],
+            'milestone' => [
+                'show_quick_templates' => true,
+                'show_custom_templates' => true
+            ],
+            'sprint' => [
+                'show_quick_templates' => true,
+                'show_custom_templates' => true
+            ]
+        ]
     ];
 
     /**
@@ -142,7 +190,7 @@ class Config
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        return $_ENV[$key] ?? self::$config[strtolower($key)] ?? $default;
+        return $_ENV[$key] ?? self::$config[strtolower($key)] ?? self::DEFAULTS[$key] ?? $default;
     }
 
     /**

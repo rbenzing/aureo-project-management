@@ -10,6 +10,9 @@ if (!defined('BASE_PATH')) {
 
 use \App\Core\Config;
 use \App\Utils\Breadcrumb;
+
+// Include view helpers for time formatting functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
 ?>
 
 <!DOCTYPE html>
@@ -72,7 +75,7 @@ use \App\Utils\Breadcrumb;
                                 </div>
                                 <div class="text-right">
                                     <div id="active-timer" class="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">00:00:00</div>
-                                    <form action="/timer/stop" method="POST" class="mt-1">
+                                    <form action="/tasks/stop-timer/<?= $_SESSION['active_timer']['task_id'] ?>" method="POST" class="mt-1">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                         <button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
                                             Stop Timer
@@ -258,10 +261,46 @@ use \App\Utils\Breadcrumb;
                                             <div class="text-sm font-medium <?= isDueSoon($task->due_date) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400' ?>">
                                                 <?= formatDueDate($task->due_date) ?>
                                             </div>
-                                            <div class="text-xs mt-1">
+                                            <div class="flex items-center justify-end space-x-2 mt-1">
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getTaskStatusClass($task->status_id) ?>">
                                                     <?= htmlspecialchars($task->status_name) ?>
                                                 </span>
+
+                                                <?php
+                                                // Check if this specific task has an active timer
+                                                $activeTimer = $_SESSION['active_timer'] ?? null;
+                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+
+                                                if ($isTimerActiveForThisTask):
+                                                ?>
+                                                    <!-- Stop Timer Button -->
+                                                    <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                    <!-- Start Timer Button -->
+                                                    <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+
+                                                <!-- Edit Button -->
+                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -302,18 +341,42 @@ use \App\Utils\Breadcrumb;
                                                     <?= formatDueDate($task->due_date) ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="mt-1">
-                                                <form action="/timer/start" method="POST" class="inline">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                                    <input type="hidden" name="task_id" value="<?= $task->id ?>">
-                                                    <button type="submit" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-xs">
-                                                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        Start Timer
-                                                    </button>
-                                                </form>
+                                            <div class="flex items-center justify-end space-x-2 mt-1">
+                                                <?php
+                                                // Check if this specific task has an active timer
+                                                $activeTimer = $_SESSION['active_timer'] ?? null;
+                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+
+                                                if ($isTimerActiveForThisTask):
+                                                ?>
+                                                    <!-- Stop Timer Button -->
+                                                    <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                    <!-- Start Timer Button -->
+                                                    <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+
+                                                <!-- Edit Button -->
+                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
@@ -355,18 +418,39 @@ use \App\Utils\Breadcrumb;
                                                 <?= formatOverdueDate($task->due_date) ?>
                                             </div>
                                             <div class="flex space-x-2 mt-1 justify-end">
-                                                <form action="/tasks/start-timer" method="POST" class="inline">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                                    <input type="hidden" name="task_id" value="<?= $task->id ?>">
-                                                    <button type="submit" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-xs">
-                                                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 text-xs">
-                                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                <?php
+                                                // Check if this specific task has an active timer
+                                                $activeTimer = $_SESSION['active_timer'] ?? null;
+                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+
+                                                if ($isTimerActiveForThisTask):
+                                                ?>
+                                                    <!-- Stop Timer Button -->
+                                                    <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                    <!-- Start Timer Button -->
+                                                    <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                            </svg>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+
+                                                <!-- Edit Button -->
+                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                     </svg>
                                                 </a>
                                             </div>
@@ -633,85 +717,13 @@ use \App\Utils\Breadcrumb;
 <!-- Footer -->
 <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
 
-<!-- Helper Functions -->
+
 <?php
-function getTaskStatusClass($statusId) {
-    return match((int)$statusId) {
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Open
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', // In Progress
-        3 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', // On Hold
-        4 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', // In Review
-        5 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Closed
-        6 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', // Completed
-        default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    };
-}
 
-function getProjectStatusClass($statusId) {
-    return match((int)$statusId) {
-        1 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', // Ready
-        2 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', // In Progress
-        3 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', // Completed
-        4 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', // On Hold
-        6 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', // Delayed
-        7 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Cancelled
-        default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    };
-}
 
-function isDueSoon($dueDate) {
-    if (empty($dueDate)) return false;
-    $dueTimestamp = strtotime($dueDate);
-    $now = time();
-    $diff = $dueTimestamp - $now;
-    $daysDiff = floor($diff / (60 * 60 * 24));
-    return ($daysDiff >= 0 && $daysDiff <= 3);
-}
 
-function formatDueDate($dueDate) {
-    if (empty($dueDate)) return 'No due date';
-    
-    $dueTimestamp = strtotime($dueDate);
-    $now = time();
-    $diff = $dueTimestamp - $now;
-    $daysDiff = floor($diff / (60 * 60 * 24));
-    
-    if ($daysDiff === 0) {
-        return 'Due today';
-    } else if ($daysDiff === 1) {
-        return 'Due tomorrow';
-    } else if ($daysDiff > 1 && $daysDiff <= 7) {
-        return 'Due in ' . $daysDiff . ' days';
-    } else {
-        return date('M j, Y', $dueTimestamp);
-    }
-}
 
-function formatOverdueDate($dueDate) {
-    if (empty($dueDate)) return 'No due date';
-    
-    $dueTimestamp = strtotime($dueDate);
-    $now = time();
-    $diff = $now - $dueTimestamp;
-    $daysDiff = floor($diff / (60 * 60 * 24));
-    
-    if ($daysDiff === 0) {
-        return 'Due today';
-    } else if ($daysDiff === 1) {
-        return '1 day overdue';
-    } else {
-        return $daysDiff . ' days overdue';
-    }
-}
 
-function formatTime($seconds) {
-    if (!$seconds) return '0h 0m';
-    
-    $hours = floor($seconds / 3600);
-    $minutes = floor(($seconds % 3600) / 60);
-    
-    return "{$hours}h {$minutes}m";
-}
 ?>
 
 <!-- JavaScript for Active Timer and Tab Switching -->

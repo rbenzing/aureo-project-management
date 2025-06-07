@@ -74,6 +74,9 @@ try {
     // Task Routes
     $router->get('tasks', ['controller' => 'Task', 'action' => 'index']);
     $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['page']]);
+    $router->get('tasks/backlog', ['controller' => 'Task', 'action' => 'backlog']);
+    $router->get('tasks/backlog/page/:page', ['controller' => 'Task', 'action' => 'backlog', 'params' => ['page']]);
+    $router->get('tasks/sprint-planning', ['controller' => 'Task', 'action' => 'sprintPlanning']);
     $router->get('tasks/assigned/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
     $router->get('tasks/assigned/:id/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['id', 'page']]);
     $router->get('tasks/project/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
@@ -84,7 +87,8 @@ try {
     $router->post('tasks/update', ['controller' => 'Task', 'action' => 'update']);
     $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete', 'params' => ['id']]);
     $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer', 'params' => ['task_id']]);
-    $router->post('tasks/stop-timer/:time_entry_id', ['controller' => 'Task', 'action' => 'stopTimer', 'params' => ['time_entry_id']]);
+    $router->post('tasks/stop-timer/:task_id', ['controller' => 'Task', 'action' => 'stopTimer', 'params' => ['task_id']]);
+    $router->post('tasks/add-comment/:id', ['controller' => 'Task', 'action' => 'addComment', 'params' => ['id']]);
 
     // User Routes
     $router->get('users', ['controller' => 'User', 'action' => 'index']);
@@ -143,16 +147,25 @@ try {
     $router->post('sprints/cancel/:id', ['controller' => 'Sprint', 'action' => 'cancelSprint', 'params' => ['id']]);
     $router->post('sprints/add-tasks/:id', ['controller' => 'Sprint', 'action' => 'addTasks', 'params' => ['id']]);
 
-    // Project Template Routes
-    $router->get('project-templates', ['controller' => 'ProjectTemplate', 'action' => 'index']);
-    $router->get('project-templates/page/:page', ['controller' => 'ProjectTemplate', 'action' => 'index', 'params' => ['page']]);
-    $router->get('project-templates/view/:id', ['controller' => 'ProjectTemplate', 'action' => 'view', 'params' => ['id']]);
-    $router->get('project-templates/create', ['controller' => 'ProjectTemplate', 'action' => 'createForm']);
-    $router->post('project-templates/create', ['controller' => 'ProjectTemplate', 'action' => 'create']);
-    $router->get('project-templates/edit/:id', ['controller' => 'ProjectTemplate', 'action' => 'editForm', 'params' => ['id']]);
-    $router->post('project-templates/update', ['controller' => 'ProjectTemplate', 'action' => 'update']);
-    $router->post('project-templates/delete/:id', ['controller' => 'ProjectTemplate', 'action' => 'delete', 'params' => ['id']]);
-    $router->get('project-templates/get/:id', ['controller' => 'ProjectTemplate', 'action' => 'getTemplate', 'params' => ['id']]);
+    // Template Routes
+    $router->get('templates', ['controller' => 'Template', 'action' => 'index']);
+    $router->get('templates/page/:page', ['controller' => 'Template', 'action' => 'index', 'params' => ['page']]);
+    $router->get('templates/type/:type', ['controller' => 'Template', 'action' => 'index', 'params' => ['type']]);
+    $router->get('templates/view/:id', ['controller' => 'Template', 'action' => 'view', 'params' => ['id']]);
+    $router->get('templates/create', ['controller' => 'Template', 'action' => 'createForm']);
+    $router->post('templates/create', ['controller' => 'Template', 'action' => 'create']);
+    $router->get('templates/edit/:id', ['controller' => 'Template', 'action' => 'editForm', 'params' => ['id']]);
+    $router->post('templates/update', ['controller' => 'Template', 'action' => 'update']);
+    $router->post('templates/delete/:id', ['controller' => 'Template', 'action' => 'delete', 'params' => ['id']]);
+    $router->get('templates/get/:id', ['controller' => 'Template', 'action' => 'getTemplate', 'params' => ['id']]);
+
+    // Legacy Project Template Routes (for backward compatibility)
+    $router->get('project-templates', ['controller' => 'Template', 'action' => 'index']);
+    $router->get('project-templates/get/:id', ['controller' => 'Template', 'action' => 'getTemplate', 'params' => ['id']]);
+
+    // Settings Routes
+    $router->get('settings', ['controller' => 'Settings', 'action' => 'index']);
+    $router->post('settings/update', ['controller' => 'Settings', 'action' => 'update']);
 
     // Get request URI and method
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

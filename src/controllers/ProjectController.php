@@ -9,7 +9,7 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Company;
-use App\Models\ProjectTemplate;
+use App\Models\Template;
 use App\Models\User;
 use App\Utils\Validator;
 use App\Utils\Sort;
@@ -23,7 +23,7 @@ class ProjectController
     private Task $taskModel;
     private Company $companyModel;
     private User $userModel;
-    private ProjectTemplate $templateModel;
+    private Template $templateModel;
 
     public function __construct()
     {
@@ -32,7 +32,7 @@ class ProjectController
         $this->taskModel = new Task();
         $this->userModel = new User();
         $this->companyModel = new Company();
-        $this->templateModel = new ProjectTemplate();
+        $this->templateModel = new Template();
     }
 
     /**
@@ -175,7 +175,7 @@ class ProjectController
             // Get company ID from user session if available
             $companyId = $_SESSION['user']['profile']['company_id'] ?? null;
             // Load templates available for this company or global templates
-            $templates = $this->templateModel->getAvailableTemplates($companyId);
+            $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
             include __DIR__ . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
@@ -210,7 +210,7 @@ class ProjectController
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date',
-                'template_id' => 'nullable|integer|exists:project_templates,id'
+                'template_id' => 'nullable|integer|exists:templates,id'
             ]);
 
             if ($validator->fails()) {
@@ -284,7 +284,7 @@ class ProjectController
             // Get company ID from project
             $companyId = $project->company_id ?? null;
             // Load templates available for this company or global templates
-            $templates = $this->templateModel->getAvailableTemplates($companyId);
+            $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
             include __DIR__ . '/../Views/Projects/edit.php';
         } catch (InvalidArgumentException $e) {
@@ -322,7 +322,7 @@ class ProjectController
                 'company_id' => 'nullable|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date',
-                'template_id' => 'nullable|integer|exists:project_templates,id'
+                'template_id' => 'nullable|integer|exists:templates,id'
             ]);
 
             if ($validator->fails()) {

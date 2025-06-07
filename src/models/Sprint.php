@@ -244,6 +244,33 @@ class Sprint extends BaseModel
     }
 
     /**
+     * Get all sprints for a project
+     *
+     * @param int $projectId
+     * @return array
+     */
+    public function getByProjectId(int $projectId): array
+    {
+        try {
+            $sql = "SELECT s.*,
+                        ss.name as status_name,
+                        COUNT(st.task_id) as task_count
+                    FROM sprints s
+                    LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
+                    LEFT JOIN sprint_tasks st ON s.id = st.sprint_id
+                    WHERE s.project_id = :project_id
+                    AND s.is_deleted = 0
+                    GROUP BY s.id
+                    ORDER BY s.start_date DESC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching sprints for project: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Get active sprints for a user
      * 
      * @param int $userId

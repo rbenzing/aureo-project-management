@@ -13,14 +13,7 @@ use App\Utils\Time;
 
 // Helper functions for formatting and styling
 function formatTimeTracking($seconds) {
-    if ($seconds === null || $seconds == 0) {
-        return '0h 0m';
-    }
-
-    $hours = floor($seconds / 3600);
-    $minutes = floor(($seconds % 3600) / 60);
-
-    return "{$hours}h {$minutes}m";
+    return formatTimeWithSettings($seconds);
 }
 
 function formatDate($date) {
@@ -42,17 +35,19 @@ function getPriorityClass($priority) {
 }
 
 function getStatusClass($statusId) {
+    // Updated to match new consistent styling
     $statusMap = [
-        1 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // Open
-        2 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // In Progress
-        3 => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', // On Hold
-        4 => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200', // In Review
-        5 => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200', // Closed
-        6 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
-        7 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // Cancelled
+        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
+        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
+        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
+        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
+        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
     ];
-    
-    return $statusMap[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+
+    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+    return $status['color'] . ' bg-opacity-20 text-white';
 }
 
 // Calculate progress
@@ -70,7 +65,7 @@ $progress = $totalSubtasks > 0 ? ($completedSubtasks / $totalSubtasks) * 100 : 0
 
 // Determine if time tracking is currently active
 $isTimerActive = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
-$timerDuration = $isTimerActive ? time() - strtotime($activeTimer['start_time']) : 0;
+$timerDuration = $isTimerActive ? time() - $activeTimer['start_time'] : 0;
 $formattedDuration = gmdate('H:i:s', $timerDuration);
 
 $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
@@ -96,7 +91,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
     <main class="container mx-auto p-6">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+        <?php echo \App\Utils\Breadcrumb::renderTaskBreadcrumb($task, 'tasks/view'); ?>
 
         <!-- Task Header -->
         <div class="flex justify-between items-start mb-6">
@@ -127,7 +122,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
             </div>
             <div class="flex space-x-3">
                 <?php if ($isTimerActive): ?>
-                    <form method="POST" action="/tasks/stop-timer/<?= $activeTimer['id'] ?>" class="inline-flex">
+                    <form method="POST" action="/tasks/stop-timer/<?= $activeTimer['task_id'] ?>" class="inline-flex">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                         <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,6 +144,14 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                     </form>
                 <?php endif; ?>
                 
+                <!-- Add Subtask Button -->
+                <button type="button" onclick="openAddSubtaskModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Add Subtask
+                </button>
+
                 <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_tasks', $_SESSION['user']['permissions'])): ?>
                     <a href="/tasks/edit/<?= $task->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -164,6 +167,28 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <!-- Task Overview & Details Column -->
             <div class="md:col-span-1">
+                <!-- Task Progress Card -->
+                <?php if (!empty($task->estimated_time) && !empty($task->time_spent)): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Task Progress</h3>
+                    </div>
+                    <div class="p-4">
+                        <?php
+                        $timeProgress = min(100, ($task->time_spent / $task->estimated_time) * 100);
+                        $progressColor = $timeProgress > 100 ? 'bg-red-600' : 'bg-blue-600';
+                        ?>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500 dark:text-gray-400">Progress</span>
+                            <span class="text-gray-500 dark:text-gray-400"><?= round($timeProgress) ?>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                            <div class="<?= $progressColor ?> h-2 rounded-full" style="width: <?= $timeProgress ?>%"></div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Task Details Card -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
@@ -176,20 +201,79 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                     </div>
                     <div id="task-details" class="p-4 space-y-3 text-sm">
                         <div class="grid grid-cols-2 gap-2">
+                            <div class="text-gray-500 dark:text-gray-400 font-medium">Task Type:</div>
+                            <div class="text-gray-900 dark:text-white">
+                                <?php
+                                $taskTypeLabels = [
+                                    'task' => 'Task',
+                                    'story' => 'User Story',
+                                    'bug' => 'Bug',
+                                    'epic' => 'Epic'
+                                ];
+                                echo htmlspecialchars($taskTypeLabels[$task->task_type ?? 'task'] ?? 'Task');
+                                ?>
+                            </div>
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Assignee:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= !empty($task->first_name) ? htmlspecialchars($task->first_name . ' ' . $task->last_name) : 'Unassigned' ?>
                             </div>
-                            
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Status:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= htmlspecialchars($task->status_name) ?>
                             </div>
-                            
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Priority:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= ucfirst(htmlspecialchars($task->priority)) ?>
                             </div>
+
+                            <div class="text-gray-500 dark:text-gray-400 font-medium">Backlog Priority:</div>
+                            <div class="text-gray-900 dark:text-white">
+                                <?php if (!empty($task->backlog_priority)): ?>
+                                    #<?= htmlspecialchars((string)$task->backlog_priority) ?>
+                                <?php else: ?>
+                                    <span class="text-gray-500 dark:text-gray-400 italic">None</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="text-gray-500 dark:text-gray-400 font-medium">Story Points:</div>
+                            <div class="text-gray-900 dark:text-white">
+                                <?php if (!empty($task->story_points)): ?>
+                                    <?= htmlspecialchars((string)$task->story_points) ?>
+                                <?php else: ?>
+                                    <span class="text-gray-500 dark:text-gray-400 italic">Not estimated</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="text-gray-500 dark:text-gray-400 font-medium">Sprint Ready:</div>
+                            <div class="text-gray-900 dark:text-white">
+                                <?php if ($task->is_ready_for_sprint ?? false): ?>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Ready
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Not Ready
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if ($task->is_subtask && $task->parent_task_id): ?>
+                            <div class="text-gray-500 dark:text-gray-400 font-medium">Parent Task:</div>
+                            <div class="text-gray-900 dark:text-white">
+                                <a href="/tasks/view/<?= $task->parent_task_id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                    Task #<?= $task->parent_task_id ?>
+                                </a>
+                            </div>
+                            <?php endif; ?>
                             
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Start Date:</div>
                             <div class="text-gray-900 dark:text-white">
@@ -239,42 +323,8 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                             </div>
                             <?php endif; ?>
                         </div>
-                        
-                        <?php if (!empty($task->estimated_time) && !empty($task->time_spent)): ?>
-                        <!-- Progress Bar -->
-                        <div class="mt-2">
-                            <?php 
-                            $timeProgress = min(100, ($task->time_spent / $task->estimated_time) * 100);
-                            $progressColor = $timeProgress > 100 ? 'bg-red-600' : 'bg-blue-600';
-                            ?>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-gray-500 dark:text-gray-400">Progress</span>
-                                <span class="text-gray-500 dark:text-gray-400"><?= round($timeProgress) ?>%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                                <div class="<?= $progressColor ?> h-2 rounded-full" style="width: <?= $timeProgress ?>%"></div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
                     </div>
                 </div>
-                
-                <!-- Parent Task Card (if this is a subtask) -->
-                <?php if ($task->is_subtask && $task->parent_task_id): ?>
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Parent Task</h3>
-                    </div>
-                    <div class="p-4">
-                        <a href="/tasks/view/<?= $task->parent_task_id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center">
-                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            View Parent Task
-                        </a>
-                    </div>
-                </div>
-                <?php endif; ?>
                 
                 <!-- Milestones Card (if task is associated with milestones) -->
                 <?php if (!empty($task->milestones)): ?>
@@ -340,137 +390,41 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                         <?php endif; ?>
                     </div>
                 </div>
-                
-                <!-- Task History -->
+
+                <!-- Acceptance Criteria -->
+                <?php if (!empty($task->acceptance_criteria)): ?>
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Activity History</h3>
-                        <button type="button" class="section-toggle" data-target="task-history">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Acceptance Criteria</h3>
+                        <button type="button" class="section-toggle" data-target="task-acceptance-criteria">
                             <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                     </div>
-                    <div id="task-history" class="p-4 max-h-96 overflow-y-auto">
-                        <?php if (!empty($task->history)): ?>
-                            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <?php foreach ($task->history as $historyItem): ?>
-                                    <li class="py-3">
-                                        <div class="flex items-start">
-                                            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                                                <span class="text-xs font-medium text-white">
-                                                    <?= htmlspecialchars(substr($historyItem->first_name ?? 'U', 0, 1) . substr($historyItem->last_name ?? 'U', 0, 1)) ?>
-                                                </span>
-                                            </div>
-                                            <div class="ml-3 flex-1">
-                                                <div class="text-sm text-gray-900 dark:text-gray-100">
-                                                    <span class="font-medium">
-                                                        <?= htmlspecialchars(($historyItem->first_name ?? '') . ' ' . ($historyItem->last_name ?? 'Unknown User')) ?>
-                                                    </span>
-                                                    <span class="ml-1">
-                                                        <?= htmlspecialchars($historyItem->action) ?>
-                                                    </span>
-                                                    <?php if ($historyItem->field_changed): ?>
-                                                        <span class="ml-1">
-                                                            changed <strong><?= htmlspecialchars($historyItem->field_changed) ?></strong>
-                                                            from "<?= htmlspecialchars($historyItem->old_value ?? '(empty)') ?>"
-                                                            to "<?= htmlspecialchars($historyItem->new_value ?? '(empty)') ?>"
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                    <?= date('M j, Y g:i A', strtotime($historyItem->created_at)) ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php else: ?>
-                            <p class="text-gray-500 dark:text-gray-400 italic">No activity history available</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <!-- Task Comments -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Comments</h3>
-                    </div>
-                    <div class="p-4 divide-y divide-gray-200 dark:divide-gray-700">
-                        <?php if (!empty($task->comments)): ?>
-                            <div class="mb-4 max-h-96 overflow-y-auto">
-                                <?php foreach ($task->comments as $comment): ?>
-                                    <div class="mb-4">
-                                        <div class="flex items-start">
-                                            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold text-xs">
-                                                <?= substr($comment->first_name ?? 'U', 0, 1) . substr($comment->last_name ?? 'U', 0, 1) ?>
-                                            </div>
-                                            <div class="ml-3 flex-1">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                    <?= htmlspecialchars(($comment->first_name ?? '') . ' ' . ($comment->last_name ?? '')) ?>
-                                                </div>
-                                                <div class="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                                                    <?= nl2br(htmlspecialchars($comment->content)) ?>
-                                                </div>
-                                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    <?= date('M j, Y g:i A', strtotime($comment->created_at)) ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <p class="text-gray-500 dark:text-gray-400 italic mb-4">No comments yet</p>
-                        <?php endif; ?>
-                        
-                        <!-- Comment Form -->
-                        <div class="pt-4">
-                            <form action="/tasks/add-comment/<?= $task->id ?>" method="POST">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                                <div>
-                                    <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Add a comment</label>
-                                    <textarea id="content" name="content" rows="3" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    </textarea>
-                                </div>
-                                <div class="mt-4">
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        Post Comment
-                                    </button>
-                                </div>
-                            </form>
+                    <div id="task-acceptance-criteria" class="p-4">
+                        <div class="prose dark:prose-invert max-w-none">
+                            <?= nl2br(htmlspecialchars($task->acceptance_criteria)) ?>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Subtasks Column -->
-            <div class="md:col-span-1">
-                <!-- Subtasks List Card -->
+                <?php endif; ?>
+                
+                <!-- Subtasks List -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-white">Subtasks</h3>
                         <div class="flex items-center">
                             <span class="text-sm text-gray-500 dark:text-gray-400 mr-2"><?= $completedSubtasks ?>/<span class="font-medium"><?= $totalSubtasks ?></span></span>
-                            <button type="button" class="section-toggle" data-target="task-subtasks">
+                            <button type="button" class="section-toggle" data-target="task-subtasks-main">
                                 <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
                         </div>
                     </div>
-                    
-                    <?php if ($totalSubtasks > 0): ?>
-                    <!-- Progress Bar -->
-                    <div class="px-4 pt-4">
-                        <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                            <div class="bg-blue-600 h-2 rounded-full" style="width: <?= $progress ?>%"></div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <div id="task-subtasks" class="p-4 max-h-96 overflow-y-auto">
+
+                    <div id="task-subtasks-main" class="p-4 max-h-96 overflow-y-auto">
                         <?php if ($totalSubtasks > 0): ?>
                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                 <?php foreach ($subtasks as $subtask): ?>
@@ -527,74 +481,128 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                     </div>
                 </div>
                 
-                <!-- Add Subtask Form Card -->
+                <!-- Task Comments -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Add Subtask</h3>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Comments</h3>
                     </div>
-                    <div class="p-4">
-                        <form method="POST" action="/tasks/create" class="space-y-4">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                            <input type="hidden" name="parent_task_id" value="<?= $task->id ?>">
-                            <input type="hidden" name="project_id" value="<?= $task->project_id ?>">
-                            <input type="hidden" name="is_subtask" value="1">
-
-                            <!-- Title -->
-                            <div>
-                                <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title <span class="text-red-500">*</span></label>
-                                <input type="text" id="title" name="title" required
-                                    class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div class="p-4 divide-y divide-gray-200 dark:divide-gray-700">
+                        <?php if (!empty($task->comments)): ?>
+                            <div class="mb-4 max-h-96 overflow-y-auto space-y-4">
+                                <?php foreach ($task->comments as $comment): ?>
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-semibold text-xs">
+                                            <?= substr($comment->first_name ?? 'U', 0, 1) . substr($comment->last_name ?? 'U', 0, 1) ?>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                    <?= htmlspecialchars(($comment->first_name ?? '') . ' ' . ($comment->last_name ?? '')) ?>
+                                                </span>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= date('M j, Y g:i A', strtotime($comment->created_at)) ?>
+                                                </span>
+                                            </div>
+                                            <div class="mt-1 text-sm text-gray-800 dark:text-gray-200 text-left leading-relaxed">
+                                                <?= nl2br(htmlspecialchars($comment->content)) ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-
-                            <!-- Row with Priority and Status -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <!-- Priority -->
+                        <?php else: ?>
+                            <div class="text-center py-6">
+                                <svg class="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.959 8.959 0 01-4.906-1.476L3 21l2.524-5.094A8.959 8.959 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"></path>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No comments yet</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">Be the first to add a comment!</p>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Comment Form -->
+                        <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <form action="/tasks/add-comment/<?= $task->id ?>" method="POST" class="space-y-4">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                                 <div>
-                                    <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
-                                    <select id="priority" name="priority"
-                                        class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <option value="none">None</option>
-                                        <option value="low">Low</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="high">High</option>
-                                    </select>
+                                    <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a comment</label>
+                                    <textarea
+                                        id="content"
+                                        name="content"
+                                        rows="3"
+                                        required
+                                        placeholder="Write your comment here..."
+                                        class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm resize-none"></textarea>
                                 </div>
-
-                                <!-- Status -->
-                                <div>
-                                    <label for="status_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                                    <select id="status_id" name="status_id" required
-                                        class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <option value="1">Open</option>
-                                        <option value="2">In Progress</option>
-                                        <option value="3">On Hold</option>
-                                        <option value="6">Completed</option>
-                                    </select>
+                                <div class="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                        Post Comment
+                                    </button>
                                 </div>
-                            </div>
-
-                            <!-- Description -->
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                                <textarea id="description" name="description" rows="3"
-                                    class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                            </div>
-
-                            <!-- Estimated Time -->
-                            <div>
-                                <label for="estimated_time" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Time (minutes)</label>
-                                <input type="number" id="estimated_time" name="estimated_time" min="0"
-                                    class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-
-                            <!-- Submit Button -->
-                            <button type="submit"
-                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Add Subtask
-                            </button>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Activity History Column -->
+            <div class="md:col-span-1">
+                <!-- Activity History Card -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Activity History</h3>
+                        <button type="button" class="section-toggle" data-target="task-history">
+                            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="task-history" class="p-4 max-h-96 overflow-y-auto">
+                        <?php if (!empty($task->history)): ?>
+                            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <?php foreach ($task->history as $historyItem): ?>
+                                    <li class="py-3">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                                <span class="text-xs font-medium text-white">
+                                                    <?= htmlspecialchars(substr($historyItem->first_name ?? 'U', 0, 1) . substr($historyItem->last_name ?? 'U', 0, 1)) ?>
+                                                </span>
+                                            </div>
+                                            <div class="ml-3 flex-1">
+                                                <div class="text-sm text-gray-900 dark:text-gray-100">
+                                                    <span class="font-medium">
+                                                        <?= htmlspecialchars(($historyItem->first_name ?? '') . ' ' . ($historyItem->last_name ?? 'Unknown User')) ?>
+                                                    </span>
+                                                    <span class="ml-1">
+                                                        <?= htmlspecialchars($historyItem->action) ?>
+                                                    </span>
+                                                    <?php if ($historyItem->field_changed): ?>
+                                                        <span class="ml-1">
+                                                            changed <strong><?= htmlspecialchars($historyItem->field_changed) ?></strong>
+                                                            from "<?= htmlspecialchars($historyItem->old_value ?? '(empty)') ?>"
+                                                            to "<?= htmlspecialchars($historyItem->new_value ?? '(empty)') ?>"
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= date('M j, Y g:i A', strtotime($historyItem->created_at)) ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <p class="text-gray-500 dark:text-gray-400 italic">No activity history available</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
             </div>
         </div>
                 
@@ -612,6 +620,89 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
         </div>
         <?php endif; ?>
     </main>
+
+    <!-- Add Subtask Modal -->
+    <div id="addSubtaskModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add Subtask</h3>
+                    <button type="button" onclick="closeAddSubtaskModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form method="POST" action="/tasks/create" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                    <input type="hidden" name="parent_task_id" value="<?= $task->id ?>">
+                    <input type="hidden" name="project_id" value="<?= $task->project_id ?>">
+                    <input type="hidden" name="is_subtask" value="1">
+
+                    <!-- Title -->
+                    <div>
+                        <label for="modal_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title <span class="text-red-500">*</span></label>
+                        <input type="text" id="modal_title" name="title" required
+                            class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <!-- Row with Priority and Status -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Priority -->
+                        <div>
+                            <label for="modal_priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                            <select id="modal_priority" name="priority"
+                                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="none">None</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+
+                        <!-- Status -->
+                        <div>
+                            <label for="modal_status_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <select id="modal_status_id" name="status_id" required
+                                class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="1">Open</option>
+                                <option value="2">In Progress</option>
+                                <option value="3">On Hold</option>
+                                <option value="6">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="modal_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                        <textarea id="modal_description" name="description" rows="3"
+                            class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                    </div>
+
+                    <!-- Estimated Time -->
+                    <div>
+                        <label for="modal_estimated_time" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Time (minutes)</label>
+                        <input type="number" id="modal_estimated_time" name="estimated_time" min="0"
+                            class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddSubtaskModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add Subtask
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
@@ -671,6 +762,36 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
             }, 1000);
         });
         <?php endif; ?>
+
+        // Modal functions
+        function openAddSubtaskModal() {
+            document.getElementById('addSubtaskModal').classList.remove('hidden');
+            document.getElementById('modal_title').focus();
+        }
+
+        function closeAddSubtaskModal() {
+            document.getElementById('addSubtaskModal').classList.add('hidden');
+            // Reset form
+            document.getElementById('modal_title').value = '';
+            document.getElementById('modal_description').value = '';
+            document.getElementById('modal_estimated_time').value = '';
+            document.getElementById('modal_priority').value = 'none';
+            document.getElementById('modal_status_id').value = '1';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addSubtaskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddSubtaskModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddSubtaskModal();
+            }
+        });
     </script>
 </body>
 </html>

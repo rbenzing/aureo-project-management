@@ -46,9 +46,19 @@ class Breadcrumb
                 'icon' => 'pencil'
             ],
             'tasks' => [
-                'name' => 'Tasks',
+                'name' => 'All Tasks',
                 'url' => '/tasks',
                 'icon' => 'check-square'
+            ],
+            'tasks/backlog' => [
+                'name' => 'Product Backlog',
+                'url' => '/tasks/backlog',
+                'icon' => 'clipboard-list'
+            ],
+            'tasks/sprint-planning' => [
+                'name' => 'Sprint Planning',
+                'url' => '/tasks/sprint-planning',
+                'icon' => 'target'
             ],
             'tasks/create' => [
                 'name' => 'Create New Task',
@@ -185,7 +195,7 @@ class Breadcrumb
     
     /**
      * Render breadcrumbs as HTML
-     * 
+     *
      * @param string $route Current route
      * @param array $params Route parameters
      * @return string HTML markup
@@ -193,18 +203,18 @@ class Breadcrumb
     public static function render(string $route, array $params = []): string
     {
         $breadcrumbs = self::generate($route, $params);
-        
+
         $html = '<nav class="flex mb-5" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-2">';
-        
+
         foreach ($breadcrumbs as $index => $crumb) {
             $isLast = $index === count($breadcrumbs) - 1;
-            
+
             // Sanitize crumb data
             $crumbName = htmlspecialchars((string)($crumb['name'] ?? ''));
             $crumbUrl = htmlspecialchars((string)($crumb['url'] ?? ''));
             $crumbIcon = $crumb['icon'] ?? '';
-            
+
             if ($index === 0) {
                 // First item (usually Dashboard)
                 $html .= '<li class="inline-flex items-center">
@@ -221,6 +231,7 @@ class Breadcrumb
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                                 </svg>
                                 <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">' . $crumbName . '</span>
+                                ' . ($crumb['copy_url'] ?? false ? self::getCopyIcon($crumb['copy_url']) : '') . '
                             </div>
                         </li>';
             } else {
@@ -235,9 +246,111 @@ class Breadcrumb
                         </li>';
             }
         }
-        
+
         $html .= '</ol></nav>';
-        
+
+        return $html;
+    }
+
+    /**
+     * Render task-specific breadcrumbs with parent task support
+     *
+     * @param object $task Task object with details
+     * @param string $route Current route (tasks/view or tasks/edit)
+     * @return string HTML markup
+     */
+    public static function renderTaskBreadcrumb($task, string $route): string
+    {
+        self::init();
+
+        $breadcrumbs = [];
+
+        // Always start with dashboard
+        $breadcrumbs[] = self::$breadcrumbs['dashboard'];
+
+        // Add "All Tasks" link
+        $breadcrumbs[] = [
+            'name' => 'All Tasks',
+            'url' => '/tasks',
+            'icon' => 'check-square'
+        ];
+
+        // Add parent task if this is a subtask
+        if ($task->is_subtask && $task->parent_task_id) {
+            try {
+                $taskModel = new \App\Models\Task();
+                $parentTask = $taskModel->find($task->parent_task_id);
+                if ($parentTask && !$parentTask->is_deleted) {
+                    $breadcrumbs[] = [
+                        'name' => 'Task #' . $parentTask->id,
+                        'url' => '/tasks/view/' . $parentTask->id,
+                        'icon' => ''
+                    ];
+                }
+            } catch (\Exception $e) {
+                // If we can't fetch parent task, continue without it
+                error_log("Error fetching parent task: " . $e->getMessage());
+            }
+        }
+
+        // Add current task
+        $taskName = 'Task #' . $task->id;
+        $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $currentUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+        $breadcrumbs[] = [
+            'name' => $taskName,
+            'url' => '',
+            'icon' => '',
+            'copy_url' => $currentUrl
+        ];
+
+        // Render the breadcrumbs
+        $html = '<nav class="flex mb-5" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-2">';
+
+        foreach ($breadcrumbs as $index => $crumb) {
+            $isLast = $index === count($breadcrumbs) - 1;
+
+            // Sanitize crumb data
+            $crumbName = htmlspecialchars((string)($crumb['name'] ?? ''));
+            $crumbUrl = htmlspecialchars((string)($crumb['url'] ?? ''));
+            $crumbIcon = $crumb['icon'] ?? '';
+
+            if ($index === 0) {
+                // First item (Dashboard)
+                $html .= '<li class="inline-flex items-center">
+                            ' . self::getIcon($crumbIcon) . '
+                            <a href="' . $crumbUrl . '" class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                ' . $crumbName . '
+                            </a>
+                        </li>';
+            } elseif ($isLast) {
+                // Current page (last item) - Task ID with copy icon
+                $html .= '<li aria-current="page">
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ml-2">' . $crumbName . '</span>
+                                ' . self::getCopyIcon($crumb['copy_url']) . '
+                            </div>
+                        </li>';
+            } else {
+                // Middle items
+                $html .= '<li>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <a href="' . $crumbUrl . '" class="ml-1 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white md:ml-2">' . $crumbName . '</a>
+                            </div>
+                        </li>';
+            }
+        }
+
+        $html .= '</ol></nav>';
+
         return $html;
     }
     
@@ -266,5 +379,23 @@ class Breadcrumb
         ];
         
         return $icons[$icon] ?? '';
+    }
+
+    /**
+     * Get copy icon for breadcrumb
+     *
+     * @param string $url URL to copy to clipboard
+     * @return string Copy icon HTML markup
+     */
+    private static function getCopyIcon(string $url): string
+    {
+        return '<button type="button"
+                    onclick="copyToClipboard(\'' . htmlspecialchars($url, ENT_QUOTES) . '\')"
+                    class="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded transition-colors"
+                    title="Copy URL to clipboard">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                </button>';
     }
 }

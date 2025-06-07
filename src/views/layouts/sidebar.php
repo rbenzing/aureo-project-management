@@ -41,7 +41,13 @@ $projectItems = [
 
 $taskItems = [
     [
-        'label' => 'Backlog',
+        'label' => 'Product Backlog',
+        'path' => '/tasks/backlog',
+        'icon' => '📋',
+        'permission' => 'view_tasks'
+    ],
+    [
+        'label' => 'All Tasks',
         'path' => '/tasks',
         'icon' => '📝',
         'permission' => 'view_tasks'
@@ -50,6 +56,12 @@ $taskItems = [
         'label' => 'My Tasks',
         'path' => '/tasks/assigned/' . $_SESSION['user']['profile']['id'],
         'icon' => '📌',
+        'permission' => 'view_tasks'
+    ],
+    [
+        'label' => 'Sprint Planning',
+        'path' => '/tasks/sprint-planning',
+        'icon' => '🎯',
         'permission' => 'view_tasks'
     ]
 ];
@@ -65,10 +77,10 @@ $timeTrackingItems = [
 
 $adminItems = [
     [
-        'label' => 'Project Templates',
-        'path' => '/project-templates',
+        'label' => 'Templates',
+        'path' => '/templates',
         'icon' => '📝',
-        'permission' => 'view_project_templates'
+        'permission' => 'view_templates'
     ],
     [
         'label' => 'Companies',
@@ -87,6 +99,12 @@ $adminItems = [
         'path' => '/roles',
         'icon' => '🔑',
         'permission' => 'view_roles'
+    ],
+    [
+        'label' => 'Settings',
+        'path' => '/settings',
+        'icon' => '⚙️',
+        'permission' => 'view_settings'
     ]
 ];
 
@@ -121,21 +139,25 @@ $adminItems = filterMenuByPermission($adminItems);
 // Get the current path
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 ?>
-<aside class="bg-gray-800 text-white w-64 min-h-screen shadow-lg fixed top-0 left-0 z-20 transition-transform duration-300 ease-in-out transform -translate-x-full overflow-y-auto" id="sidebar" aria-label="Sidebar">
-    <div class="p-4">
-        <!-- Sidebar Header with Logo -->
-        <div class="flex flex-row justify-between">
-            <h2 class="text-lg font-bold mb-4">Menu</h2>
+<aside class="bg-gray-800 text-white w-64 h-full min-h-screen shadow-lg fixed top-0 left-0 bottom-0 z-20 transition-transform duration-300 ease-in-out transform -translate-x-full flex flex-col" id="sidebar" aria-label="Sidebar">
+    <!-- Sidebar Header -->
+    <div class="flex-shrink-0 p-4 border-b border-gray-700">
+        <div class="flex flex-row justify-between items-center">
+            <h2 class="text-lg font-bold">Menu</h2>
             <!-- Close Button -->
             <button id="sidebar-close" class="block bg-none w-4 h-4 text-white hover:text-gray-300 focus:outline-none" aria-label="Close Sidebar">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
+    </div>
 
+    <!-- Scrollable Navigation Area -->
+    <div class="flex-1 overflow-y-auto p-4">
         <!-- Main Navigation -->
-        <nav class="space-y-6">
+        <nav class="space-y-4">
+
             <!-- Main Items -->
             <?php if (!empty($mainItems)): ?>
                 <div>
@@ -145,8 +167,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                             $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
                             echo '<li>';
                             echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
                             echo '</a>';
                             echo '</li>';
                         }
@@ -158,16 +180,15 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <!-- Project Management Section -->
             <?php if (!empty($projectItems)): ?>
                 <div>
-                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Project Management</p>
-                    <div class="mt-2 border-t border-gray-700"></div>
-                    <ul class="mt-2 space-y-1">
+                    <p class="px-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Projects</p>
+                    <ul class="space-y-1">
                         <?php
                         foreach ($projectItems as $item) {
                             $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
                             echo '<li>';
-                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
                             echo '</a>';
                             echo '</li>';
                         }
@@ -179,16 +200,15 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <!-- Task Management Section -->
             <?php if (!empty($taskItems)): ?>
                 <div>
-                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Task Management</p>
-                    <div class="mt-2 border-t border-gray-700"></div>
-                    <ul class="mt-2 space-y-1">
+                    <p class="px-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tasks</p>
+                    <ul class="space-y-1">
                         <?php
                         foreach ($taskItems as $item) {
                             $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
                             echo '<li>';
-                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
                             echo '</a>';
                             echo '</li>';
                         }
@@ -200,16 +220,15 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <!-- Time Tracking Section -->
             <?php if (!empty($timeTrackingItems)): ?>
                 <div>
-                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Time Tracking</p>
-                    <div class="mt-2 border-t border-gray-700"></div>
-                    <ul class="mt-2 space-y-1">
+                    <p class="px-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Time</p>
+                    <ul class="space-y-1">
                         <?php
                         foreach ($timeTrackingItems as $item) {
                             $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
                             echo '<li>';
-                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
                             echo '</a>';
                             echo '</li>';
                         }
@@ -218,19 +237,20 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 </div>
             <?php endif; ?>
 
+
+
             <!-- Administration Section -->
             <?php if (!empty($adminItems)): ?>
                 <div>
-                    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administration</p>
-                    <div class="mt-2 border-t border-gray-700"></div>
-                    <ul class="mt-2 space-y-1">
+                    <p class="px-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Admin</p>
+                    <ul class="space-y-1">
                         <?php
                         foreach ($adminItems as $item) {
                             $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
                             echo '<li>';
-                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center p-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-3">' . $item['icon'] . '</span>';
-                            echo '<span>' . htmlspecialchars($item['label']) . '</span>';
+                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
                             echo '</a>';
                             echo '</li>';
                         }
@@ -241,10 +261,10 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         </nav>
     </div>
 
-    <!-- User Profile Section -->
-    <div class="border-t border-gray-700 p-4 mt-6">
+    <!-- User Profile Section - Fixed at bottom -->
+    <div class="flex-shrink-0 border-t border-gray-700 p-3">
         <div class="flex items-center">
-            <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
+            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
                 <?php
                 $userInitials = '';
                 if (isset($_SESSION['user']['profile'])) {
@@ -255,8 +275,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 echo htmlspecialchars($userInitials);
                 ?>
             </div>
-            <div class="ml-3">
-                <p class="text-sm font-medium text-white">
+            <div class="ml-2 flex-1 min-w-0">
+                <p class="text-sm font-medium text-white truncate">
                     <?php
                     if (isset($_SESSION['user']['profile'])) {
                         echo htmlspecialchars($_SESSION['user']['profile']['first_name'] . ' ' . $_SESSION['user']['profile']['last_name']);
@@ -265,7 +285,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     }
                     ?>
                 </p>
-                <p class="text-xs text-gray-400">
+                <p class="text-xs text-gray-400 truncate">
                     <?php
                     if (isset($_SESSION['user']['roles']) && !empty($_SESSION['user']['roles'])) {
                         echo htmlspecialchars($_SESSION['user']['roles'][0]);
@@ -275,8 +295,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     ?>
                 </p>
             </div>
-            <a href="/logout" class="ml-auto p-1 rounded-full hover:bg-gray-700" title="Logout">
-                <svg class="w-5 h-5 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <a href="/logout" class="ml-2 p-1 rounded-full hover:bg-gray-700 flex-shrink-0" title="Logout">
+                <svg class="w-4 h-4 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>
             </a>
