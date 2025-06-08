@@ -51,6 +51,36 @@ $roles = array_map(function($role) {
         <!-- Breadcrumb -->
         <?php echo \App\Utils\Breadcrumb::render('roles'); ?>
 
+        <!-- Tips Box (above page title) -->
+        <div id="tips-box" class="bg-indigo-50 dark:bg-indigo-900 rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-start">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-indigo-800 dark:text-indigo-300">Role Management Tips</h3>
+                        <div class="mt-2 text-sm text-indigo-700 dark:text-indigo-200">
+                            <p class="mb-2">Roles define what users can see and do in the system. Each role can have multiple permissions assigned. Users inherit all permissions from their assigned role.</p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Create specific roles for different job functions</li>
+                                <li>Assign minimal necessary permissions for security</li>
+                                <li>Review role permissions regularly</li>
+                                <li>Use descriptive role names and descriptions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="close-tips" class="text-indigo-400 hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-100">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold mb-2">Roles Management</h1>
@@ -316,31 +346,24 @@ $roles = array_map(function($role) {
                 </div>
             <?php endif; ?>
         </div>
-        
-        <!-- Helpful Info Card -->
-        <div class="mt-6 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3 flex-1 md:flex md:justify-between">
-                    <p class="text-sm text-blue-700 dark:text-blue-200">
-                        Roles define what users can see and do in the system. Each role can have multiple permissions assigned.
-                        Users inherit all permissions from their assigned role.
-                    </p>
-                    <p class="mt-3 text-sm md:mt-0 md:ml-6">
-                        <a href="/users" class="whitespace-nowrap font-medium text-blue-700 hover:text-blue-600 dark:text-blue-200 dark:hover:text-blue-100">
-                            Manage Users <span aria-hidden="true">&rarr;</span>
-                        </a>
-                    </p>
-                </div>
-            </div>
-        </div>
+
     </main>
 
     <!-- Footer -->
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle Tips Box Close
+            const tipsBox = document.getElementById('tips-box');
+            const closeTipsButton = document.getElementById('close-tips');
+
+            if (closeTipsButton && tipsBox) {
+                closeTipsButton.addEventListener('click', function() {
+                    tipsBox.style.display = 'none';
+                });
+            }
+        });
+    </script>
 </body>
 </html>

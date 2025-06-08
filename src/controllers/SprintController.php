@@ -48,10 +48,16 @@ class SprintController
 
             if (!empty($project_id)) {
                 $project = $this->projectModel->findWithDetails($project_id);
+                if (!$project || $project->is_deleted) {
+                    throw new InvalidArgumentException('Project not found');
+                }
+                // Get sprints only for this specific project
+                $sprints = $this->sprintModel->getByProjectId($project_id);
             } else {
                 $projects = $this->projectModel->getAllWithDetails($limit, $page);
+                // Get all sprints when no specific project is selected
+                $sprints = $this->sprintModel->getAllWithTasks($limit, $page);
             }
-            $sprints = $this->sprintModel->getAllWithTasks($limit, $page);
 
             include __DIR__ . '/../Views/Sprints/index.php';
         } catch (InvalidArgumentException $e) {
@@ -433,6 +439,83 @@ class SprintController
             $_SESSION['error'] = 'An error occurred while adding tasks to the sprint.';
             header('Location: /sprints/view/' . ($sprintId ?? ''));
             exit;
+        }
+    }
+
+    /**
+     * Assign task to sprint via AJAX
+     * @param string $requestMethod
+     * @param array $data
+     */
+    public function assignTask(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_sprints');
+
+            // Get JSON input
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!isset($input['task_id']) || !isset($input['sprint_id'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Missing task_id or sprint_id']);
+                return;
+            }
+
+            $taskId = intval($input['task_id']);
+            $sprintId = intval($input['sprint_id']);
+
+            // Validate that the task exists and is not already assigned to an active sprint
+            $task = $this->taskModel->find($taskId);
+            if (!$task) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                return;
+            }
+
+            // Validate that the sprint exists and is active
+            $sprint = $this->sprintModel->find($sprintId);
+            if (!$sprint) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Sprint not found']);
+                return;
+            }
+
+            // Check if task is already assigned to an active sprint
+            $existingAssignment = $this->sprintModel->getTaskSprint($taskId);
+            if ($existingAssignment) {
+                echo json_encode(['success' => false, 'message' => 'Task is already assigned to an active sprint']);
+                return;
+            }
+
+            // Assign task to sprint
+            $success = $this->sprintModel->assignTask($sprintId, $taskId);
+
+            if ($success) {
+                // Add history entry for task assignment
+                $this->taskModel->addHistoryEntry(
+                    $taskId,
+                    $_SESSION['user']['id'],
+                    'assigned_to_sprint',
+                    'Sprint',
+                    null,
+                    $sprint->name
+                );
+
+                echo json_encode(['success' => true, 'message' => 'Task assigned to sprint successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to assign task to sprint']);
+            }
+
+        } catch (\Exception $e) {
+            error_log("Error in SprintController::assignTask: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Internal server error']);
         }
     }
 }

@@ -35,15 +35,15 @@ class RoleController
     {
         try {
             $this->authMiddleware->hasPermission('view_roles');
-            
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            
-            $results = $this->roleModel->getAll(['is_deleted' => 0], $page, $limit);
+
+            $results = $this->roleModel->getAllWithDetails($page, $limit);
             $roles = $results['records'];
             $totalRoles = $results['total'];
             $totalPages = ceil($totalRoles / $limit);
-            
+
             include __DIR__ . '/../Views/Roles/index.php';
         } catch (\Exception $e) {
             error_log("Exception in RoleController::index: " . $e->getMessage());
@@ -98,7 +98,7 @@ class RoleController
         try {
             $this->authMiddleware->hasPermission('create_roles');
             
-            $permissions = $this->permissionModel->getGroupedPermissions();
+            $permissions = $this->permissionModel->getOrganizedPermissions();
             
             include __DIR__ . '/../Views/Roles/create.php';
         } catch (\Exception $e) {
@@ -198,7 +198,7 @@ class RoleController
                 throw new InvalidArgumentException('Role not found');
             }
 
-            $permissions = $this->permissionModel->getGroupedPermissions();
+            $permissions = $this->permissionModel->getOrganizedPermissions();
 
             include __DIR__ . '/../Views/Roles/edit.php';
         } catch (InvalidArgumentException $e) {
@@ -235,7 +235,7 @@ class RoleController
             }
 
             $validator = new Validator($data, [
-                'name' => "required|string|max:100|unique:roles,name,{$id}",
+                'name' => 'required|string|max:100|unique:roles,name',
                 'description' => 'nullable|string|max:500',
                 'permissions' => 'array'
             ]);

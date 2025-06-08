@@ -60,6 +60,11 @@ if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
+        <?php if (isset($project) && !empty($project)): ?>
+            <!-- Project Header with Navigation -->
+            <?php include __DIR__ . '/inc/project_header.php'; ?>
+        <?php endif; ?>
+
         <!-- Task Stats Summary -->
         <?php include __DIR__ . '/inc/stats.php'; ?>
 

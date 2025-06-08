@@ -232,7 +232,8 @@ unset($_SESSION['form_data']);
                         .then(response => response.json())
                         .then(data => {
                             if (data.success && data.template) {
-                                descriptionTextarea.value = data.template.description;
+                                // Convert literal \n characters to actual line breaks
+                                descriptionTextarea.value = data.template.description.replace(/\\n/g, '\n');
                             } else {
                                 console.error('Error loading template:', data.message);
                             }

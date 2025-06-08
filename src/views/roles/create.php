@@ -10,9 +10,21 @@ if (!defined('BASE_PATH')) {
 
 use App\Core\Config;
 
-// Fetch grouped permissions
+// Include form components
+require_once BASE_PATH . '/../src/Views/Layouts/form_components.php';
+
+// Fetch organized permissions and templates
 $permissionModel = new \App\Models\Permission();
-$groupedPermissions = $permissionModel->getGroupedPermissions();
+$organizedPermissions = $permissionModel->getOrganizedPermissions();
+$roleTemplates = $permissionModel->getRoleTemplates();
+
+// Debug: Count total permissions
+$totalPermissions = 0;
+foreach ($organizedPermissions as $entity => $entityData) {
+    $totalPermissions += count($entityData['permissions']);
+}
+// Debug output - will be removed after verification
+echo "<script>console.log('Total permissions loaded: $totalPermissions'); console.log('Entities: " . implode(', ', array_keys($organizedPermissions)) . "');</script>";
 
 // Prepare form data from session if exists
 $formData = $_SESSION['form_data'] ?? [];
@@ -43,8 +55,11 @@ unset($_SESSION['form_data']);
         <?php echo \App\Utils\Breadcrumb::render('roles/create'); ?>
         
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Create New Role</h1>
-            
+            <div>
+                <h1 class="text-2xl font-bold">Create New Role</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">Create a new role with specific permissions</p>
+            </div>
+
             <div class="flex space-x-2">
                 <a href="/roles" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,179 +70,378 @@ unset($_SESSION['form_data']);
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Role Information</h2>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a new role and assign permissions</p>
-            </div>
-            
-            <!-- Create Role Form -->
-            <form method="POST" action="/roles/create" class="p-6 space-y-6">
-                <!-- CSRF Token -->
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
-                
-                <!-- Form Grid Layout -->
-                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                    <!-- Role Name -->
-                    <div class="sm:col-span-3">
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Role Name <span class="text-red-500">*</span>
-                        </label>
-                        <div class="mt-1">
-                            <input type="text" id="name" name="name" value="<?= htmlspecialchars($formData['name'] ?? ''); ?>" required
-                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
-                                placeholder="Enter role name">
-                        </div>
-                    </div>
+        <form method="POST" action="/roles/create">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Main Form -->
+                <div class="w-full lg:w-2/3">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
+                        <!-- CSRF Token -->
+                        <?= renderCSRFToken() ?>
 
-                    <!-- Description -->
-                    <div class="sm:col-span-6">
-                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Description
-                        </label>
-                        <div class="mt-1">
-                            <textarea id="description" name="description" rows="3"
-                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
-                                placeholder="Provide a brief description of this role"><?= htmlspecialchars($formData['description'] ?? ''); ?></textarea>
-                        </div>
-                    </div>
-                </div>
+                        <!-- Role Name -->
+                        <?= renderTextInput([
+                            'name' => 'name',
+                            'label' => 'Role Name',
+                            'value' => $formData['name'] ?? '',
+                            'required' => true,
+                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />',
+                            'error' => $errors['name'] ?? ''
+                        ]) ?>
 
-                <!-- Permissions Section -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                        Manage Permissions
-                    </h3>
-                    
-                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                        <div class="flex items-center mb-4">
-                            <input id="select-all-permissions" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
-                            <label for="select-all-permissions" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Select All Permissions
-                            </label>
-                        </div>
-                        
-                        <?php foreach ($groupedPermissions as $group => $permissions): ?>
-                            <div class="mb-6">
-                                <div class="flex items-center mb-3">
-                                    <input id="select-group-<?= htmlspecialchars($group) ?>" data-group="<?= htmlspecialchars($group) ?>" type="checkbox" class="group-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
-                                    <label for="select-group-<?= htmlspecialchars($group) ?>" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                                        Select All <?= htmlspecialchars(str_replace('_', ' ', $group)); ?> Permissions
+                        <!-- Description -->
+                        <?= renderTextarea([
+                            'name' => 'description',
+                            'label' => 'Description',
+                            'value' => $formData['description'] ?? '',
+                            'rows' => 3,
+                            'placeholder' => 'Provide a brief description of this role',
+                            'error' => $errors['description'] ?? ''
+                        ]) ?>
+
+                        <!-- Permissions Section -->
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                    Permissions
+                                </h3>
+
+                                <!-- Permission Templates -->
+                                <div class="flex items-center space-x-3">
+                                    <label for="role-template" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Quick Templates:
                                     </label>
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-6">
-                                    <?php foreach ($permissions as $permission): ?>
-                                        <div class="flex items-center">
-                                            <input 
-                                                type="checkbox" 
-                                                id="permission_<?= htmlspecialchars((string)$permission->id); ?>" 
-                                                name="permissions[]" 
-                                                value="<?= htmlspecialchars((string)$permission->id); ?>"
-                                                data-group="<?= htmlspecialchars($group); ?>"
-                                                class="permission-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
-                                                <?= isset($formData['permissions']) && in_array($permission->id, $formData['permissions']) ? 'checked' : ''; ?>
-                                            >
-                                            <label 
-                                                for="permission_<?= htmlspecialchars((string)$permission->id); ?>" 
-                                                class="ml-2 block text-sm text-gray-700 dark:text-gray-300"
-                                            >
-                                                <?= htmlspecialchars(ucwords(str_replace('_', ' ', $permission->name))); ?>
-                                                <span class="text-xs text-gray-500 dark:text-gray-400 block"><?= htmlspecialchars($permission->description ?? ''); ?></span>
-                                            </label>
-                                        </div>
-                                    <?php endforeach; ?>
+                                    <select id="role-template" class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                        <option value="">Select a template...</option>
+                                        <?php foreach ($roleTemplates as $key => $template): ?>
+                                            <option value="<?= htmlspecialchars($key) ?>" data-permissions="<?= htmlspecialchars(json_encode($permissionModel->getTemplatePermissionIds($key))) ?>">
+                                                <?= htmlspecialchars($template['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
+
+                            <!-- Search and Controls -->
+                            <div class="mb-4">
+                                <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                                    <div class="flex-1">
+                                        <input
+                                            type="text"
+                                            id="permission-search"
+                                            placeholder="Search permissions..."
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" id="select-all-permissions" class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                            Select All
+                                        </button>
+                                        <button type="button" id="clear-all-permissions" class="px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                            Clear All
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Permission Count -->
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    <span id="selected-count">0</span> of <span id="total-count">0</span> permissions selected
+                                </div>
+                            </div>
+
+                            <!-- Permissions Grid -->
+                            <div class="space-y-4" id="permissions-container">
+                                <?php foreach ($organizedPermissions as $entity => $entityData): ?>
+                                    <div class="permission-entity border border-gray-200 dark:border-gray-700 rounded-lg" data-entity="<?= htmlspecialchars($entity) ?>">
+                                        <!-- Entity Header -->
+                                        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 mr-3">
+                                                        <?php
+                                                        $iconName = $entityData['config']['icon'];
+                                                        $iconPaths = [
+                                                            'chart-bar' => 'M3 3v18h18M7 12l4-4 4 4 4-4',
+                                                            'folder' => 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
+                                                            'clipboard-list' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+                                                            'flag' => 'M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 2H21l-3 6 3 6h-8.5l-1-2H5a2 2 0 00-2 2zm9-13.5V9',
+                                                            'lightning-bolt' => 'M13 10V3L4 14h7v7l9-11h-7z',
+                                                            'clock' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+                                                            'users' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a4 4 0 11-8 0 4 4 0 018 0z',
+                                                            'shield-check' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+                                                            'office-building' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+                                                            'template' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                                                            'cog' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
+                                                            'collection' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+                                                        ];
+                                                        $iconPath = $iconPaths[$iconName] ?? $iconPaths['collection'];
+                                                        ?>
+                                                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $iconPath ?>"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                            <?= htmlspecialchars($entityData['config']['label']) ?>
+                                                        </h4>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                            <?= htmlspecialchars($entityData['config']['description']) ?>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="select-entity-<?= htmlspecialchars($entity) ?>"
+                                                        data-entity="<?= htmlspecialchars($entity) ?>"
+                                                        class="entity-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
+                                                    >
+                                                    <label for="select-entity-<?= htmlspecialchars($entity) ?>" class="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                                        Select All
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Entity Permissions -->
+                                        <div class="p-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                <?php foreach ($entityData['permissions'] as $permission): ?>
+                                                    <div class="permission-item flex items-start p-3 rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700" data-permission-name="<?= htmlspecialchars($permission['name']) ?>">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="permission_<?= htmlspecialchars((string)$permission['id']); ?>"
+                                                            name="permissions[]"
+                                                            value="<?= htmlspecialchars((string)$permission['id']); ?>"
+                                                            data-entity="<?= htmlspecialchars($entity); ?>"
+                                                            class="permission-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded mt-0.5"
+                                                            <?= isset($formData['permissions']) && in_array($permission['id'], $formData['permissions']) ? 'checked' : ''; ?>
+                                                        >
+                                                        <div class="ml-3 flex-1">
+                                                            <label
+                                                                for="permission_<?= htmlspecialchars((string)$permission['id']); ?>"
+                                                                class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer block"
+                                                            >
+                                                                <?= htmlspecialchars($permission['action_config']['label']); ?>
+                                                            </label>
+                                                            <?php if ($permission['description']): ?>
+                                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                    <?= htmlspecialchars($permission['description']); ?>
+                                                                </p>
+                                                            <?php endif; ?>
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-<?= $permission['action_config']['color'] ?>-100 text-<?= $permission['action_config']['color'] ?>-800 dark:bg-<?= $permission['action_config']['color'] ?>-900 dark:text-<?= $permission['action_config']['color'] ?>-200 mt-1">
+                                                                Level <?= $permission['action_config']['level'] ?>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Submit Buttons -->
-                <div class="pt-5 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex justify-end">
-                        <a href="/roles" 
-                            class="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Cancel
-                        </a>
-                        <button type="submit" 
-                            class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Create Role
-                        </button>
+                <!-- Sidebar with Form Actions and Summary -->
+                <div class="w-full lg:w-1/3">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200">Role Summary</h3>
+
+                        <!-- Permission Summary -->
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-400">Selected Permissions:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100" id="summary-selected-count">0</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-400">Total Available:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100" id="summary-total-count">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <?= renderFormButtons([
+                            'submit_text' => 'Create Role',
+                            'cancel_url' => '/roles',
+                            'show_cancel' => true
+                        ]) ?>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
+
+
     </main>
 
     <!-- Footer -->
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
     
-    <!-- JavaScript for permission selection -->
+    <!-- JavaScript for enhanced permission selection -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const selectAllCheckbox = document.getElementById('select-all-permissions');
-            const groupCheckboxes = document.querySelectorAll('.group-checkbox');
+            const selectAllBtn = document.getElementById('select-all-permissions');
+            const clearAllBtn = document.getElementById('clear-all-permissions');
+            const entityCheckboxes = document.querySelectorAll('.entity-checkbox');
             const permissionCheckboxes = document.querySelectorAll('.permission-checkbox');
-            
+            const searchInput = document.getElementById('permission-search');
+            const roleTemplateSelect = document.getElementById('role-template');
+            const selectedCountSpan = document.getElementById('selected-count');
+            const totalCountSpan = document.getElementById('total-count');
+            const summarySelectedCountSpan = document.getElementById('summary-selected-count');
+            const summaryTotalCountSpan = document.getElementById('summary-total-count');
+
+            // Initialize counts
+            updatePermissionCounts();
+
             // Select all permissions
-            selectAllCheckbox.addEventListener('change', function() {
-                const isChecked = this.checked;
+            selectAllBtn.addEventListener('click', function() {
                 permissionCheckboxes.forEach(checkbox => {
-                    checkbox.checked = isChecked;
+                    if (isCheckboxVisible(checkbox)) {
+                        checkbox.checked = true;
+                    }
                 });
-                groupCheckboxes.forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
+                updateEntityCheckboxes();
+                updatePermissionCounts();
             });
-            
-            // Select all permissions in a group
-            groupCheckboxes.forEach(groupCheckbox => {
-                groupCheckbox.addEventListener('change', function() {
-                    const group = this.dataset.group;
+
+            // Clear all permissions
+            clearAllBtn.addEventListener('click', function() {
+                permissionCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                entityCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updatePermissionCounts();
+            });
+
+            // Entity checkbox handling
+            entityCheckboxes.forEach(entityCheckbox => {
+                entityCheckbox.addEventListener('change', function() {
+                    const entity = this.dataset.entity;
                     const isChecked = this.checked;
-                    
-                    document.querySelectorAll(`.permission-checkbox[data-group="${group}"]`).forEach(checkbox => {
-                        checkbox.checked = isChecked;
+
+                    document.querySelectorAll(`.permission-checkbox[data-entity="${entity}"]`).forEach(checkbox => {
+                        if (isCheckboxVisible(checkbox)) {
+                            checkbox.checked = isChecked;
+                        }
                     });
-                    
-                    updateSelectAllStatus();
+
+                    updatePermissionCounts();
                 });
             });
-            
-            // Update group and select all checkboxes based on individual permissions
+
+            // Individual permission checkbox handling
             permissionCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    updateGroupStatus(this.dataset.group);
-                    updateSelectAllStatus();
+                    updateEntityCheckboxes();
+                    updatePermissionCounts();
                 });
             });
-            
-            // Initialize checkbox states
-            initializeCheckboxStates();
-            
-            function initializeCheckboxStates() {
-                groupCheckboxes.forEach(groupCheckbox => {
-                    updateGroupStatus(groupCheckbox.dataset.group);
-                });
-                
-                updateSelectAllStatus();
-            }
-            
-            function updateGroupStatus(group) {
-                const groupPermissions = document.querySelectorAll(`.permission-checkbox[data-group="${group}"]`);
-                const groupCheckbox = document.querySelector(`#select-group-${group}`);
-                
-                if (groupCheckbox) {
-                    const allChecked = Array.from(groupPermissions).every(checkbox => checkbox.checked);
-                    groupCheckbox.checked = allChecked;
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                filterPermissions(searchTerm);
+                updateEntityCheckboxes();
+                updatePermissionCounts();
+            });
+
+            // Role template selection
+            roleTemplateSelect.addEventListener('change', function() {
+                if (this.value) {
+                    const permissionIds = JSON.parse(this.options[this.selectedIndex].dataset.permissions || '[]');
+
+                    // Clear all first
+                    permissionCheckboxes.forEach(checkbox => {
+                        checkbox.checked = false;
+                    });
+
+                    // Select template permissions
+                    permissionIds.forEach(id => {
+                        const checkbox = document.querySelector(`input[value="${id}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+
+                    updateEntityCheckboxes();
+                    updatePermissionCounts();
+
+                    // Reset template selection
+                    this.value = '';
                 }
+            });
+
+            function updateEntityCheckboxes() {
+                entityCheckboxes.forEach(entityCheckbox => {
+                    const entity = entityCheckbox.dataset.entity;
+                    const entityPermissions = document.querySelectorAll(`.permission-checkbox[data-entity="${entity}"]`);
+                    const visiblePermissions = Array.from(entityPermissions).filter(isCheckboxVisible);
+                    const checkedPermissions = visiblePermissions.filter(checkbox => checkbox.checked);
+
+                    if (visiblePermissions.length === 0) {
+                        entityCheckbox.checked = false;
+                        entityCheckbox.indeterminate = false;
+                    } else if (checkedPermissions.length === visiblePermissions.length) {
+                        entityCheckbox.checked = true;
+                        entityCheckbox.indeterminate = false;
+                    } else if (checkedPermissions.length > 0) {
+                        entityCheckbox.checked = false;
+                        entityCheckbox.indeterminate = true;
+                    } else {
+                        entityCheckbox.checked = false;
+                        entityCheckbox.indeterminate = false;
+                    }
+                });
             }
-            
-            function updateSelectAllStatus() {
-                const allChecked = Array.from(permissionCheckboxes).every(checkbox => checkbox.checked);
-                selectAllCheckbox.checked = allChecked;
+
+            function updatePermissionCounts() {
+                const visiblePermissions = Array.from(permissionCheckboxes).filter(isCheckboxVisible);
+                const selectedPermissions = visiblePermissions.filter(checkbox => checkbox.checked);
+
+                // Update main counts
+                selectedCountSpan.textContent = selectedPermissions.length;
+                totalCountSpan.textContent = visiblePermissions.length;
+
+                // Update summary counts
+                summarySelectedCountSpan.textContent = selectedPermissions.length;
+                summaryTotalCountSpan.textContent = permissionCheckboxes.length;
             }
+
+            function filterPermissions(searchTerm) {
+                const entities = document.querySelectorAll('.permission-entity');
+
+                entities.forEach(entity => {
+                    const permissionItems = entity.querySelectorAll('.permission-item');
+                    let hasVisiblePermissions = false;
+
+                    permissionItems.forEach(item => {
+                        const permissionName = item.dataset.permissionName.toLowerCase();
+                        const permissionLabel = item.querySelector('label').textContent.toLowerCase();
+                        const isVisible = permissionName.includes(searchTerm) || permissionLabel.includes(searchTerm);
+
+                        item.style.display = isVisible ? 'flex' : 'none';
+                        if (isVisible) {
+                            hasVisiblePermissions = true;
+                        }
+                    });
+
+                    // Show/hide entire entity based on whether it has visible permissions
+                    entity.style.display = hasVisiblePermissions ? 'block' : 'none';
+                });
+            }
+
+            function isCheckboxVisible(checkbox) {
+                const permissionItem = checkbox.closest('.permission-item');
+                const entity = checkbox.closest('.permission-entity');
+                return permissionItem && permissionItem.style.display !== 'none' &&
+                       entity && entity.style.display !== 'none';
+            }
+
+            // Initialize states
+            updateEntityCheckboxes();
         });
     </script>
 </body>

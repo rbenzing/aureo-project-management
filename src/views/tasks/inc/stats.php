@@ -15,20 +15,53 @@ $overdueCount = 0;
 $completedCount = 0;
 
 if (!empty($tasks)) {
-    $totalTaskCount = count($tasks);
-    
-    foreach ($tasks as $task) {
-        if ($task->status_name === 'In Progress') {
-            $inProgressCount++;
+    // Check if tasks are organized by status (project context) or flat array (other contexts)
+    if (is_array($tasks) && isset($tasks['open']) || isset($tasks['in_progress']) || isset($tasks['completed'])) {
+        // Tasks are organized by status - flatten them for counting
+        $flatTasks = [];
+        foreach ($tasks as $statusGroup) {
+            if (is_array($statusGroup)) {
+                $flatTasks = array_merge($flatTasks, $statusGroup);
+            }
         }
-        
-        if (!empty($task->due_date) && strtotime($task->due_date) < time() && 
-            $task->status_name !== 'Completed' && $task->status_name !== 'Closed') {
-            $overdueCount++;
+
+        $totalTaskCount = count($flatTasks);
+
+        foreach ($flatTasks as $task) {
+            if (is_object($task)) {
+                if ($task->status_name === 'In Progress') {
+                    $inProgressCount++;
+                }
+
+                if (!empty($task->due_date) && strtotime($task->due_date) < time() &&
+                    $task->status_name !== 'Completed' && $task->status_name !== 'Closed') {
+                    $overdueCount++;
+                }
+
+                if ($task->status_name === 'Completed') {
+                    $completedCount++;
+                }
+            }
         }
-        
-        if ($task->status_name === 'Completed') {
-            $completedCount++;
+    } else {
+        // Tasks are a flat array - process normally
+        $totalTaskCount = count($tasks);
+
+        foreach ($tasks as $task) {
+            if (is_object($task)) {
+                if ($task->status_name === 'In Progress') {
+                    $inProgressCount++;
+                }
+
+                if (!empty($task->due_date) && strtotime($task->due_date) < time() &&
+                    $task->status_name !== 'Completed' && $task->status_name !== 'Closed') {
+                    $overdueCount++;
+                }
+
+                if ($task->status_name === 'Completed') {
+                    $completedCount++;
+                }
+            }
         }
     }
 }

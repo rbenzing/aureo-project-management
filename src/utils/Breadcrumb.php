@@ -51,7 +51,7 @@ class Breadcrumb
                 'icon' => 'check-square'
             ],
             'tasks/backlog' => [
-                'name' => 'Product Backlog',
+                'name' => 'Backlog',
                 'url' => '/tasks/backlog',
                 'icon' => 'clipboard-list'
             ],

@@ -1,5 +1,5 @@
 <?php
-//file: Views/Templates/create.php
+//file: Views/Templates/edit.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web
@@ -28,7 +28,7 @@ unset($_SESSION['errors']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Template - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
+    <title>Edit Template: <?= htmlspecialchars($template->name) ?> - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
@@ -55,15 +55,14 @@ unset($_SESSION['errors']);
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-indigo-800 dark:text-indigo-300">Template creation tips</h3>
+                        <h3 class="text-sm font-medium text-indigo-800 dark:text-indigo-300">Template editing tips</h3>
                         <div class="mt-2 text-sm text-indigo-700 dark:text-indigo-200">
                             <ul class="list-disc pl-5 space-y-1">
-                                <li><strong>Project:</strong> Include objectives, scope, timeline</li>
-                                <li><strong>Task:</strong> Add acceptance criteria, steps</li>
-                                <li><strong>Milestone:</strong> Define deliverables, success criteria</li>
-                                <li><strong>Sprint:</strong> Set goals, capacity, focus areas</li>
                                 <li>Use markdown formatting for better structure</li>
-                                <li>Include placeholders for specific information</li>
+                                <li>Include placeholders for dynamic content</li>
+                                <li>Test your template before setting as default</li>
+                                <li>Consider your team's workflow when creating templates</li>
+                                <li>Use the markdown buttons below for quick formatting</li>
                             </ul>
                         </div>
                     </div>
@@ -79,33 +78,37 @@ unset($_SESSION['errors']);
         <!-- Page Header -->
         <div class="pb-6 flex justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Create Template</h1>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create a reusable template for projects, tasks, milestones, or sprints.</p>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Template</h1>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Update the template "<?= htmlspecialchars($template->name) ?>"
+                </p>
             </div>
             <!-- Form Actions -->
             <div class="flex items-center justify-end space-x-3">
-                <a href="/templates" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <a href="/templates/view/<?= $template->id ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Cancel
                 </a>
-                <button type="submit" form="createTemplateForm"
+                <button type="submit" form="editTemplateForm"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Create Template
+                    Update Template
                 </button>
             </div>
         </div>
+
         <div class="flex flex-col lg:flex-row gap-6">
             <!-- Main Form -->
             <div class="w-full lg:w-2/3">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <form id="createTemplateForm" method="POST" action="/templates/create" class="space-y-6">
+                    <form id="editTemplateForm" method="POST" action="/templates/update" class="space-y-6">
                         <!-- CSRF Token -->
                         <?= renderCSRFToken() ?>
+                        <input type="hidden" name="id" value="<?= $template->id ?>">
 
                         <!-- Template Name -->
                         <?= renderTextInput([
                             'name' => 'name',
                             'label' => 'Template Name',
-                            'value' => $formData['name'] ?? '',
+                            'value' => $formData['name'] ?? $template->name,
                             'required' => true,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />',
                             'error' => $errors['name'] ?? ''
@@ -115,9 +118,8 @@ unset($_SESSION['errors']);
                         <?= renderSelect([
                             'name' => 'template_type',
                             'label' => 'Template Type',
-                            'value' => $formData['template_type'] ?? '',
+                            'value' => $formData['template_type'] ?? $template->template_type,
                             'options' => Template::TEMPLATE_TYPES,
-                            'empty_option' => 'Select template type...',
                             'required' => true,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
                             'help_text' => 'Choose what type of content this template will be used for',
@@ -134,7 +136,7 @@ unset($_SESSION['errors']);
                         <?= renderSelect([
                             'name' => 'company_id',
                             'label' => 'Company <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
-                            'value' => $formData['company_id'] ?? '',
+                            'value' => $formData['company_id'] ?? $template->company_id,
                             'options' => $companyOptions,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />',
                             'help_text' => 'If selected, this template will only be available to this company',
@@ -145,7 +147,7 @@ unset($_SESSION['errors']);
                         <?= renderCheckbox([
                             'name' => 'is_default',
                             'label' => 'Set as Default Template',
-                            'checked' => isset($formData['is_default']) && $formData['is_default'],
+                            'checked' => (isset($formData['is_default']) && $formData['is_default']) || $template->is_default,
                             'help_text' => 'Make this the default template for this type',
                             'error' => $errors['is_default'] ?? ''
                         ]) ?>
@@ -155,7 +157,7 @@ unset($_SESSION['errors']);
                             <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Template Content <span class="text-red-500">*</span>
                             </label>
-
+                            
                             <!-- Markdown Toolbar -->
                             <div class="flex flex-wrap gap-1 mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-t-md border border-gray-300 dark:border-gray-600">
                                 <button type="button" class="markdown-btn w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded" data-action="bold" title="Bold">
@@ -209,7 +211,7 @@ unset($_SESSION['errors']);
 
                             <!-- Textarea -->
                             <textarea id="description" name="description" rows="15" required
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-b-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm font-mono"><?= htmlspecialchars($formData['description'] ?? '') ?></textarea>
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-b-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm font-mono"><?= htmlspecialchars($formData['description'] ?? $template->description) ?></textarea>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Use the toolbar buttons above for quick markdown formatting. Markdown is supported for better structure and formatting.</p>
                             <?php if (!empty($errors['description'])): ?>
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400"><?= htmlspecialchars($errors['description']) ?></p>
@@ -236,8 +238,7 @@ unset($_SESSION['errors']);
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const templateTypeSelect = document.getElementById('template_type');
-            const descriptionTextarea = document.getElementById('description');
+            const textarea = document.getElementById('description');
             const previewContent = document.getElementById('preview-content');
             const markdownButtons = document.querySelectorAll('.markdown-btn');
             const closeTipsBtn = document.getElementById('close-tips');
@@ -249,14 +250,6 @@ unset($_SESSION['errors']);
                     tipsBox.style.display = 'none';
                 });
             }
-
-            // Default templates for each type
-            const defaultTemplates = {
-                'project': <?= json_encode(Config::get('DEFAULT_PROJECT_TEMPLATE')) ?>,
-                'task': <?= json_encode(Config::get('DEFAULT_TASK_TEMPLATE')) ?>,
-                'milestone': <?= json_encode(Config::get('DEFAULT_MILESTONE_TEMPLATE')) ?>,
-                'sprint': <?= json_encode(Config::get('DEFAULT_SPRINT_TEMPLATE')) ?>
-            };
 
             // Markdown button actions
             const markdownActions = {
@@ -276,18 +269,18 @@ unset($_SESSION['errors']);
             markdownButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const action = this.dataset.action;
-                    const start = descriptionTextarea.selectionStart;
-                    const end = descriptionTextarea.selectionEnd;
-                    const selectedText = descriptionTextarea.value.substring(start, end) || 'text';
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = textarea.value.substring(start, end) || 'text';
 
                     if (markdownActions[action]) {
                         const formattedText = markdownActions[action](selectedText);
-                        descriptionTextarea.value = descriptionTextarea.value.substring(0, start) + formattedText + descriptionTextarea.value.substring(end);
+                        textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
 
                         // Update cursor position
                         const newCursorPos = start + formattedText.length;
-                        descriptionTextarea.setSelectionRange(newCursorPos, newCursorPos);
-                        descriptionTextarea.focus();
+                        textarea.setSelectionRange(newCursorPos, newCursorPos);
+                        textarea.focus();
 
                         // Update preview
                         updatePreview();
@@ -332,7 +325,7 @@ unset($_SESSION['errors']);
 
             // Update preview
             function updatePreview() {
-                const markdown = descriptionTextarea.value;
+                const markdown = textarea.value;
                 const html = markdownToHtml(markdown);
                 previewContent.innerHTML = html || '<p class="text-gray-500 dark:text-gray-400 italic">Preview will appear here as you type...</p>';
             }
@@ -341,24 +334,7 @@ unset($_SESSION['errors']);
             updatePreview();
 
             // Update preview on textarea change
-            descriptionTextarea.addEventListener('input', updatePreview);
-
-            // Template type change handler
-            if (templateTypeSelect && descriptionTextarea) {
-                templateTypeSelect.addEventListener('change', function() {
-                    const selectedType = this.value;
-
-                    if (selectedType && defaultTemplates[selectedType]) {
-                        // Only update if textarea is empty or user confirms
-                        if (!descriptionTextarea.value.trim() ||
-                            confirm('This will replace your current content. Continue?')) {
-                            // Convert literal \n characters to actual line breaks
-                            descriptionTextarea.value = defaultTemplates[selectedType].replace(/\\n/g, '\n');
-                            updatePreview();
-                        }
-                    }
-                });
-            }
+            textarea.addEventListener('input', updatePreview);
         });
     </script>
 </body>

@@ -25,36 +25,24 @@ $breadcrumbs = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprint Planning - Slimbooks</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"}
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Sprint Planning - <?= htmlspecialchars(Config::get('company_name', 'SlimBooks')) ?></title>
+    <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 
 <body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <div class="flex h-full">
         <!-- Sidebar -->
-        <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
+        <?php include BASE_PATH . '/../src/views/layouts/sidebar.php'; ?>
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Header -->
-            <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
+            <?php include BASE_PATH . '/../src/views/layouts/header.php'; ?>
 
             <!-- Main Content -->
             <main class="container mx-auto p-6 flex-grow">
-                <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
-                <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+                <?php include BASE_PATH . '/../src/views/layouts/notifications.php'; ?>
+                <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
 
                 <?php if (isset($viewType) && $viewType === 'sprint_planning_selection'): ?>
                     <!-- Project Selection View -->
@@ -75,9 +63,9 @@ $breadcrumbs = [
                                                 <?= htmlspecialchars($project->name) ?>
                                             </h3>
                                             <?php if (!empty($project->description)): ?>
-                                                <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                                    <?= htmlspecialchars(substr($project->description, 0, 100)) ?><?= strlen($project->description) > 100 ? '...' : '' ?>
-                                                </p>
+                                                <div class="text-gray-600 dark:text-gray-400 mb-4">
+                                                    <?= nl2br(htmlspecialchars(substr($project->description, 0, 100))) ?><?= strlen($project->description) > 100 ? '...' : '' ?>
+                                                </div>
                                             <?php endif; ?>
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm text-gray-500 dark:text-gray-400">
@@ -136,13 +124,15 @@ $breadcrumbs = [
                         <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Available Tasks</h2>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Tasks ready for sprint planning</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Drag tasks to sprints to assign them</p>
                             </div>
-                            <div class="p-6">
+                            <div class="p-6" id="available-tasks-container">
                                 <?php if (!empty($availableTasks)): ?>
                                     <div class="space-y-3 max-h-96 overflow-y-auto">
                                         <?php foreach ($availableTasks as $task): ?>
-                                            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <div class="task-card border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-move"
+                                                 data-task-id="<?= $task->id ?>"
+                                                 draggable="true">
                                                 <div class="flex justify-between items-start">
                                                     <div class="flex-1">
                                                         <h4 class="font-medium text-gray-900 dark:text-white">
@@ -201,14 +191,15 @@ $breadcrumbs = [
                         <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Active Sprints</h2>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Current and planned sprints</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Drop zones for task assignment</p>
                             </div>
                             <div class="p-6">
                                 <?php if (!empty($activeSprints)): ?>
                                     <div class="space-y-4">
                                         <?php foreach ($activeSprints as $sprint): ?>
-                                            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                                                <div class="flex justify-between items-start">
+                                            <div class="sprint-drop-zone border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg p-4 min-h-[100px] transition-colors"
+                                                 data-sprint-id="<?= $sprint->id ?>">
+                                                <div class="flex justify-between items-start mb-3">
                                                     <div>
                                                         <h4 class="font-medium text-gray-900 dark:text-white">
                                                             <?= htmlspecialchars($sprint->name) ?>
@@ -303,5 +294,121 @@ $breadcrumbs = [
             <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
         </div>
     </div>
+
+    <script>
+        // Sprint Planning Drag and Drop
+        let draggedTask = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSprintDragAndDrop();
+        });
+
+        function initializeSprintDragAndDrop() {
+            // Make task cards draggable
+            const taskCards = document.querySelectorAll('.task-card');
+            taskCards.forEach(card => {
+                card.addEventListener('dragstart', handleTaskDragStart);
+                card.addEventListener('dragend', handleTaskDragEnd);
+            });
+
+            // Make sprint zones droppable
+            const sprintZones = document.querySelectorAll('.sprint-drop-zone');
+            sprintZones.forEach(zone => {
+                zone.addEventListener('dragover', handleSprintDragOver);
+                zone.addEventListener('drop', handleSprintDrop);
+                zone.addEventListener('dragenter', handleSprintDragEnter);
+                zone.addEventListener('dragleave', handleSprintDragLeave);
+            });
+        }
+
+        function handleTaskDragStart(e) {
+            draggedTask = this;
+            this.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.outerHTML);
+        }
+
+        function handleTaskDragEnd(e) {
+            this.style.opacity = '';
+            draggedTask = null;
+        }
+
+        function handleSprintDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleSprintDragEnter(e) {
+            this.classList.add('border-indigo-400', 'bg-indigo-50', 'dark:bg-indigo-900');
+        }
+
+        function handleSprintDragLeave(e) {
+            // Only remove highlight if we're actually leaving the drop zone
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('border-indigo-400', 'bg-indigo-50', 'dark:bg-indigo-900');
+            }
+        }
+
+        function handleSprintDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            // Remove highlight
+            this.classList.remove('border-indigo-400', 'bg-indigo-50', 'dark:bg-indigo-900');
+
+            if (draggedTask) {
+                const taskId = draggedTask.getAttribute('data-task-id');
+                const sprintId = this.getAttribute('data-sprint-id');
+
+                // Add task to sprint via AJAX
+                assignTaskToSprint(taskId, sprintId);
+
+                // Move the task card to the sprint zone
+                this.appendChild(draggedTask);
+
+                // Update the task card styling to show it's assigned
+                draggedTask.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-200', 'dark:border-green-700');
+                draggedTask.setAttribute('draggable', 'false');
+                draggedTask.style.cursor = 'default';
+            }
+
+            return false;
+        }
+
+        function assignTaskToSprint(taskId, sprintId) {
+            fetch('/api/sprints/assign-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    task_id: taskId,
+                    sprint_id: sprintId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Task assigned to sprint successfully');
+                    // Optionally show a success message
+                } else {
+                    console.error('Failed to assign task to sprint:', data.message);
+                    // Optionally revert the UI change
+                    alert('Failed to assign task to sprint: ' + data.message);
+                    location.reload(); // Reload to reset state
+                }
+            })
+            .catch(error => {
+                console.error('Error assigning task to sprint:', error);
+                alert('Error assigning task to sprint');
+                location.reload(); // Reload to reset state
+            });
+        }
+    </script>
 </body>
 </html>

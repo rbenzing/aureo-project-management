@@ -11,6 +11,9 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 use App\Utils\Time;
 
+// Include view helpers for permission functions and time formatting
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Helper functions for formatting and styling
 function formatTimeTracking($seconds) {
     return formatTimeWithSettings($seconds);
@@ -19,19 +22,6 @@ function formatTimeTracking($seconds) {
 function formatDate($date) {
     if (!$date) return 'Not set';
     return date('M j, Y', strtotime($date));
-}
-
-function getPriorityClass($priority) {
-    switch (strtolower($priority)) {
-        case 'high':
-            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-        case 'medium':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-        case 'low':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-        default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
 }
 
 function getStatusClass($statusId) {
@@ -121,31 +111,43 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                 </p>
             </div>
             <div class="flex space-x-3">
-                <?php if ($isTimerActive): ?>
-                    <form method="POST" action="/tasks/stop-timer/<?= $activeTimer['task_id'] ?>" class="inline-flex">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span id="timer"><?= $formattedDuration ?></span>
-                        </button>
-                    </form>
-                <?php else: ?>
-                    <form method="POST" action="/tasks/start-timer/<?= $task->id ?>" class="inline-flex">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Start Timer
-                        </button>
-                    </form>
+                <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
+                    <?php if ($isTimerActive): ?>
+                        <form method="POST" action="/tasks/stop-timer/<?= $activeTimer['task_id'] ?>" class="inline-flex">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span id="timer"><?= $formattedDuration ?></span>
+                            </button>
+                        </form>
+                    <?php else: ?>
+                        <form method="POST" action="/tasks/start-timer/<?= $task->id ?>" class="inline-flex">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Start Timer
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
-                
+
+                <!-- Mark Complete Button -->
+                <?php if ($task->status_id != 6 && $task->status_id != 5): // Not completed or closed ?>
+                    <a href="/tasks/edit/<?= $task->id ?>?mark_complete=1" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Mark Complete
+                    </a>
+                <?php endif; ?>
+
                 <!-- Add Subtask Button -->
-                <button type="button" onclick="openAddSubtaskModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <button type="button" onclick="openAddSubtaskModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
@@ -168,7 +170,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
             <!-- Task Overview & Details Column -->
             <div class="md:col-span-1">
                 <!-- Task Progress Card -->
-                <?php if (!empty($task->estimated_time) && !empty($task->time_spent)): ?>
+                <?php if (hasUserPermission('view_time_tracking') && !empty($task->estimated_time) && !empty($task->time_spent)): ?>
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-white">Task Progress</h3>
@@ -291,27 +293,28 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                             </div>
                             <?php endif; ?>
 
+                            <?php if (hasUserPermission('view_time_tracking')): ?>
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Estimated:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= formatTimeTracking($task->estimated_time) ?>
                             </div>
-                            
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Time spent:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= formatTimeTracking($task->time_spent) ?>
                             </div>
-                            
+
                             <?php if ($task->is_hourly): ?>
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Billable:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?= formatTimeTracking($task->billable_time) ?>
                             </div>
-                            
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Hourly rate:</div>
                             <div class="text-gray-900 dark:text-white">
                                 $<?= number_format($task->hourly_rate ?? 0, 2) ?>
                             </div>
-                            
+
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Billable amount:</div>
                             <div class="text-green-600 dark:text-green-400 font-medium">
                                 <?php
@@ -321,6 +324,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                 echo '$' . number_format($billableAmount, 2);
                                 ?>
                             </div>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -452,7 +456,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                                         <?= htmlspecialchars($subtask->status_name) ?>
                                                     </span>
                                                 </div>
-                                                <?php if (!empty($subtask->estimated_time)): ?>
+                                                <?php if (hasUserPermission('view_time_tracking') && !empty($subtask->estimated_time)): ?>
                                                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
@@ -606,19 +610,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
             </div>
         </div>
                 
-        <!-- Task Actions (like Mark Complete) -->
-        <?php if ($task->status_id != 6 && $task->status_id != 5): // Not completed or closed ?>
-        <div class="mt-6 flex justify-center">
-            <div class="inline-flex rounded-md shadow-sm">
-                <a href="/tasks/edit/<?= $task->id ?>?mark_complete=1" class="inline-flex items-center px-4 py-2 bg-green-600 text-white border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Mark Complete
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
+
     </main>
 
     <!-- Add Subtask Modal -->

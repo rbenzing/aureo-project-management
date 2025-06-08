@@ -262,13 +262,15 @@ class ActivityMiddleware
     {
         $sanitized = [];
         foreach ($postData as $key => $value) {
-            if (in_array(strtolower($key), $this->sensitiveFields, true)) {
+            // Convert key to string to avoid strtolower() type error with integer keys
+            $keyString = (string)$key;
+            if (in_array(strtolower($keyString), $this->sensitiveFields, true)) {
                 $sanitized[$key] = '[REDACTED]';
             } else if (is_array($value)) {
                 $sanitized[$key] = $this->sanitizePostData($value);
             } else {
-                $sanitized[$key] = is_string($value) ? 
-                    htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8') : 
+                $sanitized[$key] = is_string($value) ?
+                    htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8') :
                     $value;
             }
         }

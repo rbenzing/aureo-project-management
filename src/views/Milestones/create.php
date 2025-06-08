@@ -307,7 +307,10 @@ use App\Services\SettingsService;
                     return;
                 }
 
-                if (description) descriptionTextarea.value = description;
+                if (description) {
+                    // Convert literal \n characters to actual line breaks
+                    descriptionTextarea.value = description.replace(/\\n/g, '\n');
+                }
 
                 // Reset both dropdowns after applying template
                 if (quickTemplateSelect) quickTemplateSelect.value = '';

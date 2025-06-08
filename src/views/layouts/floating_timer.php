@@ -8,8 +8,12 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-// Only show if there's an active timer
-if (empty($_SESSION['active_timer'])) {
+// Include view helpers for permission functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
+// Only show if there's an active timer AND user has time tracking permissions
+if (empty($_SESSION['active_timer']) ||
+    (!hasUserPermission('view_time_tracking') && !hasUserPermission('create_time_tracking'))) {
     return;
 }
 

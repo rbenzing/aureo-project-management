@@ -65,10 +65,10 @@ if (!defined('BASE_PATH')) {
                         </span>
                     </h4>
                     <?php if (!empty($sprint->description)): ?>
-                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            <?= htmlspecialchars(substr($sprint->description, 0, 150)) ?>
+                        <div class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            <?= nl2br(htmlspecialchars(substr($sprint->description, 0, 150))) ?>
                             <?= strlen($sprint->description) > 150 ? '...' : '' ?>
-                        </p>
+                        </div>
                     <?php endif; ?>
                 </div>
                 <div class="flex flex-col items-end space-y-2">

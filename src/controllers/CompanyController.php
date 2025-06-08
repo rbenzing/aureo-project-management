@@ -43,8 +43,8 @@ class CompanyController
             
             // Build filters based on search query
             $filters = ['is_deleted' => 0];
-            if (isset($data['search']) && !empty($data['search'])) {
-                $filters['search'] = trim($data['search']);
+            if (isset($_GET['search']) && !empty($_GET['search'])) {
+                $filters['search'] = trim($_GET['search']);
             }
             
             // Get paginated companies

@@ -60,8 +60,8 @@ include_once __DIR__ . '/inc/helpers.php';
                 
                 <div class="flex flex-col md:flex-row gap-3">
                     <!-- Status Filter -->
-                    <div class="relative">
-                        <select id="status-filter" class="appearance-none px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-4 pr-10 w-full md:w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="relative min-w-[160px]">
+                        <select id="status-filter" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="all">All Statuses</option>
                             <option value="1">Planning</option>
                             <option value="2">Active</option>
@@ -69,6 +69,11 @@ include_once __DIR__ . '/inc/helpers.php';
                             <option value="4">Completed</option>
                             <option value="5">Cancelled</option>
                         </select>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                        </div>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
@@ -77,16 +82,18 @@ include_once __DIR__ . '/inc/helpers.php';
                     </div>
 
                     <!-- Search -->
-                    <div class="relative">
-                        <input 
+                    <div class="relative flex-grow min-w-[200px]">
+                        <input
                             id="sprint-search"
-                            type="search" 
-                            placeholder="Search sprints..." 
-                            class="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            type="search"
+                            placeholder="Search sprints..."
+                            class="h-10 w-full appearance-none py-2 pr-10 pl-10 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </div>

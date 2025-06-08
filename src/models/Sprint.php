@@ -254,7 +254,15 @@ class Sprint extends BaseModel
         try {
             $sql = "SELECT s.*,
                         ss.name as status_name,
-                        COUNT(st.task_id) as task_count
+                        COUNT(st.task_id) as task_count,
+                        (
+                            SELECT COUNT(t.id)
+                            FROM tasks t
+                            JOIN sprint_tasks spt ON t.id = spt.task_id
+                            WHERE spt.sprint_id = s.id
+                            AND t.status_id = 6
+                            AND t.is_deleted = 0
+                        ) as completed_tasks
                     FROM sprints s
                     LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
                     LEFT JOIN sprint_tasks st ON s.id = st.sprint_id
@@ -376,12 +384,93 @@ class Sprint extends BaseModel
 
     /**
      * Complete a sprint
-     * 
+     *
      * @param int $sprintId
      * @return bool
      */
     public function completeSprint(int $sprintId): bool
     {
         return $this->update($sprintId, ['status_id' => 3]);  // Completed status
+    }
+
+    /**
+     * Get the sprint a task is assigned to (if any)
+     *
+     * @param int $taskId
+     * @return object|null
+     */
+    public function getTaskSprint(int $taskId): ?object
+    {
+        try {
+            $sql = "SELECT s.*, st.created_at as assigned_at
+                    FROM sprints s
+                    JOIN sprint_tasks st ON s.id = st.sprint_id
+                    WHERE st.task_id = :task_id
+                    AND s.is_deleted = 0
+                    AND s.status_id IN (1, 2)"; // Planning or Active status
+
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+            return $result ?: null;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error getting task sprint: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Assign a single task to a sprint
+     *
+     * @param int $sprintId
+     * @param int $taskId
+     * @return bool
+     */
+    public function assignTask(int $sprintId, int $taskId): bool
+    {
+        try {
+            // Check if task is already assigned to this sprint
+            $sql = "SELECT COUNT(*) FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
+            $stmt = $this->db->executeQuery($sql, [
+                ':sprint_id' => $sprintId,
+                ':task_id' => $taskId
+            ]);
+
+            if ($stmt->fetchColumn() > 0) {
+                return true; // Already assigned
+            }
+
+            // Remove task from any other active sprints first
+            $this->removeTaskFromActiveSprints($taskId);
+
+            // Assign task to the new sprint
+            $sql = "INSERT INTO sprint_tasks (sprint_id, task_id) VALUES (:sprint_id, :task_id)";
+            return $this->db->executeInsertUpdate($sql, [
+                ':sprint_id' => $sprintId,
+                ':task_id' => $taskId
+            ]);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error assigning task to sprint: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove task from any active sprints
+     *
+     * @param int $taskId
+     * @return bool
+     */
+    private function removeTaskFromActiveSprints(int $taskId): bool
+    {
+        try {
+            $sql = "DELETE st FROM sprint_tasks st
+                    JOIN sprints s ON st.sprint_id = s.id
+                    WHERE st.task_id = :task_id
+                    AND s.status_id IN (1, 2)
+                    AND s.is_deleted = 0";
+
+            return $this->db->executeInsertUpdate($sql, [':task_id' => $taskId]);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error removing task from active sprints: " . $e->getMessage());
+        }
     }
 }

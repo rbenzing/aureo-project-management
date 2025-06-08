@@ -10,9 +10,12 @@ if (!defined('BASE_PATH')) {
 
 use \App\Core\Config;
 use \App\Utils\Breadcrumb;
+use \App\Models\User;
 
 // Include view helpers for time formatting functions
 require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
+// Helper function to check permissions - moved to view_helpers.php
 ?>
 
 <!DOCTYPE html>
@@ -56,13 +59,19 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
                             Welcome back, <?= htmlspecialchars($user->first_name) ?>!
                         </h1>
-                        <p class="text-gray-600 dark:text-gray-400 mt-1">
-                            Here's an overview of your work and progress.
-                        </p>
+                        <?php if (hasUserPermission('view_tasks') || hasUserPermission('view_projects') || hasUserPermission('view_time_tracking')): ?>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">
+                                Here's an overview of your work and progress.
+                            </p>
+                        <?php else: ?>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">
+                                You're successfully logged in. Contact your administrator for access to additional features.
+                            </p>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Active Timer Widget (if any) -->
-                    <?php if (isset($_SESSION['active_timer'])): 
+                    <?php if (isset($_SESSION['active_timer']) && (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking'))):
                         $activeTask = $dashboardData['active_timer']['task'] ?? null;
                     ?>
                         <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 timer-pulse">
@@ -88,124 +97,303 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 </div>
                 
                 <!-- Quick Stats -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
-                        <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= $dashboardData['task_summary']['in_progress'] ?></div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Tasks In Progress</div>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
-                        <div class="text-3xl font-bold text-red-600 dark:text-red-400"><?= $dashboardData['task_summary']['overdue'] ?></div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Overdue Tasks</div>
-                    </div>
-                    <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
-                        <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= $dashboardData['project_summary']['in_progress'] ?></div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Active Projects</div>
-                    </div>
-                    <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
-                        <div class="text-3xl font-bold text-purple-600 dark:text-purple-400"><?= number_format($dashboardData['time_tracking_summary']['this_week'] / 3600, 1) ?></div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Hours This Week</div>
-                    </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    <?php if (hasUserPermission('view_tasks')): ?>
+                        <!-- Row 1 -->
+                        <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= $dashboardData['task_summary']['in_progress'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Tasks In Progress</div>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-red-600 dark:text-red-400"><?= $dashboardData['task_summary']['overdue'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Overdue Tasks</div>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= $dashboardData['story_points_summary']['this_week'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Story Points This Week</div>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-red-600 dark:text-red-400"><?= $dashboardData['task_summary']['bugs'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Bugs to Fix</div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400"><?= $dashboardData['task_summary']['total'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Total Tasks</div>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= $dashboardData['task_summary']['completed'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Completed Tasks</div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= $dashboardData['task_summary']['sprint_ready'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Sprint Ready</div>
+                        </div>
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"><?= $dashboardData['task_summary']['backlog_items'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Backlog Items</div>
+                        </div>
+                    <?php elseif (hasUserPermission('view_projects')): ?>
+                        <!-- Row 1 -->
+                        <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400"><?= $dashboardData['project_summary']['total'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Total Projects</div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= $dashboardData['project_summary']['in_progress'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Active Projects</div>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= $dashboardData['project_summary']['completed'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Completed Projects</div>
+                        </div>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400"><?= $dashboardData['project_summary']['delayed'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Delayed Projects</div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-orange-600 dark:text-orange-400"><?= $dashboardData['project_summary']['on_hold'] ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">On Hold Projects</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                    <?php elseif (hasUserPermission('view_time_tracking')): ?>
+                        <!-- Row 1 -->
+                        <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-purple-600 dark:text-purple-400"><?= number_format($dashboardData['time_tracking_summary']['this_week'] / 3600, 1) ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Hours This Week</div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-blue-600 dark:text-blue-400"><?= number_format($dashboardData['time_tracking_summary']['this_month'] / 3600, 1) ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Hours This Month</div>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-green-600 dark:text-green-400"><?= number_format($dashboardData['time_tracking_summary']['billable_hours'] / 3600, 1) ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Billable Hours</div>
+                        </div>
+                        <div class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"><?= number_format($dashboardData['time_tracking_summary']['total_hours'] / 3600, 1) ?></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">Total Hours</div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data</div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Show placeholder for users with no permissions -->
+                        <!-- Row 1 -->
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 text-center">
+                            <div class="text-3xl font-bold text-gray-400 dark:text-gray-600">-</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">No Data Available</div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- Time Tracking Summary -->
             <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Time Tracking</h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 dark:text-gray-400">This Week</span>
-                            <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['this_week']) ?></span>
+
+                <?php
+                // Force reload permissions from database for admin users
+                if (isset($_SESSION['user']['roles']) && in_array('admin', $_SESSION['user']['roles'])) {
+                    // For admin users, ensure they have all permissions
+                    $userId = $_SESSION['user']['profile']['id'] ?? null;
+                    if ($userId) {
+                        $userModel = new User();
+                        $rolesAndPermissions = $userModel->getRolesAndPermissions($userId);
+                        $_SESSION['user']['permissions'] = $rolesAndPermissions['permissions'];
+                    }
+                }
+                ?>
+
+                <?php if (hasUserPermission('view_time_tracking')): ?>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">This Week</span>
+                                <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['this_week']) ?></span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <?php
+                                // Assume 40-hour work week
+                                $weeklyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_week'] / (40 * 3600)) * 100);
+                                ?>
+                                <div class="bg-blue-600 rounded-full h-2" style="width: <?= $weeklyPercentage ?>%"></div>
+                            </div>
                         </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <?php 
-                            // Assume 40-hour work week
-                            $weeklyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_week'] / (40 * 3600)) * 100);
-                            ?>
-                            <div class="bg-blue-600 rounded-full h-2" style="width: <?= $weeklyPercentage ?>%"></div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">This Month</span>
+                                <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['this_month']) ?></span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <?php
+                                // Assume 160-hour work month
+                                $monthlyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_month'] / (160 * 3600)) * 100);
+                                ?>
+                                <div class="bg-purple-600 rounded-full h-2" style="width: <?= $monthlyPercentage ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600 dark:text-gray-400">Billable Hours</span>
+                                <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['billable_hours']) ?></span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <?php
+                                $billablePercentage = $dashboardData['time_tracking_summary']['total_hours'] > 0
+                                    ? min(100, ($dashboardData['time_tracking_summary']['billable_hours'] / $dashboardData['time_tracking_summary']['total_hours']) * 100)
+                                    : 0;
+                                ?>
+                                <div class="bg-green-600 rounded-full h-2" style="width: <?= $billablePercentage ?>%"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <?php if (hasUserPermission('create_tasks')): ?>
+                                <a href="/tasks/create" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    New Task
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 dark:text-gray-400">This Month</span>
-                            <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['this_month']) ?></span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <?php 
-                            // Assume 160-hour work month
-                            $monthlyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_month'] / (160 * 3600)) * 100);
-                            ?>
-                            <div class="bg-purple-600 rounded-full h-2" style="width: <?= $monthlyPercentage ?>%"></div>
-                        </div>
+                <?php else: ?>
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No access to time tracking data</p>
                     </div>
-                    
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 dark:text-gray-400">Billable Hours</span>
-                            <span class="font-medium"><?= formatTime($dashboardData['time_tracking_summary']['billable_hours']) ?></span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <?php 
-                            $billablePercentage = $dashboardData['time_tracking_summary']['total_hours'] > 0 
-                                ? min(100, ($dashboardData['time_tracking_summary']['billable_hours'] / $dashboardData['time_tracking_summary']['total_hours']) * 100)
-                                : 0;
-                            ?>
-                            <div class="bg-green-600 rounded-full h-2" style="width: <?= $billablePercentage ?>%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <a href="/tasks/create" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
-                            </svg>
-                            New Task
-                        </a>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Quick Actions -->
             <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
-                
+
                 <div class="space-y-3">
-                    <a href="/projects/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Project</span>
-                    </a>
-                    
-                    <a href="/tasks/create" class="flex items-center p-2 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Task</span>
-                    </a>
-                    
-                    <a href="/milestones/create" class="flex items-center p-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Milestone</span>
-                    </a>
-                    
-                    <a href="/sprints/create" class="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Sprint</span>
-                    </a>
-                    
-                    <a href="/companies/create" class="flex items-center p-2 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                        <span class="text-gray-800 dark:text-gray-200">New Company</span>
-                    </a>
+                    <?php if (hasUserPermission('create_projects')): ?>
+                        <a href="/projects/create" class="flex items-center p-2 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="text-gray-800 dark:text-gray-200">New Project</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if (hasUserPermission('create_tasks')): ?>
+                        <a href="/tasks/create" class="flex items-center p-2 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <span class="text-gray-800 dark:text-gray-200">New Task</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if (hasUserPermission('create_milestones')): ?>
+                        <a href="/milestones/create" class="flex items-center p-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                            </svg>
+                            <span class="text-gray-800 dark:text-gray-200">New Milestone</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if (hasUserPermission('create_sprints')): ?>
+                        <a href="/sprints/create" class="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <span class="text-gray-800 dark:text-gray-200">New Sprint</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if (hasUserPermission('create_companies')): ?>
+                        <a href="/companies/create" class="flex items-center p-2 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <span class="text-gray-800 dark:text-gray-200">New Company</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php
+                    // Show message if user has no create permissions
+                    $hasAnyCreatePermission = hasUserPermission('create_projects') || hasUserPermission('create_tasks') ||
+                                             hasUserPermission('create_milestones') || hasUserPermission('create_sprints') ||
+                                             hasUserPermission('create_companies');
+                    if (!$hasAnyCreatePermission):
+                    ?>
+                        <div class="text-center py-4">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No create permissions available</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -213,13 +401,16 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
         <!-- Main Dashboard Widgets -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Tasks Section -->
-            <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">My Tasks</h2>
-                    <a href="/tasks" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                        View All →
-                    </a>
-                </div>
+            <?php if (hasUserPermission('view_tasks')): ?>
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">My Tasks</h2>
+                        <?php if (hasUserPermission('view_tasks')): ?>
+                            <a href="/tasks" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                View All →
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 
                 <!-- Task Tabs Navigation -->
                 <div class="grid grid-cols-3 border-b border-gray-200 dark:border-gray-700">
@@ -271,7 +462,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                 $activeTimer = $_SESSION['active_timer'] ?? null;
                                                 $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
 
-                                                if ($isTimerActiveForThisTask):
+                                                if (hasUserPermission('view_time_tracking') && $isTimerActiveForThisTask):
                                                 ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
@@ -283,7 +474,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all ?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -296,11 +487,13 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                 <?php endif; ?>
 
                                                 <!-- Edit Button -->
-                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </a>
+                                                <?php if (hasUserPermission('edit_tasks')): ?>
+                                                    <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </a>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -359,7 +552,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all ?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -372,11 +565,13 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                 <?php endif; ?>
 
                                                 <!-- Edit Button -->
-                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </a>
+                                                <?php if (hasUserPermission('edit_tasks')): ?>
+                                                    <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </a>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -448,11 +643,13 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                                 <?php endif; ?>
 
                                                 <!-- Edit Button -->
-                                                <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </a>
+                                                <?php if (hasUserPermission('edit_tasks')): ?>
+                                                    <a href="/tasks/edit/<?= $task->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit Task">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </a>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -466,100 +663,144 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                     <?php endif; ?>
                 </div>
             </div>
+            <?php else: ?>
+                <!-- Show placeholder for users without task permissions -->
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="p-8 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No Task Access</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You don't have permission to view tasks.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- Projects & Milestones Section -->
         <div class="lg:col-span-1">
             <!-- Recent Projects -->
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
-                <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Projects</h2>
-                    <a href="/projects" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                        View All →
-                    </a>
-                </div>
-                
-                <div class="p-4">
-                    <?php if (!empty($dashboardData['recent_projects'])): ?>
-                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php foreach (array_slice($dashboardData['recent_projects'], 0, 4) as $project): ?>
-                                <li class="py-3">
-                                    <a href="/projects/view/<?= $project->id ?>" class="flex items-center">
-                                        <div class="flex-1">
-                                            <div class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                                <?= htmlspecialchars($project->project_name) ?>
-                                            </div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                <?= htmlspecialchars($project->company_name ?? '') ?>
-                                            </div>
-                                        </div>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getProjectStatusClass($project->status_id) ?>">
-                                <?= htmlspecialchars($project->status_name) ?>
-                            </span>
+            <?php if (hasUserPermission('view_projects')): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
+                    <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Projects</h2>
+                        <a href="/projects" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            View All →
                         </a>
-                    </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <div class="py-6 text-center text-gray-500 dark:text-gray-400">
-                        No recent projects.
                     </div>
-                <?php endif; ?>
-                </div>
-            </div>
 
-            <!-- Upcoming Milestones -->
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Upcoming Milestones</h2>
-                    <a href="/milestones" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                        View All →
-                    </a>
-                </div>
-                
-                <div class="p-4">
-                    <?php if (!empty($dashboardData['upcoming_milestones'])): ?>
-                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php foreach (array_slice($dashboardData['upcoming_milestones'], 0, 4) as $milestone): ?>
-                                <li class="py-3">
-                                    <div class="flex justify-between">
-                                        <div>
-                                            <a href="/milestones/view/<?= $milestone->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                                <?= htmlspecialchars($milestone->title) ?>
-                                            </a>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                <?= htmlspecialchars($milestone->project_name ?? 'No Project') ?>
+                    <div class="p-4">
+                        <?php if (!empty($dashboardData['recent_projects'])): ?>
+                            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <?php foreach (array_slice($dashboardData['recent_projects'], 0, 4) as $project): ?>
+                                    <li class="py-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <a href="/projects/view/<?= $project->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                                    <?= htmlspecialchars($project->project_name) ?>
+                                                </a>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= htmlspecialchars($project->company_name ?? '') ?>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <?php
+                                                // Project status mapping to match task style
+                                                $projectStatusMap = [
+                                                    1 => ['label' => 'READY', 'color' => 'bg-gray-600'],
+                                                    2 => ['label' => 'IN PROGRESS', 'color' => 'bg-blue-600'],
+                                                    3 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+                                                    4 => ['label' => 'ON HOLD', 'color' => 'bg-yellow-500'],
+                                                    6 => ['label' => 'DELAYED', 'color' => 'bg-orange-500'],
+                                                    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+                                                ];
+                                                $projectStatus = $projectStatusMap[$project->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                                                ?>
+                                                <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $projectStatus['color'] ?>">
+                                                    <?= $projectStatus['label'] ?>
+                                                </span>
                                             </div>
                                         </div>
-                                        <div class="text-right text-sm">
-                                            <div class="<?= isDueSoon($milestone->due_date) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400' ?>">
-                                                <?= formatDueDate($milestone->due_date) ?>
-                                            </div>
-                                            
-                                            <?php if (isset($milestone->completion_rate)): ?>
-                                            <div class="mt-1 w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 ml-auto">
-                                                <div class="bg-blue-600 h-1.5 rounded-full" style="width: <?= $milestone->completion_rate ?>%"></div>
-                                            </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
                     <?php else: ?>
                         <div class="py-6 text-center text-gray-500 dark:text-gray-400">
-                            No upcoming milestones.
+                            No recent projects.
                         </div>
                     <?php endif; ?>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
+
+            <!-- Upcoming Milestones -->
+            <?php if (hasUserPermission('view_milestones')): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Upcoming Milestones</h2>
+                        <a href="/milestones" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            View All →
+                        </a>
+                    </div>
+
+                    <div class="p-4">
+                        <?php if (!empty($dashboardData['upcoming_milestones'])): ?>
+                            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <?php foreach (array_slice($dashboardData['upcoming_milestones'], 0, 4) as $milestone): ?>
+                                    <li class="py-3">
+                                        <div class="flex justify-between">
+                                            <div>
+                                                <a href="/milestones/view/<?= $milestone->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
+                                                    <?= htmlspecialchars($milestone->title) ?>
+                                                </a>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= htmlspecialchars($milestone->project_name ?? 'No Project') ?>
+                                                </div>
+                                            </div>
+                                            <div class="text-right text-sm">
+                                                <div class="<?= isDueSoon($milestone->due_date) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400' ?>">
+                                                    <?= formatDueDate($milestone->due_date) ?>
+                                                </div>
+
+                                                <?php if (isset($milestone->completion_rate)): ?>
+                                                <div class="mt-1 w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 ml-auto">
+                                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: <?= $milestone->completion_rate ?>%"></div>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <div class="py-6 text-center text-gray-500 dark:text-gray-400">
+                                No upcoming milestones.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Show placeholder if user has no project or milestone permissions -->
+            <?php if (!hasUserPermission('view_projects') && !hasUserPermission('view_milestones')): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="p-8 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Limited Access</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You don't have permission to view projects or milestones.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
     <!-- Project & Sprint Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <!-- Project Status Chart -->
-        <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Project Status</h2>
+        <?php if (hasUserPermission('view_projects')): ?>
+            <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Project Status</h2>
             
             <div class="flex justify-center">
                 <div class="relative inline-block w-40 h-40">
@@ -596,10 +837,12 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Task Completion Status -->
-        <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Task Status</h2>
+        <?php if (hasUserPermission('view_tasks')): ?>
+            <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Task Status</h2>
             
             <?php
             // Calculate task completion percentage
@@ -653,15 +896,17 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Active Sprints -->
-        <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <div class="flex justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Sprints</h2>
-                <a href="/sprints" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                    View All →
-                </a>
-            </div>
+        <?php if (hasUserPermission('view_sprints')): ?>
+            <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div class="flex justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Sprints</h2>
+                    <a href="/sprints" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        View All →
+                    </a>
+                </div>
             
             <?php if (isset($dashboardData['active_sprints']) && !empty($dashboardData['active_sprints'])): ?>
                 <ul class="space-y-4">
@@ -711,6 +956,20 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 </div>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
+
+        <!-- Show placeholder if user has no chart permissions -->
+        <?php if (!hasUserPermission('view_projects') && !hasUserPermission('view_tasks') && !hasUserPermission('view_sprints')): ?>
+            <div class="lg:col-span-3 bg-white dark:bg-gray-800 shadow rounded-lg p-8">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No Chart Data Available</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You don't have permission to view project, task, or sprint analytics.</p>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 </main>
 

@@ -349,7 +349,8 @@ $errors = $errors ?? [];
                         .then(response => response.json())
                         .then(data => {
                             if (data.success && data.template) {
-                                descriptionTextarea.value = data.template.description;
+                                // Convert literal \n characters to actual line breaks
+                                descriptionTextarea.value = data.template.description.replace(/\\n/g, '\n');
                                 // Reset quick template dropdown
                                 if (quickTemplateSelect) quickTemplateSelect.value = '';
                             } else {
@@ -377,7 +378,8 @@ $errors = $errors ?? [];
                     }
 
                     if (description) {
-                        descriptionTextarea.value = description;
+                        // Convert literal \n characters to actual line breaks
+                        descriptionTextarea.value = description.replace(/\\n/g, '\n');
                         // Reset custom template dropdown
                         if (customTemplateSelect) customTemplateSelect.value = '';
                     }

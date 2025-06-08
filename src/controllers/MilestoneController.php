@@ -39,14 +39,31 @@ class MilestoneController
         try {
             $this->authMiddleware->hasPermission('view_milestones');
 
+            $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
 
-            $milestones = $this->milestoneModel->getAllWithProgress($limit, $page);
+            if (!empty($project_id)) {
+                $project = $this->projectModel->findWithDetails($project_id);
+                if (!$project || $project->is_deleted) {
+                    throw new InvalidArgumentException('Project not found');
+                }
+                // Get milestones only for this specific project
+                $milestones = $this->milestoneModel->getByProjectId($project_id);
+            } else {
+                $projects = $this->projectModel->getAllWithDetails($limit, $page);
+                // Get all milestones when no specific project is selected
+                $milestones = $this->milestoneModel->getAllWithProgress($limit, $page);
+            }
+
             $totalMilestones = $this->milestoneModel->count(['is_deleted' => 0]);
             $totalPages = ceil($totalMilestones / $limit);
 
             include __DIR__ . '/../Views/Milestones/index.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /milestones');
+            exit;
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching milestones.';

@@ -153,9 +153,10 @@ function getMilestoneStatusClass(int $statusId): string
 }
 
 /**
- * Get CSS classes for sprint status
+ * Get CSS classes for sprint status - Global fallback version
+ * Note: Sprint-specific pages should use the version from Sprints/inc/helpers.php
  */
-function getSprintStatusClass(int $statusId): string
+function getGlobalSprintStatusClass(int $statusId): string
 {
     // Based on schema: 1=planning, 2=active, 3=completed, 4=cancelled, 5=delayed
     $statusClasses = [
@@ -315,10 +316,52 @@ function renderActionButtons(string $entityType, int $id, array $permissions = [
 }
 
 /**
+ * Check if user has permission
+ */
+function hasUserPermission(string $permission): bool
+{
+    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    return in_array($permission, $userPermissions, true);
+}
+
+/**
+ * Check if user has any of the given permissions
+ */
+function hasAnyUserPermission(array $permissions): bool
+{
+    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    foreach ($permissions as $permission) {
+        if (in_array($permission, $userPermissions, true)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if user has all of the given permissions
+ */
+function hasAllUserPermissions(array $permissions): bool
+{
+    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    foreach ($permissions as $permission) {
+        if (!in_array($permission, $userPermissions, true)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Generate timer controls for tasks
  */
 function renderTimerControls(int $taskId): string
 {
+    // Check if user has time tracking permissions
+    if (!hasUserPermission('view_time_tracking') && !hasUserPermission('create_time_tracking')) {
+        return '';
+    }
+
     // Check if this specific task has an active timer
     $activeTimer = $_SESSION['active_timer'] ?? null;
     $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $taskId;

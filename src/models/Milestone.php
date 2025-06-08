@@ -6,6 +6,7 @@ namespace App\Models;
 
 use PDO;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Milestone Model
@@ -233,8 +234,65 @@ class Milestone extends BaseModel
     }
 
     /**
+     * Get all milestones for a project
+     *
+     * @param int $projectId
+     * @return array
+     */
+    public function getByProjectId(int $projectId): array
+    {
+        try {
+            $sql = "SELECT
+                    m.id,
+                    m.title,
+                    m.start_date,
+                    m.due_date,
+                    m.complete_date,
+                    m.status_id,
+                    m.project_id,
+                    m.milestone_type,
+                    m.epic_id,
+                    p.name AS project_name,
+                    s.name AS status_name,
+                    CASE
+                        WHEN m.start_date IS NULL OR m.due_date IS NULL THEN NULL
+                        WHEN DATEDIFF(m.due_date, m.start_date) = 0 THEN 100
+                        WHEN m.complete_date IS NOT NULL THEN 100
+                        ELSE
+                            LEAST(
+                                (DATEDIFF(CURDATE(), m.start_date) * 100.0) /
+                                DATEDIFF(m.due_date, m.start_date),
+                                100
+                            )
+                    END AS completion_rate,
+                    CASE
+                        WHEN m.due_date IS NULL THEN NULL
+                        ELSE DATEDIFF(m.due_date, CURDATE())
+                    END AS time_remaining,
+                    (
+                        SELECT COUNT(*)
+                        FROM milestone_tasks mt
+                        JOIN tasks t ON mt.task_id = t.id
+                        WHERE mt.milestone_id = m.id
+                          AND t.is_deleted = 0
+                    ) AS task_count
+                FROM milestones m
+                LEFT JOIN projects p ON m.project_id = p.id
+                LEFT JOIN statuses_milestone s ON m.status_id = s.id
+                WHERE m.project_id = :project_id
+                AND m.is_deleted = 0
+                ORDER BY m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching milestones for project: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Get milestone statuses
-     * 
+     *
      * @return array
      */
     public function getMilestoneStatuses(): array

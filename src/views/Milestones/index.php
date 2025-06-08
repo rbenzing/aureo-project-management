@@ -46,6 +46,11 @@ $totalPages = $totalPages ?? 1;
         include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
         ?>
 
+        <?php if (!empty($project)): ?>
+            <!-- Project Header with Navigation -->
+            <?php include BASE_PATH . '/../src/Views/Milestones/inc/project_header.php'; ?>
+        <?php endif; ?>
+
         <!-- Include the header with stats and filters -->
         <?php include BASE_PATH . '/../src/Views/Milestones/inc/table_header.php'; ?>
 

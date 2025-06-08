@@ -8,6 +8,9 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
+// Include view helpers for permission functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Define menu items with required permissions
 $mainItems = [
     [
@@ -41,15 +44,15 @@ $projectItems = [
 
 $taskItems = [
     [
-        'label' => 'Product Backlog',
-        'path' => '/tasks/backlog',
-        'icon' => '📋',
-        'permission' => 'view_tasks'
-    ],
-    [
         'label' => 'All Tasks',
         'path' => '/tasks',
         'icon' => '📝',
+        'permission' => 'view_tasks'
+    ],
+    [
+        'label' => 'Backlog',
+        'path' => '/tasks/backlog',
+        'icon' => '📋',
         'permission' => 'view_tasks'
     ],
     [
@@ -204,7 +207,13 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     <ul class="space-y-1">
                         <?php
                         foreach ($taskItems as $item) {
-                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                            // Use exact path matching for task items to prevent prefix conflicts
+                            // Special handling for "My Tasks" which includes user ID
+                            if (strpos($item['path'], '/tasks/assigned/') === 0) {
+                                $isActive = strpos($currentPath, '/tasks/assigned/') === 0 ? 'bg-indigo-600' : '';
+                            } else {
+                                $isActive = $currentPath === $item['path'] ? 'bg-indigo-600' : '';
+                            }
                             echo '<li>';
                             echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
                             echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
@@ -218,19 +227,31 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <?php endif; ?>
 
             <!-- Time Tracking Section -->
-            <?php if (!empty($timeTrackingItems)): ?>
+            <?php
+            // Check if user has any time tracking permissions before showing the section
+            $hasTimeTrackingPermission = hasUserPermission('view_time_tracking') ||
+                                       hasUserPermission('create_time_tracking') ||
+                                       hasUserPermission('edit_time_tracking') ||
+                                       hasUserPermission('delete_time_tracking');
+
+            if ($hasTimeTrackingPermission && !empty($timeTrackingItems)):
+            ?>
                 <div>
                     <p class="px-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Time</p>
                     <ul class="space-y-1">
                         <?php
                         foreach ($timeTrackingItems as $item) {
-                            $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
-                            echo '<li>';
-                            echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
-                            echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
-                            echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
-                            echo '</a>';
-                            echo '</li>';
+                            $hasPermission = !isset($item['permission']) || hasUserPermission($item['permission']);
+
+                            if ($hasPermission) {
+                                $isActive = strpos($currentPath, $item['path']) === 0 ? 'bg-indigo-600' : '';
+                                echo '<li>';
+                                echo '<a href="' . htmlspecialchars($item['path']) . '" class="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700 transition duration-150 ' . $isActive . '" aria-current="' . ($isActive ? 'page' : 'false') . '">';
+                                echo '<span class="mr-2 text-sm">' . $item['icon'] . '</span>';
+                                echo '<span class="text-sm">' . htmlspecialchars($item['label']) . '</span>';
+                                echo '</a>';
+                                echo '</li>';
+                            }
                         }
                         ?>
                     </ul>

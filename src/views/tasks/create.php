@@ -14,6 +14,9 @@ use App\Services\SettingsService;
 // Include form components
 require_once BASE_PATH . '/../src/Views/Layouts/form_components.php';
 
+// Include view helpers for permission functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];
 unset($_SESSION['form_data']);
@@ -445,6 +448,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                         </div>
 
                         <!-- Estimated Time -->
+                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
                         <div>
                             <?php
                             $timeUnit = $timeSettings['time_unit'] ?? 'minutes';
@@ -471,6 +475,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 'error' => $errors['estimated_time'] ?? ''
                             ]) ?>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Sprint Planning -->
                         <div>
@@ -484,6 +489,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                         </div>
 
                         <!-- Billable Toggle -->
+                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
                         <div>
                             <?= renderCheckbox([
                                 'name' => 'is_hourly',
@@ -508,6 +514,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -624,7 +631,10 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
 
                 if (title) titleInput.value = title;
                 if (priority) prioritySelect.value = priority;
-                if (description) descriptionTextarea.value = description;
+                if (description) {
+                    // Convert literal \n characters to actual line breaks
+                    descriptionTextarea.value = description.replace(/\\n/g, '\n');
+                }
 
                 // Reset both dropdowns after applying template
                 quickTemplateSelect.value = '';

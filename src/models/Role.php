@@ -130,34 +130,34 @@ class Role extends BaseModel
     public function syncPermissions(int $roleId, array $permissionIds): bool
     {
         try {
-            $this->db->beginTransaction();
-
             // Remove existing permissions
             $sql = "DELETE FROM role_permissions WHERE role_id = :role_id";
             $this->db->executeInsertUpdate($sql, [':role_id' => $roleId]);
 
             // Add new permissions if any
             if (!empty($permissionIds)) {
-                $placeholders = [];
-                $params = [];
+                // Process permissions in batches to avoid SQL length limits
+                $batchSize = 100;
+                $batches = array_chunk($permissionIds, $batchSize);
 
-                foreach ($permissionIds as $index => $permissionId) {
-                    $placeholders[] = "(:role_id, :permission_id_{$index})";
-                    $params[":permission_id_{$index}"] = $permissionId;
+                foreach ($batches as $batch) {
+                    $placeholders = [];
+                    $params = [':role_id' => $roleId];
+
+                    foreach ($batch as $index => $permissionId) {
+                        $placeholders[] = "(:role_id, :permission_id_{$index})";
+                        $params[":permission_id_{$index}"] = (int)$permissionId;
+                    }
+
+                    $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " .
+                        implode(',', $placeholders);
+
+                    $this->db->executeInsertUpdate($sql, $params);
                 }
-
-                $params[':role_id'] = $roleId;
-
-                $sql = "INSERT INTO role_permissions (role_id, permission_id) VALUES " .
-                    implode(',', $placeholders);
-
-                $this->db->executeInsertUpdate($sql, $params);
             }
 
-            $this->db->commit();
             return true;
         } catch (\Exception $e) {
-            $this->db->rollBack();
             throw new RuntimeException("Failed to sync permissions: " . $e->getMessage());
         }
     }

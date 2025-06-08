@@ -227,7 +227,7 @@ use App\Services\SettingsService;
                                     <label for="task-<?= $task->id ?>" class="ml-2 flex-1 cursor-pointer">
                                         <div class="text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task->title) ?></div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                                            <span class="px-1.5 py-0.5 text-xs rounded-full mr-2 <?= getTaskStatusClass($task->status_name ?? 'Open') ?>">
+                                            <span class="px-1.5 py-0.5 text-xs rounded-full mr-2 <?= getSprintTaskStatusClass($task->status_name ?? 'Open') ?>">
                                                 <?= htmlspecialchars($task->status_name ?? 'Open') ?>
                                             </span>
                                             <?php if (!empty($task->due_date)): ?>
@@ -265,33 +265,8 @@ use App\Services\SettingsService;
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
 
     <?php
-    // Helper function for task status display - Updated for consistency
-    function getTaskStatusClass($statusName) {
-        // Map status names to IDs for consistent styling
-        $statusNameToId = [
-            'Open' => 1,
-            'In Progress' => 2,
-            'On Hold' => 3,
-            'In Review' => 4,
-            'Closed' => 5,
-            'Completed' => 6,
-            'Cancelled' => 7
-        ];
-
-        $statusMap = [
-            1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-            2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-            3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-            4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-            5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-            6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-            7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-        ];
-
-        $statusId = $statusNameToId[$statusName] ?? 1;
-        $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-        return $status['color'] . ' bg-opacity-20 text-white';
-    }
+    // Include sprint helpers for status functions
+    include_once __DIR__ . '/inc/helpers.php';
     ?>
 
     <script>
@@ -315,7 +290,10 @@ use App\Services\SettingsService;
                     return;
                 }
 
-                if (description) descriptionTextarea.value = description;
+                if (description) {
+                    // Convert literal \n characters to actual line breaks
+                    descriptionTextarea.value = description.replace(/\\n/g, '\n');
+                }
 
                 // Reset both dropdowns after applying template
                 if (quickTemplateSelect) quickTemplateSelect.value = '';

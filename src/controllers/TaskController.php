@@ -48,25 +48,44 @@ class TaskController
     {
         try {
             $this->authMiddleware->hasPermission('view_tasks');
-            
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            $userId = $data['id'] ?? null;
+            $id = $data['id'] ?? null;
 
-            if (!empty($userId)) {
-                $tasks = $this->taskModel->getByUserId(intval($userId), $limit, $page);
-                $totalTasks = $this->taskModel->count(['assigned_to' => intval($userId), 'is_deleted' => 0]);
+            // Determine the context based on the current route
+            $currentPath = $_SERVER['REQUEST_URI'] ?? '';
+            $isProjectContext = strpos($currentPath, '/tasks/project/') !== false;
+            $isUserContext = strpos($currentPath, '/tasks/assigned/') !== false;
+
+            if (!empty($id) && $isProjectContext) {
+                // Project-specific tasks
+                $project = $this->projectModel->findWithDetails(intval($id));
+                if (!$project || $project->is_deleted) {
+                    throw new InvalidArgumentException('Project not found');
+                }
+                $tasks = $this->taskModel->getByProjectId(intval($id));
+                $totalTasks = $this->taskModel->count(['project_id' => intval($id), 'is_deleted' => 0]);
+                $viewType = 'project_tasks';
+            } elseif (!empty($id) && $isUserContext) {
+                // User-specific tasks
+                $tasks = $this->taskModel->getByUserId(intval($id), $limit, $page);
+                $totalTasks = $this->taskModel->count(['assigned_to' => intval($id), 'is_deleted' => 0]);
+                $viewType = 'user_tasks';
             } else {
+                // All tasks
                 $tasks = $this->taskModel->getAllWithDetails($limit, $page);
                 $totalTasks = $this->taskModel->count(['is_deleted' => 0]);
+                $viewType = 'all_tasks';
             }
 
             $totalPages = ceil($totalTasks / $limit);
 
-            // Add view type for template logic
-            $viewType = 'all_tasks';
-
-            include __DIR__ . '/../Views/Tasks/index.php';
+            include __DIR__ . '/../views/tasks/index.php';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: /tasks');
+            exit;
         } catch (\Exception $e) {
             error_log("Exception in TaskController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching tasks.';
@@ -88,10 +107,10 @@ class TaskController
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = Config::get('max_pages', 10);
-            $projectId = $data['project_id'] ?? null;
+            $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
 
-            $tasks = $this->taskModel->getProductBacklog($limit, $page, $projectId ? intval($projectId) : null);
-            $totalTasks = $this->taskModel->countProductBacklog($projectId ? intval($projectId) : null);
+            $tasks = $this->taskModel->getProductBacklog($limit, $page, $projectId);
+            $totalTasks = $this->taskModel->countProductBacklog($projectId);
             $totalPages = ceil($totalTasks / $limit);
 
             // Get projects for filtering
@@ -101,7 +120,7 @@ class TaskController
             $viewType = 'backlog';
             $selectedProjectId = $projectId;
 
-            include __DIR__ . '/../Views/Tasks/backlog.php';
+            include __DIR__ . '/../views/tasks/backlog.php';
         } catch (\Exception $e) {
             error_log("Error in TaskController::backlog: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the product backlog.';
@@ -121,39 +140,91 @@ class TaskController
         try {
             $this->authMiddleware->hasPermission('view_tasks');
 
-            $projectId = $data['project_id'] ?? null;
+            $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
 
             if (!$projectId) {
                 // Get all projects for selection
                 $projects = $this->projectModel->getAllWithDetails(100, 1);
                 $viewType = 'sprint_planning_selection';
 
-                include __DIR__ . '/../Views/Tasks/sprint-planning.php';
+                include __DIR__ . '/../views/tasks/sprint-planning.php';
             } else {
                 // Get project details
-                $project = $this->projectModel->findWithDetails(intval($projectId));
+                $project = $this->projectModel->findWithDetails($projectId);
                 if (!$project) {
                     throw new RuntimeException('Project not found');
                 }
 
                 // Get available tasks for sprint planning
-                $availableTasks = $this->taskModel->getAvailableForSprint(intval($projectId));
+                $availableTasks = $this->taskModel->getAvailableForSprint($projectId);
 
                 // Get active/planning sprints for this project
-                $sprints = $this->sprintModel->getByProjectId(intval($projectId));
+                $sprints = $this->sprintModel->getByProjectId($projectId);
                 $activeSprints = array_filter($sprints, function($sprint) {
                     return in_array($sprint->status_id, [1, 2]); // Planning or Active
                 });
 
                 $viewType = 'sprint_planning';
 
-                include __DIR__ . '/../Views/Tasks/sprint-planning.php';
+                include __DIR__ . '/../views/tasks/sprint-planning.php';
             }
         } catch (\Exception $e) {
             error_log("Error in TaskController::sprintPlanning: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading sprint planning.';
             header('Location: /dashboard');
             exit;
+        }
+    }
+
+    /**
+     * Update backlog priorities via AJAX
+     * @param string $requestMethod
+     * @param array $data
+     */
+    public function updateBacklogPriorities(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_tasks');
+
+            // Get JSON input
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!isset($input['tasks']) || !is_array($input['tasks'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid input data']);
+                return;
+            }
+
+            $success = true;
+            foreach ($input['tasks'] as $taskData) {
+                if (!isset($taskData['id']) || !isset($taskData['priority'])) {
+                    continue;
+                }
+
+                $taskId = intval($taskData['id']);
+                $priority = intval($taskData['priority']);
+
+                $result = $this->taskModel->update($taskId, ['backlog_priority' => $priority]);
+                if (!$result) {
+                    $success = false;
+                }
+            }
+
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'Backlog priorities updated successfully' : 'Some priorities failed to update'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Error in TaskController::updateBacklogPriorities: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Internal server error']);
         }
     }
 
@@ -188,7 +259,7 @@ class TaskController
             $subtasks = $this->taskModel->getSubtasks($id);
             $activeTimer = $_SESSION['active_timer'] ?? null;
 
-            include __DIR__ . '/../Views/Tasks/view.php';
+            include __DIR__ . '/../views/tasks/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /tasks');
@@ -231,7 +302,7 @@ class TaskController
             $errors = $_SESSION['errors'] ?? [];
             unset($_SESSION['errors']);
 
-            include __DIR__ . '/../Views/Tasks/create.php';
+            include __DIR__ . '/../views/tasks/create.php';
         } catch (\Exception $e) {
             error_log("Exception in TaskController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -396,7 +467,7 @@ class TaskController
             $projectSettings = $settingsService->getProjectSettings();
             $timeSettings = $settingsService->getTimeIntervalSettings();
 
-            include __DIR__ . '/../Views/Tasks/edit.php';
+            include __DIR__ . '/../views/tasks/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /tasks');

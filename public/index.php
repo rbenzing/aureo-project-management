@@ -90,6 +90,10 @@ try {
     $router->post('tasks/stop-timer/:task_id', ['controller' => 'Task', 'action' => 'stopTimer', 'params' => ['task_id']]);
     $router->post('tasks/add-comment/:id', ['controller' => 'Task', 'action' => 'addComment', 'params' => ['id']]);
 
+    // API Routes for AJAX
+    $router->post('api/tasks/update-backlog-priorities', ['controller' => 'Task', 'action' => 'updateBacklogPriorities']);
+    $router->post('api/sprints/assign-task', ['controller' => 'Sprint', 'action' => 'assignTask']);
+
     // User Routes
     $router->get('users', ['controller' => 'User', 'action' => 'index']);
     $router->get('users/page/:page', ['controller' => 'User', 'action' => 'index', 'params' => ['page']]);
@@ -123,6 +127,8 @@ try {
     // Milestone Routes
     $router->get('milestones', ['controller' => 'Milestone', 'action' => 'index']);
     $router->get('milestones/page/:page', ['controller' => 'Milestone', 'action' => 'index', 'params' => ['page']]);
+    $router->get('milestones/project/:id', ['controller' => 'Milestone', 'action' => 'index', 'params' => ['id']]);
+    $router->get('milestones/project/:id/page/:page', ['controller' => 'Milestone', 'action' => 'index', 'params' => ['id', 'page']]);
     $router->get('milestones/view/:id', ['controller' => 'Milestone', 'action' => 'view', 'params' => ['id']]);
     $router->get('milestones/create', ['controller' => 'Milestone', 'action' => 'createForm']);
     $router->post('milestones/create', ['controller' => 'Milestone', 'action' => 'create']);

@@ -361,7 +361,7 @@ include_once __DIR__ . '/inc/helpers.php';
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getTaskStatusClass($task->status_name ?? 'Open') ?>">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getSprintTaskStatusClass($task->status_name ?? 'Open') ?>">
                                             <?= htmlspecialchars($task->status_name ?? 'Open') ?>
                                         </span>
                                     </td>
@@ -398,7 +398,7 @@ include_once __DIR__ . '/inc/helpers.php';
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="<?= getPriorityClass($task->priority ?? 'none') ?>">
+                                        <span class="<?= getSprintPriorityClass($task->priority ?? 'none') ?>">
                                             <?= ucfirst($task->priority ?? 'None') ?>
                                         </span>
                                     </td>

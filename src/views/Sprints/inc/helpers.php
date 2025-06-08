@@ -43,12 +43,12 @@ function getSprintStatusLabel($statusId) {
 }
 
 /**
- * Get CSS class for task status - Updated for consistency
+ * Get CSS class for task status by name - Sprint specific version
  *
  * @param string $statusName
  * @return string CSS class
  */
-function getTaskStatusClass($statusName) {
+function getSprintTaskStatusClass($statusName) {
     // Map status names to IDs for consistent styling
     $statusNameToId = [
         'Open' => 1,
@@ -76,12 +76,12 @@ function getTaskStatusClass($statusName) {
 }
 
 /**
- * Gets the priority classes
- * 
+ * Gets the priority classes for sprint views
+ *
  * @param string $priority
  * @return string CSS class
  */
-function getPriorityClass($priority) {
+function getSprintPriorityClass($priority) {
     return match($priority) {
         'high' => 'text-red-600 dark:text-red-400 font-medium',
         'medium' => 'text-yellow-600 dark:text-yellow-400',

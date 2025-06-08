@@ -46,8 +46,26 @@ $taskStatusMap = [
 ?>
 
 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-    <?php if (!empty($tasks)): ?>
-        <?php foreach ($tasks as $task): ?>
+    <?php
+    // Handle both flat array and organized by status array
+    $flatTasks = [];
+    if (!empty($tasks)) {
+        // Check if tasks are organized by status (project context) or flat array (other contexts)
+        if (is_array($tasks) && (isset($tasks['open']) || isset($tasks['in_progress']) || isset($tasks['completed']))) {
+            // Tasks are organized by status - flatten them
+            foreach ($tasks as $statusGroup) {
+                if (is_array($statusGroup)) {
+                    $flatTasks = array_merge($flatTasks, $statusGroup);
+                }
+            }
+        } else {
+            // Tasks are already a flat array
+            $flatTasks = $tasks;
+        }
+    }
+    ?>
+    <?php if (!empty($flatTasks)): ?>
+        <?php foreach ($flatTasks as $task): ?>
             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors task-row" 
                 data-task-id="<?= $task->id ?>"
                 data-priority="<?= $task->priority ?>"
@@ -66,7 +84,7 @@ $taskStatusMap = [
                             </div>
                             <?php if (!empty($task->description)): ?>
                                 <div class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                                    <?= htmlspecialchars(substr($task->description, 0, 60)) . (strlen($task->description) > 60 ? '...' : '') ?>
+                                    <?= nl2br(htmlspecialchars(substr($task->description, 0, 60))) . (strlen($task->description) > 60 ? '...' : '') ?>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -158,7 +176,7 @@ $taskStatusMap = [
                             </span>
                         <?php endif; ?>
                         
-                        <?php if (!empty($task->estimated_time)): ?>
+                        <?php if (!empty($task->estimated_time) && hasUserPermission('view_time_tracking')): ?>
                             <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -171,10 +189,11 @@ $taskStatusMap = [
                 <td class="px-6 py-4 text-right">
                     <div class="flex justify-end space-x-3">
                         <?php
-                        // Only show timer button if viewing own tasks or have permission to manage tasks
-                        $canTimeTrack = $viewingOwnTasks ||
-                                      ($task->assigned_to == $currentUserId) ||
-                                      (isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions']));
+                        // Only show timer button if user has time tracking permissions and can access the task
+                        $canTimeTrack = (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')) &&
+                                      ($viewingOwnTasks ||
+                                       ($task->assigned_to == $currentUserId) ||
+                                       hasUserPermission('manage_tasks'));
 
                         // Check if this specific task has an active timer
                         $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;

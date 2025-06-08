@@ -40,7 +40,7 @@ class TemplateController
             $limit = Config::get('max_pages', 10);
             
             // Get filter parameters
-            $templateType = $data['type'] ?? '';
+            $templateType = isset($_GET['type']) ? $_GET['type'] : '';
             $filters = [];
             if (!empty($templateType) && array_key_exists($templateType, Template::TEMPLATE_TYPES)) {
                 $filters['template_type'] = $templateType;

@@ -15,6 +15,9 @@ use App\Services\SettingsService;
 // Include form components
 require_once BASE_PATH . '/../src/views/layouts/form_components.php';
 
+// Include view helpers for permission functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];
 unset($_SESSION['form_data']);
@@ -420,6 +423,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         </div>
 
                         <!-- Estimated Time -->
+                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
                             <?= renderTextInput([
                                 'name' => 'estimated_time',
@@ -433,6 +437,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                 'error' => $errors['estimated_time'] ?? ''
                             ]) ?>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Sprint Planning -->
                         <div>
@@ -447,6 +452,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         </div>
 
                         <!-- Time Spent -->
+                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
                             <?= renderTextInput([
                                 'name' => 'time_spent',
@@ -502,6 +508,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                     </div>
                 </div>
@@ -592,7 +599,10 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
 
                 if (title) titleInput.value = title;
                 if (priority) prioritySelect.value = priority;
-                if (description) descriptionTextarea.value = description;
+                if (description) {
+                    // Convert literal \n characters to actual line breaks
+                    descriptionTextarea.value = description.replace(/\\n/g, '\n');
+                }
 
                 // Reset both dropdowns after applying template
                 if (quickTemplateSelect) quickTemplateSelect.value = '';

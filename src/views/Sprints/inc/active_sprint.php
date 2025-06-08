@@ -20,7 +20,7 @@ $elapsed = $today - $sprintStartDate;
 $progressPercentage = min(100, max(0, ($elapsed / $sprintDuration) * 100));
 
 // Calculate task completion stats
-$totalTasks = isset($activeSprint->total_tasks) ? $activeSprint->total_tasks : 0;
+$totalTasks = isset($activeSprint->task_count) ? $activeSprint->task_count : 0;
 $completedTasks = isset($activeSprint->completed_tasks) ? $activeSprint->completed_tasks : 0;
 $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
 ?>

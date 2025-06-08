@@ -154,8 +154,10 @@ class Router
             $requestData = array_merge($requestData, $_POST);
         }
 
-        
-
+        // For GET requests, merge GET data with URL parameters
+        if ($requestMethod === 'GET') {
+            $requestData = array_merge($requestData, $_GET);
+        }
 
         // Call controller action
         call_user_func([$controller, $actionName], $requestMethod, $requestData);
