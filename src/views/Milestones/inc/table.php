@@ -76,8 +76,8 @@ $canDeleteMilestones = isset($_SESSION['user']['permissions']) && in_array('dele
                                 <?= htmlspecialchars($milestone->project_name ?? 'Unassigned') ?>
                             </div>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getStatusClasses($milestone->status_id) ?>">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap <?= getStatusClasses($milestone->status_id) ?>">
                                 <?= htmlspecialchars($milestone->status_name ?? 'Unknown') ?>
                             </span>
                         </td>
@@ -92,27 +92,39 @@ $canDeleteMilestones = isset($_SESSION['user']['permissions']) && in_array('dele
                                 <?= isset($milestone->completion_rate) ? number_format((float)$milestone->completion_rate, 1) : '0' ?>%
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <?php if (!empty($milestone->due_date)): ?>
-                                <div class="text-sm <?= isDueDateOverdue($milestone->due_date, $milestone->status_id) ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-200' ?>">
-                                    <?= date('M j, Y', strtotime($milestone->due_date)) ?>
+                                <div class="space-y-1">
+                                    <!-- Date Row -->
+                                    <div class="text-sm <?= isDueDateOverdue($milestone->due_date, $milestone->status_id) ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-900 dark:text-gray-200' ?> whitespace-nowrap">
+                                        <?= date('M j, Y', strtotime($milestone->due_date)) ?>
+                                    </div>
+                                    <!-- Status Badge Row -->
                                     <?php $daysLeft = calculateDaysLeft($milestone->due_date); ?>
                                     <?php if ($daysLeft !== null): ?>
                                         <?php if ($daysLeft < 0 && $milestone->status_id != 3): ?>
-                                            <span class="ml-2 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded">
-                                                <?= abs($daysLeft) ?> days overdue
-                                            </span>
+                                            <div>
+                                                <span class="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded whitespace-nowrap">
+                                                    <?= abs($daysLeft) ?> days overdue
+                                                </span>
+                                            </div>
                                         <?php elseif ($daysLeft === 0): ?>
-                                            <span class="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded">Today</span>
+                                            <div>
+                                                <span class="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded whitespace-nowrap">Today</span>
+                                            </div>
                                         <?php elseif ($daysLeft <= 3): ?>
-                                            <span class="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded">
-                                                <?= $daysLeft ?> days left
-                                            </span>
+                                            <div>
+                                                <span class="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded whitespace-nowrap">
+                                                    <?= $daysLeft ?> days left
+                                                </span>
+                                            </div>
                                         <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             <?php else: ?>
-                                <span class="text-sm text-gray-500 dark:text-gray-400">No Due Date</span>
+                                <div class="space-y-1">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">No Due Date</div>
+                                </div>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-right">

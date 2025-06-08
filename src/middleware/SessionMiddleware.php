@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Core\Database;
+use App\Services\SettingsService;
 
 class SessionMiddleware
 {
@@ -19,22 +20,26 @@ class SessionMiddleware
     private static function startSecureSession() {
         ini_set('session.cookie_httponly', 1);
         ini_set('session.use_only_cookies', 1);
-        
+
+        // Get session timeout from settings
+        $settingsService = SettingsService::getInstance();
+        $sessionTimeout = $settingsService->getSessionTimeout();
+
         // If site is using HTTPS
         if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
             ini_set('session.cookie_secure', 1);
         }
-        
-        // Add SameSite attribute 
+
+        // Add SameSite attribute
         session_set_cookie_params([
-            'lifetime' => 3600,
+            'lifetime' => $sessionTimeout,
             'path' => '/',
             'domain' => $_SERVER['HTTP_HOST'],
             'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
             'httponly' => true,
             'samesite' => 'Lax'
         ]);
-        
+
         session_start();
     }
 
@@ -66,7 +71,9 @@ class SessionMiddleware
             $_SESSION = json_decode($session->data, true);
 
             // Extend session expiration time and update last_accessed_at
-            $newExpiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Extend by 1 hour
+            $settingsService = SettingsService::getInstance();
+            $sessionTimeout = $settingsService->getSessionTimeout();
+            $newExpiresAt = date('Y-m-d H:i:s', time() + $sessionTimeout);
             self::$db->executeQuery(
                 "UPDATE sessions SET expires_at = :expires_at, last_accessed_at = NOW() WHERE id = :id",
                 [
@@ -105,7 +112,11 @@ class SessionMiddleware
         }
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $sessionId = session_id();
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour')); // Default expiration: 1 hour
+
+        // Get session timeout from settings
+        $settingsService = SettingsService::getInstance();
+        $sessionTimeout = $settingsService->getSessionTimeout();
+        $expiresAt = date('Y-m-d H:i:s', time() + $sessionTimeout);
         
         // Serialize session data
         $serializedData = json_encode($data);
@@ -198,11 +209,13 @@ class SessionMiddleware
 
         // If the update failed (maybe no session in database yet), create a new session
         if (!$success) {
+            $settingsService = SettingsService::getInstance();
+            $sessionTimeout = $settingsService->getSessionTimeout();
             self::$db->executeQuery(
                 "INSERT INTO sessions (id, data, expires_at) VALUES (:id, '{}', :expires_at)",
                 [
                     ':id' => $newSessionId,
-                    ':expires_at' => date('Y-m-d H:i:s', strtotime('+1 hour'))
+                    ':expires_at' => date('Y-m-d H:i:s', time() + $sessionTimeout)
                 ]
             );
         }

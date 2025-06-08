@@ -10,6 +10,7 @@ if (!defined('BASE_PATH')) {
 
 use App\Core\Config;
 use App\Utils\Time;
+use App\Services\SettingsService;
 
 // Include view helpers for permission functions and time formatting
 require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
@@ -21,7 +22,8 @@ function formatTimeTracking($seconds) {
 
 function formatDate($date) {
     if (!$date) return 'Not set';
-    return date('M j, Y', strtotime($date));
+    $settingsService = SettingsService::getInstance();
+    return $settingsService->formatDate($date);
 }
 
 function getStatusClass($statusId) {

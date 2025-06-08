@@ -95,7 +95,7 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                         <h2 class="inline-block text-lg font-medium">
                             <a href="/projects/view/<?= $project->id ?>" class="hover:text-blue-500 dark:hover:text-blue-400"><?= htmlspecialchars($project->name ?? '') ?></a>
                         </h2>
-                        <span class="ml-4 px-3 py-1 text-xs rounded-full bg-opacity-20 text-white <?= $statusInfo['color'] ?>">
+                        <span class="ml-4 px-3 py-1 text-xs rounded-full bg-opacity-20 text-white whitespace-nowrap <?= $statusInfo['color'] ?>">
                             <?= $statusInfo['label'] ?>
                         </span>
                         <?php if (isset($project->company_name) && !empty($project->company_name)): ?>
@@ -214,8 +214,8 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle dropdowns
-        const dropdowns = document.querySelectorAll('.dropdown');
+        // Handle page-specific dropdowns (excluding header dropdown)
+        const dropdowns = document.querySelectorAll('main .dropdown, .content .dropdown, table .dropdown');
         dropdowns.forEach(dropdown => {
             const button = dropdown.querySelector('button');
             const menu = dropdown.querySelector('.dropdown-menu');

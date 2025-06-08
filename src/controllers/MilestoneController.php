@@ -41,7 +41,8 @@ class MilestoneController
 
             $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
 
             if (!empty($project_id)) {
                 $project = $this->projectModel->findWithDetails($project_id);

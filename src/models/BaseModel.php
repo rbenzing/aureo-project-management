@@ -79,6 +79,22 @@ abstract class BaseModel
 
                         $whereClauses[] = "{$column} NOT IN (" . implode(', ', $inPlaceholders) . ")";
                         break;
+                    case 'IS':
+                        if ($comparisonValue === null) {
+                            $whereClauses[] = "{$column} IS NULL";
+                        } else {
+                            $whereClauses[] = "{$column} = :$column";
+                            $params[":$column"] = $comparisonValue;
+                        }
+                        break;
+                    case 'IS NOT':
+                        if ($comparisonValue === null) {
+                            $whereClauses[] = "{$column} IS NOT NULL";
+                        } else {
+                            $whereClauses[] = "{$column} != :$column";
+                            $params[":$column"] = $comparisonValue;
+                        }
+                        break;
                     default:
                         // Fallback to equality
                         $whereClauses[] = "{$column} = :$column";

@@ -390,11 +390,11 @@ include_once __DIR__ . '/inc/helpers.php';
                                             $today = new DateTime();
                                             $isPastDue = $dueDate < $today && $task->status_id != 6; // 6 = Completed
                                             ?>
-                                            <span class="<?= $isPastDue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-200' ?>">
+                                            <span class="<?= $isPastDue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-200' ?> whitespace-nowrap">
                                                 <?= date('M j, Y', strtotime($task->due_date)) ?>
                                             </span>
                                         <?php else: ?>
-                                            <span class="text-gray-500 dark:text-gray-400">No due date</span>
+                                            <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">No due date</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">

@@ -76,6 +76,8 @@ try {
     $router->get('tasks/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['page']]);
     $router->get('tasks/backlog', ['controller' => 'Task', 'action' => 'backlog']);
     $router->get('tasks/backlog/page/:page', ['controller' => 'Task', 'action' => 'backlog', 'params' => ['page']]);
+    $router->get('tasks/unassigned', ['controller' => 'Task', 'action' => 'index']);
+    $router->get('tasks/unassigned/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['page']]);
     $router->get('tasks/sprint-planning', ['controller' => 'Task', 'action' => 'sprintPlanning']);
     $router->get('tasks/assigned/:id', ['controller' => 'Task', 'action' => 'index', 'params' => ['id']]);
     $router->get('tasks/assigned/:id/page/:page', ['controller' => 'Task', 'action' => 'index', 'params' => ['id', 'page']]);
@@ -103,6 +105,9 @@ try {
     $router->get('users/edit/:id', ['controller' => 'User', 'action' => 'editForm', 'params' => ['id']]);
     $router->post('users/update', ['controller' => 'User', 'action' => 'update']);
     $router->post('users/delete/:id', ['controller' => 'User', 'action' => 'delete', 'params' => ['id']]);
+
+    // Profile Routes
+    $router->get('profile', ['controller' => 'User', 'action' => 'profile']);
 
     // Role Routes
     $router->get('roles', ['controller' => 'Role', 'action' => 'index']);

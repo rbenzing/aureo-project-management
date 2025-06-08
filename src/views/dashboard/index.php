@@ -850,7 +850,8 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
             $completedPercentage = round(($dashboardData['task_summary']['completed'] / $taskTotal) * 100);
             $inProgressPercentage = round(($dashboardData['task_summary']['in_progress'] / $taskTotal) * 100);
             $overduePercentage = round(($dashboardData['task_summary']['overdue'] / $taskTotal) * 100);
-            $remainingPercentage = 100 - $completedPercentage - $inProgressPercentage - $overduePercentage;
+            $openOtherCount = $dashboardData['task_summary']['open_other'] ?? 0;
+            $remainingPercentage = round(($openOtherCount / $taskTotal) * 100);
             ?>
             
             <!-- Task Progress Bars -->
@@ -888,7 +889,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 <div>
                     <div class="flex justify-between text-sm mb-1">
                         <span class="text-gray-600 dark:text-gray-400">Open/Other</span>
-                        <span class="font-medium"><?= $dashboardData['task_summary']['total'] - $dashboardData['task_summary']['completed'] - $dashboardData['task_summary']['in_progress'] - $dashboardData['task_summary']['overdue'] ?> (<?= $remainingPercentage ?>%)</span>
+                        <span class="font-medium"><?= $dashboardData['task_summary']['open_other'] ?? 0 ?> (<?= $remainingPercentage ?>%)</span>
                     </div>
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                         <div class="bg-gray-500 h-2.5 rounded-full" style="width: <?= $remainingPercentage ?>%"></div>

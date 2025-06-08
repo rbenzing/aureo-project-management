@@ -60,7 +60,7 @@ if (!defined('BASE_PATH')) {
                         <a href="/sprints/view/<?= $sprint->id ?>" class="hover:text-indigo-600 dark:hover:text-indigo-400">
                             <?= htmlspecialchars($sprint->name) ?>
                         </a>
-                        <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
+                        <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap <?= $statusClass ?>">
                             <?= isset($sprint->status_name) ? htmlspecialchars($sprint->status_name) : 'Unknown' ?>
                         </span>
                     </h4>
@@ -167,11 +167,11 @@ if (!defined('BASE_PATH')) {
                                             $today = strtotime('today');
                                             $isDue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5);
                                             ?>
-                                            <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?>">
+                                            <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?> whitespace-nowrap">
                                                 <?= date('M j, Y', $dueDate) ?>
                                             </span>
                                         <?php else: ?>
-                                            <span class="text-gray-500 dark:text-gray-400">—</span>
+                                            <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">—</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>

@@ -115,6 +115,11 @@ class Breadcrumb
                 'url' => '/users/edit/{id}',
                 'icon' => 'pencil'
             ],
+            'profile' => [
+                'name' => 'My Profile',
+                'url' => '/profile',
+                'icon' => 'user'
+            ],
             'roles' => [
                 'name' => 'Roles',
                 'url' => '/roles',

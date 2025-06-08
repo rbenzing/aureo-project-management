@@ -182,7 +182,17 @@ function parseMarkdown($content) {
                         <div>
                             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
                             <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                                <?= date('F j, Y \a\t g:i A', strtotime($template->updated_at)) ?>
+                                <?php
+                                $settingsService = \App\Services\SettingsService::getInstance();
+                                $timezone = $settingsService->getDefaultTimezone();
+                                try {
+                                    $date = new DateTime($template->updated_at);
+                                    $date->setTimezone(new DateTimeZone($timezone));
+                                    echo $date->format('F j, Y \a\t g:i A');
+                                } catch (Exception $e) {
+                                    echo date('F j, Y \a\t g:i A', strtotime($template->updated_at));
+                                }
+                                ?>
                             </dd>
                         </div>
                         <?php endif; ?>

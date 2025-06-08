@@ -40,47 +40,96 @@ function formatTimeWithSettings(?int $seconds): string
 }
 
 /**
- * Format due date with relative time
+ * Format date using configured date format and timezone
+ */
+function formatDateWithSettings(?string $date): string
+{
+    if (empty($date)) {
+        return 'Not set';
+    }
+
+    $settingsService = SettingsService::getInstance();
+    return $settingsService->formatDate($date);
+}
+
+/**
+ * Format due date with relative time using configured timezone
  */
 function formatDueDate(?string $dueDate): string
 {
     if (empty($dueDate)) {
         return 'No due date';
     }
-    
-    $due = new DateTime($dueDate);
-    $now = new DateTime();
-    $diff = $now->diff($due);
-    
-    if ($due < $now) {
-        return 'Overdue by ' . $diff->format('%a days');
-    } elseif ($diff->days == 0) {
-        return 'Due today';
-    } elseif ($diff->days == 1) {
-        return 'Due tomorrow';
-    } else {
-        return 'Due in ' . $diff->days . ' days';
+
+    try {
+        $settingsService = SettingsService::getInstance();
+        $timezone = $settingsService->getDefaultTimezone();
+
+        $due = new DateTime($dueDate, new DateTimeZone($timezone));
+        $now = new DateTime('now', new DateTimeZone($timezone));
+        $diff = $now->diff($due);
+
+        if ($due < $now) {
+            return 'Overdue by ' . $diff->format('%a days');
+        } elseif ($diff->days == 0) {
+            return 'Due today';
+        } elseif ($diff->days == 1) {
+            return 'Due tomorrow';
+        } else {
+            return 'Due in ' . $diff->days . ' days';
+        }
+    } catch (Exception $e) {
+        // Fallback to original method if timezone handling fails
+        $due = new DateTime($dueDate);
+        $now = new DateTime();
+        $diff = $now->diff($due);
+
+        if ($due < $now) {
+            return 'Overdue by ' . $diff->format('%a days');
+        } elseif ($diff->days == 0) {
+            return 'Due today';
+        } elseif ($diff->days == 1) {
+            return 'Due tomorrow';
+        } else {
+            return 'Due in ' . $diff->days . ' days';
+        }
     }
 }
 
 /**
- * Format overdue date
+ * Format overdue date using configured timezone
  */
 function formatOverdueDate(?string $dueDate): string
 {
     if (empty($dueDate)) {
         return '';
     }
-    
-    $due = new DateTime($dueDate);
-    $now = new DateTime();
-    $diff = $now->diff($due);
-    
-    if ($due < $now) {
-        return 'Overdue by ' . $diff->format('%a days');
+
+    try {
+        $settingsService = SettingsService::getInstance();
+        $timezone = $settingsService->getDefaultTimezone();
+
+        $due = new DateTime($dueDate, new DateTimeZone($timezone));
+        $now = new DateTime('now', new DateTimeZone($timezone));
+        $diff = $now->diff($due);
+
+        if ($due < $now) {
+            return 'Overdue by ' . $diff->format('%a days');
+        }
+
+        return '';
+    } catch (Exception $e) {
+        // Fallback to original method if timezone handling fails
+        $due = new DateTime($dueDate);
+        $now = new DateTime();
+        $diff = $now->diff($due);
+
+        if ($due < $now) {
+            return 'Overdue by ' . $diff->format('%a days');
+        }
+
+        return '';
     }
-    
-    return '';
 }
 
 /**

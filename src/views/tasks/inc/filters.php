@@ -28,11 +28,11 @@ if (!defined('BASE_PATH')) {
         <?php if (!$isMyTasksView || $viewingOwnTasks): ?>
         <div class="relative">
             <select id="context-switcher" onchange="window.location.href=this.value" class="h-10 appearance-none w-full md:w-48 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="/tasks/backlog">Backlog</option>
-                <option value="/tasks" <?= !$isMyTasksView ? 'selected' : '' ?>>All Tasks</option>
+                <option value="/tasks/backlog" <?= $isBacklogView ? 'selected' : '' ?>>Backlog</option>
+                <option value="/tasks" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView) ? 'selected' : '' ?>>All Tasks</option>
                 <option value="/tasks/assigned/<?= $currentUserId ?>" <?= $viewingOwnTasks ? 'selected' : '' ?>>My Tasks</option>
                 <?php if (isset($_SESSION['user']) && isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions'])): ?>
-                <option value="/tasks/unassigned">Unassigned Tasks</option>
+                <option value="/tasks/unassigned" <?= $isUnassignedView ? 'selected' : '' ?>>Unassigned Tasks</option>
                 <?php endif; ?>
             </select>
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

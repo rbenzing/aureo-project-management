@@ -157,17 +157,41 @@ class Config
      */
     private static function initializeSettings(): void
     {
-        // Set timezone
-        date_default_timezone_set(self::get('TIMEZONE', self::DEFAULTS['TIMEZONE']));
+        // Set timezone - try to use General settings first, fallback to environment
+        try {
+            // Check if SettingsService is available and database is initialized
+            if (class_exists('\App\Services\SettingsService')) {
+                $settingsService = \App\Services\SettingsService::getInstance();
+                $timezone = $settingsService->getDefaultTimezone();
+                date_default_timezone_set($timezone);
+            } else {
+                // Fallback to environment variable
+                date_default_timezone_set(self::get('TIMEZONE', self::DEFAULTS['TIMEZONE']));
+            }
+        } catch (\Exception $e) {
+            // Fallback to environment variable if settings service fails
+            date_default_timezone_set(self::get('TIMEZONE', self::DEFAULTS['TIMEZONE']));
+        }
 
         // Set locale
         $locale = self::get('LOCALE', self::DEFAULTS['LOCALE']);
         setlocale(LC_ALL, $locale . '.UTF-8');
 
+        // Get pagination limit from settings if available, otherwise use environment
+        $maxPages = (int) self::get('PAGE_LIMIT', self::DEFAULTS['PAGE_LIMIT']);
+        try {
+            if (class_exists('\App\Services\SettingsService')) {
+                $settingsService = \App\Services\SettingsService::getInstance();
+                $maxPages = $settingsService->getResultsPerPage();
+            }
+        } catch (\Exception $e) {
+            // Use environment/default value if settings service fails
+        }
+
         // Initialize configuration
         self::$config = [
             'debug' => self::getEnvBoolean('APP_DEBUG', false),
-            'max_pages' => (int) self::get('PAGE_LIMIT', self::DEFAULTS['PAGE_LIMIT']),
+            'max_pages' => $maxPages,
             'timezone' => self::get('TIMEZONE', self::DEFAULTS['TIMEZONE']),
             'domain' => self::get('DOMAIN', self::DEFAULTS['DOMAIN']),
             'company_name' => self::get('COMPANY', self::DEFAULTS['COMPANY']),

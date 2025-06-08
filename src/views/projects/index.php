@@ -87,18 +87,18 @@ $activeTab = $_GET['view'] ?? 'table';
     <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
     
     <script>
-        // Simple dropdown functionality
+        // Page-specific dropdown functionality (excluding header dropdown)
         document.addEventListener('DOMContentLoaded', function() {
-            const dropdowns = document.querySelectorAll('.dropdown');
+            const dropdowns = document.querySelectorAll('main .dropdown, .content .dropdown');
             dropdowns.forEach(dropdown => {
                 const button = dropdown.querySelector('button');
                 const menu = dropdown.querySelector('.dropdown-menu');
-                
+
                 if (button && menu) {
                     button.addEventListener('click', function() {
                         menu.classList.toggle('hidden');
                     });
-                    
+
                     // Close when clicking outside
                     document.addEventListener('click', function(event) {
                         if (!dropdown.contains(event.target)) {

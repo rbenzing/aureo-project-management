@@ -9,11 +9,21 @@ if (!defined('BASE_PATH')) {
 }
 
 use \App\Core\Config;
+use \App\Services\SettingsService;
+
+// Get current year using configured timezone
+$settingsService = SettingsService::getInstance();
+$timezone = $settingsService->getDefaultTimezone();
+try {
+    $currentYear = (new DateTime('now', new DateTimeZone($timezone)))->format('Y');
+} catch (Exception $e) {
+    $currentYear = date('Y'); // Fallback
+}
 ?>
 
 <footer class="bg-gray-800 text-white py-4 mt-auto">
     <div class="container mx-auto px-4 text-center text-sm">
-        &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars(Config::get('company_name')); ?>, All rights reserved.
+        &copy; <?php echo $currentYear; ?> <?php echo htmlspecialchars(Config::get('company_name')); ?>, All rights reserved.
     </div>
 </footer>
 
@@ -22,7 +32,67 @@ use \App\Core\Config;
 
 <script type="text/javascript" src="/assets/js/scripts.js"></script>
 
+<!-- Avatar Dropdown - Load last to ensure it works on all pages -->
+<script>
+// Ensure avatar dropdown works on all pages - runs after all other scripts
+(function() {
+    function initAvatarDropdown() {
+        const avatarDropdown = document.querySelector('header .dropdown');
+        if (!avatarDropdown) return;
 
+        const button = avatarDropdown.querySelector('button');
+        const menu = avatarDropdown.querySelector('.dropdown-menu');
+
+        if (!button || !menu) return;
+
+        // Clear any existing event listeners
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+
+        // Add click handler
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Close other dropdowns
+            document.querySelectorAll('.dropdown-menu:not(.hidden)').forEach(otherMenu => {
+                if (otherMenu !== menu) {
+                    otherMenu.classList.add('hidden');
+                }
+            });
+
+            menu.classList.toggle('hidden');
+            newButton.setAttribute('aria-expanded', !menu.classList.contains('hidden'));
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function(event) {
+            if (!avatarDropdown.contains(event.target)) {
+                menu.classList.add('hidden');
+                newButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close on escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+                newButton.setAttribute('aria-expanded', 'false');
+                newButton.focus();
+            }
+        });
+    }
+
+    // Initialize immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initAvatarDropdown, 200);
+        });
+    } else {
+        setTimeout(initAvatarDropdown, 200);
+    }
+})();
+</script>
 
 <!-- Common JavaScript Functions -->
 <script>

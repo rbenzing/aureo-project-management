@@ -158,7 +158,7 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                                         $statusId = $task->status_id ?? 1;
                                         $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
                                         ?>
-                                        <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $status['color'] ?>">
+                                        <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $status['color'] ?>">
                                             <?= $status['label'] ?>
                                         </span>
                                     </td>

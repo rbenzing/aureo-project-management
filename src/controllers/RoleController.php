@@ -37,7 +37,8 @@ class RoleController
             $this->authMiddleware->hasPermission('view_roles');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
 
             $results = $this->roleModel->getAllWithDetails($page, $limit);
             $roles = $results['records'];

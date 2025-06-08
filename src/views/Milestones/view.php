@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+use App\Services\SettingsService;
 
 // Include view helpers for permission functions and formatting
 require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
@@ -16,7 +17,8 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
 // Helper functions for formatting and styling
 function formatDate($date) {
     if (!$date) return 'Not set';
-    return date('M j, Y', strtotime($date));
+    $settingsService = SettingsService::getInstance();
+    return $settingsService->formatDate($date);
 }
 
 function getStatusClass($statusId) {

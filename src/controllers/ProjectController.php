@@ -47,7 +47,8 @@ class ProjectController
             $this->authMiddleware->hasPermission('view_projects');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
 
             // Extract filter parameters from request
             $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';

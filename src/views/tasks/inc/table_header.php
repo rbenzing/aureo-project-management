@@ -8,9 +8,9 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-// Get current sort parameters
-$taskSortField = isset($_GET['task_sort']) ? htmlspecialchars($_GET['task_sort']) : 'priority';
-$taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
+// Get current sort parameters from controller or fallback to $_GET
+$taskSortField = isset($currentSortField) ? $currentSortField : (isset($_GET['task_sort']) ? htmlspecialchars($_GET['task_sort']) : 'due_date');
+$taskSortDir = isset($currentSortDirection) ? $currentSortDirection : (isset($_GET['task_dir']) && $_GET['task_dir'] === 'desc' ? 'desc' : 'asc');
 
 /**
  * Generate sort indicator icon based on field and current sort state
@@ -31,7 +31,7 @@ function getSortIndicator($field, $currentField, $currentDir) {
 
 /**
  * Generate URL for column sorting
- * 
+ *
  * @param string $field Field to sort by
  * @param string $currentField Current sorted field
  * @param string $currentDir Current sort direction
@@ -39,11 +39,23 @@ function getSortIndicator($field, $currentField, $currentDir) {
  */
 function getSortUrl($field, $currentField, $currentDir) {
     $newDir = ($field === $currentField && $currentDir === 'asc') ? 'desc' : 'asc';
-    $baseUrl = isset($GLOBALS['userId']) ? "/tasks/assigned/{$GLOBALS['userId']}" : "/tasks";
+
+    // Determine base URL based on current context
+    $currentPath = $_SERVER['REQUEST_URI'] ?? '';
+    $baseUrl = '/tasks';
+
+    if (strpos($currentPath, '/tasks/assigned/') !== false && isset($GLOBALS['userId'])) {
+        $baseUrl = "/tasks/assigned/{$GLOBALS['userId']}";
+    } elseif (strpos($currentPath, '/tasks/unassigned') !== false) {
+        $baseUrl = '/tasks/unassigned';
+    } elseif (strpos($currentPath, '/tasks/project/') !== false && isset($GLOBALS['projectId'])) {
+        $baseUrl = "/tasks/project/{$GLOBALS['projectId']}";
+    }
+
     $queryParams = $_GET;
     $queryParams['task_sort'] = $field;
     $queryParams['task_dir'] = $newDir;
-    
+
     return $baseUrl . '?' . http_build_query($queryParams);
 }
 ?>
@@ -88,8 +100,8 @@ function getSortUrl($field, $currentField, $currentDir) {
                 <?= getSortIndicator('priority', $taskSortField, $taskSortDir) ?>
             </a>
         </th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            <a href="<?= getSortUrl('status_id', $taskSortField, $taskSortDir) ?>" class="group inline-flex items-center">
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+            <a href="<?= getSortUrl('status_id', $taskSortField, $taskSortDir) ?>" class="group inline-flex items-center whitespace-nowrap">
                 <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -97,8 +109,8 @@ function getSortUrl($field, $currentField, $currentDir) {
                 <?= getSortIndicator('status_id', $taskSortField, $taskSortDir) ?>
             </a>
         </th>
-        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-            <a href="<?= getSortUrl('due_date', $taskSortField, $taskSortDir) ?>" class="group inline-flex items-center">
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-36">
+            <a href="<?= getSortUrl('due_date', $taskSortField, $taskSortDir) ?>" class="group inline-flex items-center whitespace-nowrap">
                 <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>

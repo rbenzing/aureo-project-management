@@ -45,24 +45,38 @@ $pageTitle = 'Settings';
     <main class="container mx-auto p-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
                 <!-- Page Header -->
-                <div class="pb-6">
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        Configure application settings for projects, tasks, milestones, and sprints.
-                    </p>
+                <div class="pb-6 flex justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            Configure application settings for projects, tasks, milestones, and sprints.
+                        </p>
+                    </div>
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-end space-x-3">
+                        <a href="/dashboard" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Cancel
+                        </a>
+                        <button type="submit" form="settingsForm" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Save Settings
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Settings Form -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                    <form method="POST" action="/settings/update" class="space-y-0">
+                    <form id="settingsForm" method="POST" action="/settings/update" class="space-y-0">
                         <!-- CSRF Token -->
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
                         <!-- Tab Navigation -->
                         <div class="border-b border-gray-200 dark:border-gray-700">
                             <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-                                <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active" data-tab="time-intervals">
-                                    Time Intervals
+                                <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active" data-tab="general">
+                                    General
+                                </button>
+                                <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="templates">
+                                    Templates
                                 </button>
                                 <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="projects">
                                     Projects
@@ -76,48 +90,146 @@ $pageTitle = 'Settings';
                                 <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="sprints">
                                     Sprints
                                 </button>
-                                <button type="button" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="templates">
-                                    Templates
-                                </button>
                             </nav>
                         </div>
 
                         <!-- Tab Content -->
                         <div class="p-6">
-                            <!-- Time Intervals Tab -->
-                            <div id="time-intervals" class="tab-content">
-                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4">Time Tracking Settings</h3>
+                            <!-- General Tab -->
+                            <div id="general" class="tab-content">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4">General Settings</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Results Per Page -->
+                                    <div>
+                                        <?= renderSelect([
+                                            'name' => 'general[results_per_page]',
+                                            'label' => 'Results Per Page',
+                                            'value' => $settings['general']['results_per_page'] ?? '25',
+                                            'options' => [
+                                                '10' => '10',
+                                                '25' => '25',
+                                                '50' => '50',
+                                                '100' => '100'
+                                            ],
+                                            'help_text' => 'Number of items to display per page in lists',
+                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />',
+                                            'error' => $errors['general.results_per_page'] ?? ''
+                                        ]) ?>
+                                    </div>
+
+                                    <!-- Date Format -->
+                                    <div>
+                                        <?= renderSelect([
+                                            'name' => 'general[date_format]',
+                                            'label' => 'Date Format',
+                                            'value' => $settings['general']['date_format'] ?? 'Y-m-d',
+                                            'options' => [
+                                                'Y-m-d' => date('Y-m-d') . ' (YYYY-MM-DD)',
+                                                'm/d/Y' => date('m/d/Y') . ' (MM/DD/YYYY)',
+                                                'd/m/Y' => date('d/m/Y') . ' (DD/MM/YYYY)',
+                                                'M j, Y' => date('M j, Y') . ' (Mon DD, YYYY)',
+                                                'F j, Y' => date('F j, Y') . ' (Month DD, YYYY)'
+                                            ],
+                                            'help_text' => 'Default date format for display throughout the application',
+                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+                                            'error' => $errors['general.date_format'] ?? ''
+                                        ]) ?>
+                                    </div>
+
+                                    <!-- Default Timezone -->
+                                    <div>
+                                        <?= renderSelect([
+                                            'name' => 'general[default_timezone]',
+                                            'label' => 'Default Timezone',
+                                            'value' => $settings['general']['default_timezone'] ?? 'America/New_York',
+                                            'options' => [
+                                                'America/New_York' => 'Eastern Time (ET)',
+                                                'America/Chicago' => 'Central Time (CT)',
+                                                'America/Denver' => 'Mountain Time (MT)',
+                                                'America/Los_Angeles' => 'Pacific Time (PT)',
+                                                'UTC' => 'UTC',
+                                                'Europe/London' => 'London (GMT)',
+                                                'Europe/Paris' => 'Paris (CET)',
+                                                'Asia/Tokyo' => 'Tokyo (JST)',
+                                                'Australia/Sydney' => 'Sydney (AEST)'
+                                            ],
+                                            'help_text' => 'Default timezone for new users and date/time display',
+                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />',
+                                            'error' => $errors['general.default_timezone'] ?? ''
+                                        ]) ?>
+                                    </div>
+
+                                    <!-- Auto-save Interval -->
+                                    <div>
+                                        <?= renderSelect([
+                                            'name' => 'general[autosave_interval]',
+                                            'label' => 'Auto-save Interval',
+                                            'value' => $settings['general']['autosave_interval'] ?? '0',
+                                            'options' => [
+                                                '0' => 'Disabled',
+                                                '15' => '15 seconds',
+                                                '30' => '30 seconds',
+                                                '60' => '1 minute',
+                                                '120' => '2 minutes',
+                                                '300' => '5 minutes'
+                                            ],
+                                            'help_text' => 'Automatically save form data at specified intervals (Feature coming soon)',
+                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />',
+                                            'error' => $errors['general.autosave_interval'] ?? '',
+                                            'disabled' => true
+                                        ]) ?>
+                                    </div>
+
+                                    <!-- Session Timeout -->
+                                    <div>
+                                        <?= renderSelect([
+                                            'name' => 'general[session_timeout]',
+                                            'label' => 'Session Timeout',
+                                            'value' => $settings['general']['session_timeout'] ?? '3600',
+                                            'options' => [
+                                                '1800' => '30 minutes',
+                                                '3600' => '1 hour',
+                                                '7200' => '2 hours',
+                                                '14400' => '4 hours',
+                                                '28800' => '8 hours',
+                                                '86400' => '24 hours'
+                                            ],
+                                            'help_text' => 'Automatically log out users after period of inactivity',
+                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />',
+                                            'error' => $errors['general.session_timeout'] ?? ''
+                                        ]) ?>
+                                    </div>
+
                                     <!-- Time Unit -->
                                     <div>
                                         <?= renderSelect([
-                                            'name' => 'time_intervals[time_unit]',
+                                            'name' => 'general[time_unit]',
                                             'label' => 'Time Unit',
-                                            'value' => $settings['time_intervals']['time_unit'] ?? 'minutes',
+                                            'value' => $settings['general']['time_unit'] ?? 'minutes',
                                             'options' => [
                                                 'seconds' => 'Seconds',
                                                 'minutes' => 'Minutes',
                                                 'hours' => 'Hours',
                                                 'days' => 'Days'
                                             ],
-                                            'help_text' => 'Default unit for time tracking and estimation',
+                                            'help_text' => 'Default unit for time tracking and display',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                            'error' => $errors['time_intervals.time_unit'] ?? ''
+                                            'error' => $errors['general.time_unit'] ?? ''
                                         ]) ?>
                                     </div>
 
                                     <!-- Time Precision -->
                                     <div>
                                         <?= renderTextInput([
-                                            'name' => 'time_intervals[time_precision]',
+                                            'name' => 'general[time_precision]',
                                             'type' => 'number',
                                             'label' => 'Time Precision',
-                                            'value' => $settings['time_intervals']['time_precision'] ?? '15',
+                                            'value' => $settings['general']['time_precision'] ?? '15',
                                             'min' => '1',
                                             'max' => '60',
                                             'help_text' => 'Increment/precision for time inputs (e.g., 15 for 15-minute intervals)',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
-                                            'error' => $errors['time_intervals.time_precision'] ?? ''
+                                            'error' => $errors['general.time_precision'] ?? ''
                                         ]) ?>
                                     </div>
                                 </div>
@@ -399,16 +511,6 @@ $pageTitle = 'Settings';
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Form Actions -->
-                        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex justify-end space-x-3">
-                            <a href="/dashboard" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Cancel
-                            </a>
-                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Save Settings
-                            </button>
                         </div>
                     </form>
                 </div>

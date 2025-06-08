@@ -96,23 +96,33 @@ class Setting
     }
 
     /**
-     * Get time unit setting with default
+     * Get time unit setting with default (backward compatibility)
      */
     public function getTimeUnit(): string
     {
-        return $this->getSetting('time_intervals', 'time_unit', 'minutes');
+        // Try general first, fallback to time_intervals for backward compatibility
+        $timeUnit = $this->getSetting('general', 'time_unit', '');
+        if (empty($timeUnit)) {
+            $timeUnit = $this->getSetting('time_intervals', 'time_unit', 'minutes');
+        }
+        return $timeUnit;
     }
 
     /**
-     * Get time precision setting with default
+     * Get time precision setting with default (backward compatibility)
      */
     public function getTimePrecision(): int
     {
-        return (int)$this->getSetting('time_intervals', 'time_precision', '15');
+        // Try general first, fallback to time_intervals for backward compatibility
+        $timePrecision = $this->getSetting('general', 'time_precision', '');
+        if (empty($timePrecision)) {
+            $timePrecision = $this->getSetting('time_intervals', 'time_precision', '15');
+        }
+        return (int)$timePrecision;
     }
 
     /**
-     * Get all time interval settings
+     * Get all time interval settings (backward compatibility)
      */
     public function getTimeIntervalSettings(): array
     {
@@ -120,6 +130,30 @@ class Setting
             'time_unit' => $this->getTimeUnit(),
             'time_precision' => $this->getTimePrecision()
         ];
+    }
+
+    /**
+     * Get results per page setting
+     */
+    public function getResultsPerPage(): int
+    {
+        return (int)$this->getSetting('general', 'results_per_page', '25');
+    }
+
+    /**
+     * Get date format setting
+     */
+    public function getDateFormat(): string
+    {
+        return $this->getSetting('general', 'date_format', 'Y-m-d');
+    }
+
+    /**
+     * Get default timezone setting
+     */
+    public function getDefaultTimezone(): string
+    {
+        return $this->getSetting('general', 'default_timezone', 'America/New_York');
     }
 
     /**

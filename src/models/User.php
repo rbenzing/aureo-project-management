@@ -397,7 +397,11 @@ class User extends BaseModel
     {
         try {
             $token = bin2hex(random_bytes(16));
-            $expiresAt = (new DateTime())->modify('+1 hour')->format('Y-m-d H:i:s');
+
+            // Use timezone-aware date formatting
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $timezone = $settingsService->getDefaultTimezone();
+            $expiresAt = (new DateTime('now', new \DateTimeZone($timezone)))->modify('+1 hour')->format('Y-m-d H:i:s');
 
             $sql = "UPDATE users 
                     SET reset_password_token = :token,
@@ -428,7 +432,11 @@ class User extends BaseModel
     {
         try {
             $token = bin2hex(random_bytes(16));
-            $expiresAt = (new DateTime())->modify('+24 hours')->format('Y-m-d H:i:s');
+
+            // Use timezone-aware date formatting
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $timezone = $settingsService->getDefaultTimezone();
+            $expiresAt = (new DateTime('now', new \DateTimeZone($timezone)))->modify('+24 hours')->format('Y-m-d H:i:s');
 
             $sql = "UPDATE users 
                     SET activation_token = :token,

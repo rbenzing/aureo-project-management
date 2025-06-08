@@ -41,7 +41,8 @@ class UserController
             $this->authMiddleware->hasPermission('view_users');
             
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
             
             $results = $this->userModel->getAll(['is_deleted' => 0], $page, $limit);
             $users = $results['records'];
@@ -67,7 +68,7 @@ class UserController
     {
         try {
             $this->authMiddleware->hasPermission('view_users');
-            
+
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
                 throw new InvalidArgumentException('Invalid user ID');
@@ -82,7 +83,7 @@ class UserController
             $userRoleData = $this->userModel->getRolesAndPermissions($id);
             $user->roles = $userRoleData['roles'];
             $user->permissions = $userRoleData['permissions'];
-            
+
             include __DIR__ . '/../Views/Users/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -92,6 +93,48 @@ class UserController
             error_log("Exception in UserController::view: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching user details.';
             header('Location: /users');
+            exit;
+        }
+    }
+
+    /**
+     * View current user's profile
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function profile(string $requestMethod, array $data): void
+    {
+        try {
+            // Check if user is logged in
+            if (!isset($_SESSION['user']['profile']['id'])) {
+                $_SESSION['error'] = 'You must be logged in to view your profile.';
+                header('Location: /login');
+                exit;
+            }
+
+            $userId = $_SESSION['user']['profile']['id'];
+
+            $user = $this->userModel->findWithDetails($userId);
+            if (!$user || $user->is_deleted) {
+                $_SESSION['error'] = 'Profile not found.';
+                header('Location: /dashboard');
+                exit;
+            }
+
+            // Get user's roles and permissions
+            $userRoleData = $this->userModel->getRolesAndPermissions($userId);
+            $user->roles = $userRoleData['roles'];
+            $user->permissions = $userRoleData['permissions'];
+
+            // Pass data for breadcrumb
+            $data = [];
+
+            include __DIR__ . '/../Views/Users/profile.php';
+        } catch (\Exception $e) {
+            error_log("Exception in UserController::profile: " . $e->getMessage());
+            $_SESSION['error'] = 'An error occurred while fetching your profile.';
+            header('Location: /dashboard');
             exit;
         }
     }

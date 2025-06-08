@@ -96,14 +96,28 @@ function isDueDateOverdue($dueDate, $status) {
 }
 
 /**
- * Check if due date is today
- * 
+ * Check if due date is today using configured timezone
+ *
  * @param string $dueDate Due date string
  * @return bool True if due today
  */
 function isDueToday($dueDate) {
-    return !empty($dueDate) && 
-           date('Y-m-d', strtotime($dueDate)) === date('Y-m-d');
+    if (empty($dueDate)) {
+        return false;
+    }
+
+    try {
+        $settingsService = \App\Services\SettingsService::getInstance();
+        $timezone = $settingsService->getDefaultTimezone();
+
+        $due = new DateTime($dueDate, new DateTimeZone($timezone));
+        $now = new DateTime('now', new DateTimeZone($timezone));
+
+        return $due->format('Y-m-d') === $now->format('Y-m-d');
+    } catch (Exception $e) {
+        // Fallback to original method
+        return date('Y-m-d', strtotime($dueDate)) === date('Y-m-d');
+    }
 }
 
 /**

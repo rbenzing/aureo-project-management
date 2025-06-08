@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Models\User;
+use App\Services\SettingsService;
 
 class AuthMiddleware
 {
@@ -14,12 +15,13 @@ class AuthMiddleware
         'unauthorized' => '/dashboard'
     ];
 
-    private const SESSION_TIMEOUT = 1800; // 30 minutes
     private User $userModel;
+    private SettingsService $settingsService;
 
     public function __construct()
     {
         $this->userModel = new User();
+        $this->settingsService = SettingsService::getInstance();
     }
 
     /**
@@ -176,11 +178,12 @@ class AuthMiddleware
         if (!isset($_SESSION['last_activity'])) {
             return true;
         }
-        
+
         $lastActivity = (int)$_SESSION['last_activity'];
         $timeElapsed = time() - $lastActivity;
-        
-        return $timeElapsed > self::SESSION_TIMEOUT;
+        $sessionTimeout = $this->settingsService->getSessionTimeout();
+
+        return $timeElapsed > $sessionTimeout;
     }
 
     /**

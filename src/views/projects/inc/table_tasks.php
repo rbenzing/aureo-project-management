@@ -113,7 +113,7 @@ $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' :
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $taskStatus['color'] ?>">
+                            <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $taskStatus['color'] ?>">
                                 <?= $taskStatus['label'] ?>
                             </span>
                         </td>
@@ -124,11 +124,11 @@ $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' :
                                 $today = strtotime('today');
                                 $isDue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5);
                                 ?>
-                                <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?>">
+                                <span class="<?= $isDue ? 'text-red-600 dark:text-red-400 font-medium' : '' ?> whitespace-nowrap">
                                     <?= date('M j, Y', $dueDate) ?>
                                 </span>
                             <?php else: ?>
-                                <span class="text-gray-500 dark:text-gray-400">—</span>
+                                <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">—</span>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">

@@ -82,13 +82,30 @@ class SettingsService
     }
 
     /**
-     * Get time interval settings
+     * Get general settings
+     */
+    public function getGeneralSettings(): array
+    {
+        return [
+            'results_per_page' => $this->getSettingInt('general', 'results_per_page', 25),
+            'date_format' => $this->getSetting('general', 'date_format', 'Y-m-d'),
+            'default_timezone' => $this->getSetting('general', 'default_timezone', 'America/New_York'),
+            'autosave_interval' => $this->getSettingInt('general', 'autosave_interval', 0),
+            'session_timeout' => $this->getSettingInt('general', 'session_timeout', 3600),
+            'time_unit' => $this->getSetting('general', 'time_unit', 'minutes'),
+            'time_precision' => $this->getSettingInt('general', 'time_precision', 15)
+        ];
+    }
+
+    /**
+     * Get time interval settings (backward compatibility)
      */
     public function getTimeIntervalSettings(): array
     {
+        $generalSettings = $this->getGeneralSettings();
         return [
-            'time_unit' => $this->getSetting('time_intervals', 'time_unit', 'minutes'),
-            'time_precision' => $this->getSettingInt('time_intervals', 'time_precision', 15)
+            'time_unit' => $generalSettings['time_unit'],
+            'time_precision' => $generalSettings['time_precision']
         ];
     }
 
@@ -178,7 +195,12 @@ class SettingsService
     private function applyDefaults(): void
     {
         $defaultSettings = [
-            'time_intervals' => [
+            'general' => [
+                'results_per_page' => '25',
+                'date_format' => 'Y-m-d',
+                'default_timezone' => 'America/New_York',
+                'autosave_interval' => '0',
+                'session_timeout' => '3600',
                 'time_unit' => 'minutes',
                 'time_precision' => '15'
             ],
@@ -279,7 +301,7 @@ class SettingsService
     {
         $timeSettings = $this->getTimeIntervalSettings();
         $unit = $timeSettings['time_unit'];
-        
+
         switch ($unit) {
             case 'seconds':
                 return 'seconds';
@@ -290,6 +312,99 @@ class SettingsService
             case 'minutes':
             default:
                 return 'minutes';
+        }
+    }
+
+    /**
+     * Get results per page setting
+     */
+    public function getResultsPerPage(): int
+    {
+        return $this->getSettingInt('general', 'results_per_page', 25);
+    }
+
+    /**
+     * Get date format setting
+     */
+    public function getDateFormat(): string
+    {
+        return $this->getSetting('general', 'date_format', 'Y-m-d');
+    }
+
+    /**
+     * Get default timezone setting
+     */
+    public function getDefaultTimezone(): string
+    {
+        return $this->getSetting('general', 'default_timezone', 'America/New_York');
+    }
+
+    /**
+     * Get autosave interval setting
+     */
+    public function getAutosaveInterval(): int
+    {
+        return $this->getSettingInt('general', 'autosave_interval', 0);
+    }
+
+    /**
+     * Get session timeout setting
+     */
+    public function getSessionTimeout(): int
+    {
+        return $this->getSettingInt('general', 'session_timeout', 3600);
+    }
+
+    /**
+     * Format date using the configured date format and timezone
+     */
+    public function formatDate($date): string
+    {
+        if (empty($date)) {
+            return '';
+        }
+
+        $format = $this->getDateFormat();
+        $timezone = $this->getDefaultTimezone();
+
+        try {
+            if ($date instanceof \DateTime) {
+                // Set timezone if not already set
+                if ($date->getTimezone()->getName() === 'UTC') {
+                    $date->setTimezone(new \DateTimeZone($timezone));
+                }
+                return $date->format($format);
+            }
+
+            if (is_string($date)) {
+                $dateObj = new \DateTime($date);
+                // Convert to configured timezone
+                $dateObj->setTimezone(new \DateTimeZone($timezone));
+                return $dateObj->format($format);
+            }
+
+            return (string)$date;
+        } catch (\Exception $e) {
+            // Fallback to original date if timezone conversion fails
+            error_log("Date formatting error: " . $e->getMessage());
+            return (string)$date;
+        }
+    }
+
+    /**
+     * Get current date/time in configured timezone and format
+     */
+    public function getCurrentDateTime(): string
+    {
+        $format = $this->getDateFormat();
+        $timezone = $this->getDefaultTimezone();
+
+        try {
+            $now = new \DateTime('now', new \DateTimeZone($timezone));
+            return $now->format($format);
+        } catch (\Exception $e) {
+            error_log("Current date/time error: " . $e->getMessage());
+            return date($format);
         }
     }
 }

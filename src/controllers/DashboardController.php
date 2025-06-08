@@ -153,37 +153,7 @@ class DashboardController
 
             // Enhanced Task summary with new metrics - only if user has task permissions
             if (in_array('view_tasks', $userPermissions)) {
-                $dashboardData['task_summary'] = [
-                    'total' => $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]),
-                    'completed' => $this->taskModel->count([
-                        'assigned_to' => $userId,
-                        'status_id' => 6, // Completed status
-                        'is_deleted' => 0
-                    ]),
-                    'in_progress' => $this->taskModel->count([
-                        'assigned_to' => $userId,
-                        'status_id' => 2, // In Progress status
-                        'is_deleted' => 0
-                    ]),
-                    'overdue' => $this->taskModel->count([
-                        'assigned_to' => $userId,
-                        'due_date' => ['<', date('Y-m-d')],
-                        'status_id' => ['NOT IN', [5, 6]], // Not closed or completed
-                        'is_deleted' => 0
-                    ]),
-                    'sprint_ready' => $this->taskModel->count([
-                        'assigned_to' => $userId,
-                        'is_ready_for_sprint' => 1,
-                        'is_deleted' => 0
-                    ]),
-                    'backlog_items' => $this->getUserBacklogCount($userId),
-                    'bugs' => $this->taskModel->count([
-                        'assigned_to' => $userId,
-                        'task_type' => 'bug',
-                        'status_id' => ['NOT IN', [5, 6]], // Not closed or completed
-                        'is_deleted' => 0
-                    ])
-                ];
+                $dashboardData['task_summary'] = $this->getTaskSummary($userId);
             }
 
             // Enhanced Time tracking summary - only if user has time tracking permissions
@@ -383,6 +353,87 @@ class DashboardController
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching priority tasks: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get comprehensive task summary with accurate counts
+     * @param int $userId
+     * @return array
+     */
+    private function getTaskSummary(int $userId): array
+    {
+        try {
+            $today = date('Y-m-d');
+
+            // Get total tasks
+            $total = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
+
+            // Get completed tasks (status_id = 6)
+            $completed = $this->taskModel->count([
+                'assigned_to' => $userId,
+                'status_id' => 6,
+                'is_deleted' => 0
+            ]);
+
+            // Get overdue tasks (due_date < today AND status NOT IN [5,6])
+            $overdue = $this->taskModel->count([
+                'assigned_to' => $userId,
+                'due_date' => ['<', $today],
+                'status_id' => ['NOT IN', [5, 6]],
+                'is_deleted' => 0
+            ]);
+
+            // Get in progress tasks (status_id = 2) excluding overdue ones
+            $inProgressTotal = $this->taskModel->count([
+                'assigned_to' => $userId,
+                'status_id' => 2,
+                'is_deleted' => 0
+            ]);
+
+            $inProgressOverdue = $this->taskModel->count([
+                'assigned_to' => $userId,
+                'status_id' => 2,
+                'due_date' => ['<', $today],
+                'is_deleted' => 0
+            ]);
+
+            $inProgress = $inProgressTotal - $inProgressOverdue;
+
+            // Calculate open/other tasks (all remaining tasks)
+            $openOther = $total - $completed - $inProgress - $overdue;
+
+            return [
+                'total' => $total,
+                'completed' => $completed,
+                'in_progress' => $inProgress,
+                'overdue' => $overdue,
+                'open_other' => max(0, $openOther), // Ensure non-negative
+                'sprint_ready' => $this->taskModel->count([
+                    'assigned_to' => $userId,
+                    'is_ready_for_sprint' => 1,
+                    'is_deleted' => 0
+                ]),
+                'backlog_items' => $this->getUserBacklogCount($userId),
+                'bugs' => $this->taskModel->count([
+                    'assigned_to' => $userId,
+                    'task_type' => 'bug',
+                    'status_id' => ['NOT IN', [5, 6]],
+                    'is_deleted' => 0
+                ])
+            ];
+        } catch (\Exception $e) {
+            error_log("Error getting task summary: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'in_progress' => 0,
+                'overdue' => 0,
+                'open_other' => 0,
+                'sprint_ready' => 0,
+                'backlog_items' => 0,
+                'bugs' => 0
+            ];
         }
     }
 

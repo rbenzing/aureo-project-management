@@ -144,13 +144,62 @@ class Task extends BaseModel
     }
 
     /**
+     * Build ORDER BY clause for task queries
+     *
+     * @param string $sortField
+     * @param string $sortDirection
+     * @return string
+     */
+    private function buildOrderByClause(string $sortField, string $sortDirection): string
+    {
+        // Validate sort direction
+        $sortDirection = strtoupper($sortDirection) === 'DESC' ? 'DESC' : 'ASC';
+
+        // Map sort fields to actual database columns
+        $fieldMap = [
+            'title' => 't.title',
+            'project_name' => 'p.name',
+            'assigned_to' => 'CONCAT(u.first_name, " ", u.last_name)',
+            'priority' => 't.priority',
+            'status_id' => 't.status_id',
+            'due_date' => 't.due_date',
+            'time_spent' => 't.time_spent',
+            'created_at' => 't.created_at',
+            'updated_at' => 't.updated_at'
+        ];
+
+        // Use mapped field or default to due_date
+        $dbField = $fieldMap[$sortField] ?? 't.due_date';
+
+        // Special handling for priority (convert to numeric for proper sorting)
+        if ($sortField === 'priority') {
+            return "ORDER BY CASE
+                        WHEN t.priority = 'high' THEN 3
+                        WHEN t.priority = 'medium' THEN 2
+                        WHEN t.priority = 'low' THEN 1
+                        ELSE 0
+                    END {$sortDirection}";
+        }
+
+        // Special handling for due_date (null values last)
+        if ($sortField === 'due_date') {
+            return "ORDER BY CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, t.due_date {$sortDirection}";
+        }
+
+        return "ORDER BY {$dbField} {$sortDirection}";
+    }
+
+    /**
      * Get tasks with full details
      * @return ?array
      */
-    public function getAllWithDetails(int $limit = 10, int $page = 1): ?array
+    public function getAllWithDetails(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): ?array
     {
         try {
             $offset = ($page - 1) * $limit;
+
+            // Build ORDER BY clause
+            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
 
             $sql = "SELECT t.*,
                 p.name as project_name,
@@ -161,8 +210,8 @@ class Task extends BaseModel
             LEFT JOIN projects p ON t.project_id = p.id
             LEFT JOIN statuses_task ts ON t.status_id = ts.id
             LEFT JOIN users u ON t.assigned_to = u.id
-            WHERE t.is_deleted = 0 AND p.is_deleted = 0 
-            ORDER BY t.due_date ASC, t.priority DESC
+            WHERE t.is_deleted = 0 AND p.is_deleted = 0
+            {$orderBy}
             LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->executeQuery($sql, [
@@ -186,29 +235,34 @@ class Task extends BaseModel
 
     /**
      * Get tasks by user ID
-     * 
+     *
      * @param int $userId
      * @param int $limit
      * @param int $page
+     * @param string $sortField
+     * @param string $sortDirection
      * @return array
      */
-    public function getByUserId(int $userId, int $limit = 10, int $page = 1): array
+    public function getByUserId(int $userId, int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): array
     {
         try {
             $offset = ($page - 1) * $limit;
 
-            $sql = "SELECT t.*, 
+            // Build ORDER BY clause
+            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+
+            $sql = "SELECT t.*,
                        p.name as project_name,
                        ts.name as status_name,
-                       u.first_name, 
+                       u.first_name,
                        u.last_name
                 FROM tasks t
                 LEFT JOIN projects p ON t.project_id = p.id
                 LEFT JOIN statuses_task ts ON t.status_id = ts.id
                 LEFT JOIN users u ON t.assigned_to = u.id
-                WHERE t.assigned_to = :user_id 
+                WHERE t.assigned_to = :user_id
                 AND t.is_deleted = 0
-                ORDER BY t.due_date ASC, t.priority DESC
+                {$orderBy}
                 LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->executeQuery($sql, [
@@ -231,33 +285,86 @@ class Task extends BaseModel
     }
 
     /**
-     * Get tasks by project
-     * 
-     * @param int $projectId
+     * Get unassigned tasks
+     *
+     * @param int $limit
+     * @param int $page
+     * @param string $sortField
+     * @param string $sortDirection
      * @return array
      */
-    public function getByProjectId(int $projectId): array
+    public function getUnassignedTasks(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): array
     {
         try {
-            $sql = "SELECT 
+            $offset = ($page - 1) * $limit;
+
+            // Build ORDER BY clause
+            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+
+            $sql = "SELECT t.*,
+                       p.name as project_name,
+                       ts.name as status_name,
+                       u.first_name,
+                       u.last_name
+                FROM tasks t
+                LEFT JOIN projects p ON t.project_id = p.id
+                LEFT JOIN statuses_task ts ON t.status_id = ts.id
+                LEFT JOIN users u ON t.assigned_to = u.id
+                WHERE (t.assigned_to IS NULL OR t.assigned_to = 0)
+                AND t.is_deleted = 0 AND p.is_deleted = 0
+                {$orderBy}
+                LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':limit' => $limit,
+                ':offset' => $offset
+            ]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // Format times for display
+            foreach ($tasks as $task) {
+                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
+            }
+
+            return $tasks;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching unassigned tasks: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get tasks by project
+     *
+     * @param int $projectId
+     * @param string $sortField
+     * @param string $sortDirection
+     * @return array
+     */
+    public function getByProjectId(int $projectId, string $sortField = 'due_date', string $sortDirection = 'asc'): array
+    {
+        try {
+            // Build ORDER BY clause
+            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+
+            $sql = "SELECT
                     t.*,
                     ts.name AS status_name,
                     u.first_name,
-                    u.last_name
-                FROM 
+                    u.last_name,
+                    p.name as project_name
+                FROM
                     tasks t
                 LEFT JOIN
                     statuses_task ts ON t.status_id = ts.id
                 LEFT JOIN
                     users u ON t.assigned_to = u.id
-                WHERE 
+                LEFT JOIN
+                    projects p ON t.project_id = p.id
+                WHERE
                     t.project_id = :project_id
                     AND t.is_deleted = 0
-                ORDER BY 
-                    t.is_subtask ASC,
-                    t.parent_task_id ASC,
-                    t.priority DESC,
-                    t.due_date ASC";
+                {$orderBy}";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
             $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -358,9 +465,11 @@ class Task extends BaseModel
      * @param int $limit
      * @param int $page
      * @param int|null $projectId Optional project filter
+     * @param string $sortField
+     * @param string $sortDirection
      * @return array
      */
-    public function getProductBacklog(int $limit = 10, int $page = 1, ?int $projectId = null): array
+    public function getProductBacklog(int $limit = 10, int $page = 1, ?int $projectId = null, string $sortField = 'backlog_priority', string $sortDirection = 'asc'): array
     {
         try {
             $offset = ($page - 1) * $limit;
@@ -379,6 +488,17 @@ class Task extends BaseModel
                 $params[':project_id'] = $projectId;
             }
 
+            // For backlog, use special ordering if sorting by backlog_priority
+            if ($sortField === 'backlog_priority') {
+                $orderBy = "ORDER BY
+                    CASE WHEN t.backlog_priority IS NULL THEN 1 ELSE 0 END,
+                    t.backlog_priority ASC,
+                    t.priority DESC,
+                    t.created_at DESC";
+            } else {
+                $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+            }
+
             $sql = "SELECT t.*,
                 p.name as project_name,
                 ts.name as status_name,
@@ -389,11 +509,7 @@ class Task extends BaseModel
             LEFT JOIN statuses_task ts ON t.status_id = ts.id
             LEFT JOIN users u ON t.assigned_to = u.id
             {$whereClause}
-            ORDER BY
-                CASE WHEN t.backlog_priority IS NULL THEN 1 ELSE 0 END,
-                t.backlog_priority ASC,
-                t.priority DESC,
-                t.created_at DESC
+            {$orderBy}
             LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->executeQuery($sql, $params);
@@ -435,6 +551,27 @@ class Task extends BaseModel
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting product backlog: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count unassigned tasks
+     *
+     * @return int
+     */
+    public function countUnassignedTasks(): int
+    {
+        try {
+            $sql = "SELECT COUNT(*)
+                    FROM tasks t
+                    LEFT JOIN projects p ON t.project_id = p.id
+                    WHERE (t.assigned_to IS NULL OR t.assigned_to = 0)
+                    AND t.is_deleted = 0 AND p.is_deleted = 0";
+
+            $stmt = $this->db->executeQuery($sql);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error counting unassigned tasks: " . $e->getMessage());
         }
     }
 

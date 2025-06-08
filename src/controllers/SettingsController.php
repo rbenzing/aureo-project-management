@@ -39,7 +39,12 @@ class SettingsController
             
             // Set default values if settings don't exist
             $defaultSettings = [
-                'time_intervals' => [
+                'general' => [
+                    'results_per_page' => '25',
+                    'date_format' => 'Y-m-d',
+                    'default_timezone' => 'America/New_York',
+                    'autosave_interval' => '0',
+                    'session_timeout' => '3600',
                     'time_unit' => 'minutes',
                     'time_precision' => '15'
                 ],
@@ -114,7 +119,7 @@ class SettingsController
 
         try {
             // Process each category of settings
-            $categories = ['time_intervals', 'projects', 'tasks', 'milestones', 'sprints', 'templates'];
+            $categories = ['general', 'projects', 'tasks', 'milestones', 'sprints', 'templates'];
             
             foreach ($categories as $category) {
                 if (isset($data[$category]) && is_array($data[$category])) {

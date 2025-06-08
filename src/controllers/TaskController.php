@@ -50,13 +50,19 @@ class TaskController
             $this->authMiddleware->hasPermission('view_tasks');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = \App\Services\SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
             $id = $data['id'] ?? null;
+
+            // Get sorting parameters
+            $sortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'due_date';
+            $sortDirection = isset($_GET['task_dir']) && $_GET['task_dir'] === 'desc' ? 'desc' : 'asc';
 
             // Determine the context based on the current route
             $currentPath = $_SERVER['REQUEST_URI'] ?? '';
             $isProjectContext = strpos($currentPath, '/tasks/project/') !== false;
             $isUserContext = strpos($currentPath, '/tasks/assigned/') !== false;
+            $isUnassignedContext = strpos($currentPath, '/tasks/unassigned') !== false;
 
             if (!empty($id) && $isProjectContext) {
                 // Project-specific tasks
@@ -64,22 +70,32 @@ class TaskController
                 if (!$project || $project->is_deleted) {
                     throw new InvalidArgumentException('Project not found');
                 }
-                $tasks = $this->taskModel->getByProjectId(intval($id));
+                $tasks = $this->taskModel->getByProjectId(intval($id), $sortField, $sortDirection);
                 $totalTasks = $this->taskModel->count(['project_id' => intval($id), 'is_deleted' => 0]);
                 $viewType = 'project_tasks';
             } elseif (!empty($id) && $isUserContext) {
                 // User-specific tasks
-                $tasks = $this->taskModel->getByUserId(intval($id), $limit, $page);
+                $tasks = $this->taskModel->getByUserId(intval($id), $limit, $page, $sortField, $sortDirection);
                 $totalTasks = $this->taskModel->count(['assigned_to' => intval($id), 'is_deleted' => 0]);
                 $viewType = 'user_tasks';
+                $userId = intval($id);
+            } elseif ($isUnassignedContext) {
+                // Unassigned tasks
+                $tasks = $this->taskModel->getUnassignedTasks($limit, $page, $sortField, $sortDirection);
+                $totalTasks = $this->taskModel->countUnassignedTasks();
+                $viewType = 'unassigned_tasks';
             } else {
                 // All tasks
-                $tasks = $this->taskModel->getAllWithDetails($limit, $page);
+                $tasks = $this->taskModel->getAllWithDetails($limit, $page, $sortField, $sortDirection);
                 $totalTasks = $this->taskModel->count(['is_deleted' => 0]);
                 $viewType = 'all_tasks';
             }
 
             $totalPages = ceil($totalTasks / $limit);
+
+            // Make sorting parameters available to the view
+            $currentSortField = $sortField;
+            $currentSortDirection = $sortDirection;
 
             include __DIR__ . '/../views/tasks/index.php';
         } catch (InvalidArgumentException $e) {
@@ -106,10 +122,15 @@ class TaskController
             $this->authMiddleware->hasPermission('view_tasks');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
-            $limit = Config::get('max_pages', 10);
+            $settingsService = SettingsService::getInstance();
+            $limit = $settingsService->getResultsPerPage();
             $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
 
-            $tasks = $this->taskModel->getProductBacklog($limit, $page, $projectId);
+            // Get sorting parameters (default to backlog_priority for backlog view)
+            $sortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'backlog_priority';
+            $sortDirection = isset($_GET['task_dir']) && $_GET['task_dir'] === 'desc' ? 'desc' : 'asc';
+
+            $tasks = $this->taskModel->getProductBacklog($limit, $page, $projectId, $sortField, $sortDirection);
             $totalTasks = $this->taskModel->countProductBacklog($projectId);
             $totalPages = ceil($totalTasks / $limit);
 
@@ -780,9 +801,24 @@ class TaskController
             throw new RuntimeException('User session not found');
         }
 
-        // Format start and end times for database
-        $startDateTime = date('Y-m-d H:i:s', $startTime);
-        $endDateTime = date('Y-m-d H:i:s', $endTime);
+        // Format start and end times for database using timezone-aware formatting
+        $settingsService = SettingsService::getInstance();
+        $timezone = $settingsService->getDefaultTimezone();
+
+        try {
+            $startDate = new \DateTime('@' . $startTime);
+            $startDate->setTimezone(new \DateTimeZone($timezone));
+            $startDateTime = $startDate->format('Y-m-d H:i:s');
+
+            $endDate = new \DateTime('@' . $endTime);
+            $endDate->setTimezone(new \DateTimeZone($timezone));
+            $endDateTime = $endDate->format('Y-m-d H:i:s');
+        } catch (\Exception $e) {
+            // Fallback to original method if timezone conversion fails
+            error_log("Time formatting error: " . $e->getMessage());
+            $startDateTime = date('Y-m-d H:i:s', $startTime);
+            $endDateTime = date('Y-m-d H:i:s', $endTime);
+        }
 
         // Create time entry record
         $entryData = [

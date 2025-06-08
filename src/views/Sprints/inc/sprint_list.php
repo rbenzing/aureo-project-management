@@ -114,8 +114,8 @@
                                 <span class="text-sm text-gray-500 dark:text-gray-400">Date not set</span>
                             <?php endif; ?>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getSprintStatusClass($sprint->status_id ?? 0) ?>">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap <?= getSprintStatusClass($sprint->status_id ?? 0) ?>">
                                 <?= getSprintStatusLabel($sprint->status_id ?? 0) ?>
                             </span>
                         </td>

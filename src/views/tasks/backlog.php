@@ -357,13 +357,13 @@ $breadcrumbs = [
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                                                 <?= $task->story_points ?? '-' ?>
                                             </td>
-                                            <td class="px-6 py-4">
+                                            <td class="px-6 py-4 whitespace-nowrap">
                                                 <?php
                                                 // Get status info using the same style as projects
                                                 $statusId = $task->status_id ?? 1;
                                                 $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
                                                 ?>
-                                                <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $statusInfo['color'] ?>">
+                                                <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $statusInfo['color'] ?>">
                                                     <?= $statusInfo['label'] ?>
                                                 </span>
                                             </td>

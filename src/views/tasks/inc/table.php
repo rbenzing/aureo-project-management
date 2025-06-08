@@ -66,11 +66,12 @@ $taskStatusMap = [
     ?>
     <?php if (!empty($flatTasks)): ?>
         <?php foreach ($flatTasks as $task): ?>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors task-row" 
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors task-row"
                 data-task-id="<?= $task->id ?>"
                 data-priority="<?= $task->priority ?>"
                 data-status="<?= $task->status_name ?>"
-                data-due-date="<?= $task->due_date ?? '' ?>">
+                data-due-date="<?= $task->due_date ?? '' ?>"
+                data-assigned="<?= !empty($task->first_name) ? $task->first_name . ' ' . $task->last_name : '' ?>">
                 <td class="px-6 py-4">
                     <div class="flex items-center">
                         <?php if ($task->is_subtask): ?>
@@ -131,31 +132,41 @@ $taskStatusMap = [
                         <?= ucfirst(htmlspecialchars($task->priority)) ?>
                     </span>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <?php
                     // Get status info using the same style as projects
                     $statusId = $task->status_id ?? 1;
                     $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
                     ?>
-                    <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $statusInfo['color'] ?>">
+                    <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $statusInfo['color'] ?>">
                         <?= $statusInfo['label'] ?>
                     </span>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-6 py-4 whitespace-nowrap">
                     <?php if (!empty($task->due_date)): ?>
                         <?php $dueDateInfo = getDueDateDisplay($task->due_date, $task->status_name); ?>
-                        <div class="text-sm <?= $dueDateInfo['class'] ?>">
-                            <?= $dueDateInfo['icon'] ?>
-                            <?= date('M j, Y', strtotime($task->due_date)) ?>
-                            <?= $dueDateInfo['badge'] ?>
+                        <div class="space-y-1">
+                            <!-- Date Row -->
+                            <div class="text-sm <?= $dueDateInfo['class'] ?> justify-start whitespace-nowrap">
+                                <?= $dueDateInfo['icon'] ?>
+                                <?= date('M j, Y', strtotime($task->due_date)) ?>
+                            </div>
+                            <!-- Status Badge Row -->
+                            <?php if (!empty($dueDateInfo['badge'])): ?>
+                                <div class="whitespace-nowrap">
+                                    <?= $dueDateInfo['badge'] ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php else: ?>
-                        <span class="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                            <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-dasharray="2"></path>
-                            </svg>
-                            No Due Date
-                        </span>
+                        <div class="space-y-1">
+                            <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
+                                <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-dasharray="2"></path>
+                                </svg>
+                                No Due Date
+                            </div>
+                        </div>
                     <?php endif; ?>
                 </td>
                 <td class="px-6 py-4">

@@ -13,12 +13,21 @@ use App\Core\Config;
 // Include helper functions
 include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
 
-// Determine the context based on URL
+// Determine the context based on URL and viewType
 $isMyTasksView = isset($userId); // This would be set in the controller when /:user_id is present
 $currentUserId = $_SESSION['user']['profile']['id'] ?? null;
 $viewingOwnTasks = $isMyTasksView && $userId == $currentUserId;
-$viewTitle = $isMyTasksView ? ($viewingOwnTasks ? 'My Tasks' : 'User Tasks') : 'All Tasks';
+$isUnassignedView = isset($viewType) && $viewType === 'unassigned_tasks';
 $isBacklogView = isset($viewType) && $viewType === 'backlog';
+
+// Set view title based on context
+if ($isUnassignedView) {
+    $viewTitle = 'Unassigned Tasks';
+} elseif ($isMyTasksView) {
+    $viewTitle = $viewingOwnTasks ? 'My Tasks' : 'User Tasks';
+} else {
+    $viewTitle = 'All Tasks';
+}
 
 // Set up filter options based on context
 $filterOptions = [
@@ -30,8 +39,12 @@ $filterOptions = [
     'completed' => 'Completed'
 ];
 
-// If viewing another user's tasks, we may want to add more filters
+// Add additional filters based on context
 if ($isMyTasksView && !$viewingOwnTasks) {
+    $filterOptions['assigned'] = 'Assigned';
+    $filterOptions['unassigned'] = 'Unassigned';
+} elseif (!$isMyTasksView && !$isUnassignedView && !$isBacklogView) {
+    // For All Tasks view, add assignment filters
     $filterOptions['assigned'] = 'Assigned';
     $filterOptions['unassigned'] = 'Unassigned';
 }
