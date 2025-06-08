@@ -8,6 +8,7 @@ use PDO;
 use App\Utils\Time;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 /**
  * Task Model
@@ -670,7 +671,13 @@ class Task extends BaseModel
 
             return $this->db->lastInsertId();
         } catch (\Exception $e) {
-            throw new RuntimeException("Error creating time entry: " . $e->getMessage());
+            try {
+                $securityService = SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Error creating time entry");
+                throw new RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new RuntimeException("Error creating time entry");
+            }
         }
     }
 

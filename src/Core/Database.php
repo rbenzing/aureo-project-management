@@ -186,8 +186,15 @@ class Database
             error_log("Query Execution Error: " . $e->getMessage());
             error_log("SQL: " . $sql);
             error_log("Params: " . json_encode($params));
-            
-            throw new RuntimeException('Query execution failed: ' . $e->getMessage());
+
+            // Use security service to determine error message
+            try {
+                $securityService = \App\Services\SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), 'Database query failed');
+                throw new RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new RuntimeException('Database query failed');
+            }
         }
     }
 

@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+use App\Services\SettingsService;
 ?>
 
 <!DOCTYPE html>
@@ -34,15 +35,29 @@ use App\Core\Config;
 
         <!-- Page Header -->
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Milestone</h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                Update the milestone details
-            </p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Milestone</h1>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Update the milestone details
+                    </p>
+                </div>
+                <!-- Form Actions -->
+                <div class="flex items-center justify-end space-x-3">
+                    <a href="/milestones/view/<?= htmlspecialchars((string)$milestone->id) ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Cancel
+                    </a>
+                    <button type="submit" form="editMilestoneForm"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Update Milestone
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Edit Milestone Form -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
-            <form action="/milestones/update" method="POST" class="space-y-6">
+            <form id="editMilestoneForm" action="/milestones/update" method="POST" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)$milestone->id) ?>">
                 
@@ -160,8 +175,8 @@ use App\Core\Config;
                             required
                         >
                             <?php foreach ($statuses as $status): ?>
-                                <option 
-                                    value="<?= htmlspecialchars($status->id) ?>"
+                                <option
+                                    value="<?= htmlspecialchars((string)$status->id) ?>"
                                     <?= ($status->id == $milestone->status_id) ? 'selected' : '' ?>
                                 >
                                     <?= htmlspecialchars($status->name) ?>
@@ -170,6 +185,86 @@ use App\Core\Config;
                         </select>
                     </div>
                 </div>
+
+                <!-- Templates Row -->
+                <?php
+                $settingsService = SettingsService::getInstance();
+                $templateSettings = $settingsService->getTemplateSettings();
+                $milestoneTemplateSettings = $templateSettings['milestone'] ?? [];
+                $showQuickTemplates = $milestoneTemplateSettings['show_quick_templates'] ?? true;
+                $showCustomTemplates = $milestoneTemplateSettings['show_custom_templates'] ?? true;
+
+                // Filter templates to only show milestone templates
+                $milestoneTemplates = [];
+                if (!empty($templates)) {
+                    foreach ($templates as $template) {
+                        if ($template->template_type === 'milestone') {
+                            $milestoneTemplates[] = $template;
+                        }
+                    }
+                }
+                ?>
+                <?php if ($showQuickTemplates || $showCustomTemplates): ?>
+                <div class="grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
+                    <?php if ($showQuickTemplates): ?>
+                    <!-- Quick Templates -->
+                    <div>
+                        <label for="quick_template_edit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quick Templates</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <select id="quick_template_edit" name="quick_template_edit" class="pl-10 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                <option value="">Select a quick template...</option>
+                                <?php
+                                $quickTemplates = Config::get('QUICK_MILESTONE_TEMPLATES', []);
+                                foreach ($quickTemplates as $name => $content):
+                                ?>
+                                    <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
+                                            data-title="<?= htmlspecialchars($name) ?>"
+                                            data-description="<?= htmlspecialchars($content) ?>">
+                                        <?= htmlspecialchars($name) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Quick pre-built templates</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($showCustomTemplates): ?>
+                    <!-- Custom Templates -->
+                    <div>
+                        <label for="custom_template_edit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Templates</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </div>
+                            <select id="custom_template_edit" name="custom_template_edit" class="pl-10 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                <option value="">Select a custom template...</option>
+                                <?php if (!empty($milestoneTemplates)): ?>
+                                    <?php foreach ($milestoneTemplates as $template): ?>
+                                        <option value="<?= htmlspecialchars((string)$template->id) ?>"
+                                                data-title="<?= htmlspecialchars($template->name) ?>"
+                                                data-description="<?= htmlspecialchars($template->description) ?>">
+                                            <?= htmlspecialchars($template->name) ?>
+                                            <?php if ($template->is_default): ?>
+                                                <span class="text-xs text-gray-500">(Default)</span>
+                                            <?php endif; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Your saved templates</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
 
                 <!-- Description -->
                 <div>
@@ -233,21 +328,7 @@ use App\Core\Config;
                     </div>
                 </div>
 
-                <!-- Submit Buttons -->
-                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a 
-                        href="/milestones/view/<?= htmlspecialchars($milestone->id) ?>" 
-                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                        Cancel
-                    </a>
-                    <button 
-                        type="submit" 
-                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Update Milestone
-                    </button>
-                </div>
+
             </form>
         </div>
     </main>
@@ -264,6 +345,12 @@ use App\Core\Config;
             const epicSelect = document.getElementById('epic_id');
             const statusSelect = document.getElementById('status_id');
             const completeDateInput = document.getElementById('complete_date');
+
+            // Template elements
+            const quickTemplateSelect = document.getElementById('quick_template_edit');
+            const customTemplateSelect = document.getElementById('custom_template_edit');
+            const titleInput = document.getElementById('title');
+            const descriptionTextarea = document.getElementById('description');
             
             // Toggle Epic Selection visibility based on milestone type
             function toggleEpicSelection() {
@@ -323,15 +410,52 @@ use App\Core\Config;
                     completeDateInput.disabled = true;
                 }
             }
-            
+
+            // Template application function
+            function applyTemplate(templateSelect) {
+                if (!templateSelect.value) return;
+
+                const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+                const title = selectedOption.getAttribute('data-title');
+                const description = selectedOption.getAttribute('data-description');
+
+                if (descriptionTextarea.value.trim() !== '' &&
+                    !confirm('This will replace your current description. Continue?')) {
+                    templateSelect.value = ''; // Reset dropdown
+                    return;
+                }
+
+                if (description) {
+                    // Convert literal \n characters to actual line breaks
+                    descriptionTextarea.value = description.replace(/\\n/g, '\n');
+                }
+
+                // Reset both dropdowns after applying template
+                if (quickTemplateSelect) quickTemplateSelect.value = '';
+                if (customTemplateSelect) customTemplateSelect.value = '';
+            }
+
             // Add event listeners
             milestoneTypeRadios.forEach(radio => {
                 radio.addEventListener('change', toggleEpicSelection);
             });
-            
+
             projectSelect.addEventListener('change', loadEpics);
             statusSelect.addEventListener('change', toggleCompletionDate);
-            
+
+            // Template event listeners
+            if (quickTemplateSelect) {
+                quickTemplateSelect.addEventListener('change', function() {
+                    applyTemplate(this);
+                });
+            }
+
+            if (customTemplateSelect) {
+                customTemplateSelect.addEventListener('change', function() {
+                    applyTemplate(this);
+                });
+            }
+
             // Initial state
             toggleEpicSelection();
             toggleCompletionDate();

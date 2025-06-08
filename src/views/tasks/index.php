@@ -71,7 +71,9 @@ if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
     <!-- Main Content -->
     <main class="container mx-auto p-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
-        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+
+        <!-- Page Header with Breadcrumb and New Task Button -->
+        <?php include __DIR__ . '/inc/page_header.php'; ?>
 
         <?php if (isset($project) && !empty($project)): ?>
             <!-- Project Header with Navigation -->

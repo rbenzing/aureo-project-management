@@ -6,6 +6,7 @@ namespace App\Middleware;
 
 use App\Core\Database;
 use App\Services\SettingsService;
+use App\Services\SecurityService;
 
 class SessionMiddleware
 {
@@ -18,26 +19,40 @@ class SessionMiddleware
     }
 
     private static function startSecureSession() {
-        ini_set('session.cookie_httponly', 1);
-        ini_set('session.use_only_cookies', 1);
-
-        // Get session timeout from settings
+        // Get security service for configuration
+        $securityService = SecurityService::getInstance();
         $settingsService = SettingsService::getInstance();
-        $sessionTimeout = $settingsService->getSessionTimeout();
 
-        // If site is using HTTPS
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        // Apply security configuration
+        $sessionConfig = $securityService->getSessionConfig();
+
+        ini_set('session.cookie_httponly', $sessionConfig['cookie_httponly'] ? 1 : 0);
+        ini_set('session.use_only_cookies', $sessionConfig['use_only_cookies'] ? 1 : 0);
+
+        if ($sessionConfig['cookie_secure']) {
             ini_set('session.cookie_secure', 1);
         }
 
-        // Add SameSite attribute
+        // Get session timeout from settings
+        $sessionTimeout = $settingsService->getSessionTimeout();
+
+        // Validate session domain if enabled
+        $domain = $_SERVER['HTTP_HOST'] ?? '';
+        if ($settingsService->isSecurityFeatureEnabled('validate_session_domain')) {
+            if (!$securityService->validateSessionDomain($domain)) {
+                // Use a safe fallback domain or current host
+                $domain = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_HOST) ?: $domain;
+            }
+        }
+
+        // Set session cookie parameters with security settings
         session_set_cookie_params([
             'lifetime' => $sessionTimeout,
             'path' => '/',
-            'domain' => $_SERVER['HTTP_HOST'],
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-            'httponly' => true,
-            'samesite' => 'Lax'
+            'domain' => $domain,
+            'secure' => $sessionConfig['cookie_secure'],
+            'httponly' => $sessionConfig['cookie_httponly'],
+            'samesite' => $sessionConfig['cookie_samesite']
         ]);
 
         session_start();

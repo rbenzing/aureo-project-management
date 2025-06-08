@@ -54,7 +54,7 @@ use App\Services\SettingsService;
         </div>
         <!-- Create Milestone Form -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
-            <form action="/milestones/create" method="POST" class="space-y-6">
+            <form id="createMilestoneForm" action="/milestones/create" method="POST" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
 
                 <!-- Milestone Type Selection -->
@@ -90,7 +90,7 @@ use App\Services\SettingsService;
                             required
                             data-epic-url="/api/projects/{id}/epics">
                             <option value="">Select Project</option>
-                            <?php foreach ($projects['records'] as $project): ?>
+                            <?php foreach ($projects as $project): ?>
                                 <option value="<?= htmlspecialchars((string)$project->id) ?>"><?= htmlspecialchars($project->name) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -210,7 +210,7 @@ use App\Services\SettingsService;
                                 <option value="">Select a custom template...</option>
                                 <?php if (!empty($milestoneTemplates)): ?>
                                     <?php foreach ($milestoneTemplates as $template): ?>
-                                        <option value="<?= htmlspecialchars($template->id) ?>"
+                                        <option value="<?= htmlspecialchars((string)$template->id) ?>"
                                                 data-title="<?= htmlspecialchars($template->name) ?>"
                                                 data-description="<?= htmlspecialchars($template->description) ?>">
                                             <?= htmlspecialchars($template->name) ?>

@@ -12,6 +12,7 @@ use App\Models\Template;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 class MilestoneController
 {
@@ -66,8 +67,8 @@ class MilestoneController
             header('Location: /milestones');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in MilestoneController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching milestones.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'MilestoneController::index', 'An error occurred while fetching milestones.');
             header('Location: /dashboard');
             exit;
         }
@@ -137,7 +138,8 @@ class MilestoneController
         try {
             $this->authMiddleware->hasPermission('create_milestones');
 
-            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $projectsResult = $this->projectModel->getAll(['is_deleted' => 0], 1, 1000);
+            $projects = $projectsResult['records'];
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $epics = $this->milestoneModel->getProjectEpics($data['project_id'] ?? 0);
 
@@ -243,7 +245,8 @@ class MilestoneController
                 throw new InvalidArgumentException('Milestone not found');
             }
 
-            $projects = $this->projectModel->getAll(['is_deleted' => 0]);
+            $projectsResult = $this->projectModel->getAll(['is_deleted' => 0], 1, 1000);
+            $projects = $projectsResult['records'];
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $epics = $this->milestoneModel->getProjectEpics($milestone->project_id);
 

@@ -7,6 +7,7 @@ namespace App\Models;
 use PDO;
 use InvalidArgumentException;
 use RuntimeException;
+use App\Services\SecurityService;
 
 /**
  * Milestone Model
@@ -97,7 +98,13 @@ class Milestone extends BaseModel
 
             return $milestone ?: null;
         } catch (\Exception $e) {
-            throw new \RuntimeException("Failed to find milestone details: " . $e->getMessage());
+            try {
+                $securityService = \App\Services\SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to find milestone details");
+                throw new \RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new \RuntimeException("Failed to find milestone details");
+            }
         }
     }
 

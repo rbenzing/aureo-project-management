@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Core\Database;
+use App\Services\SettingsService;
+use App\Services\SecurityService;
 use Exception;
 
 class CsrfMiddleware
@@ -29,24 +31,28 @@ class CsrfMiddleware
     {
         try {
             $token = bin2hex(random_bytes(self::TOKEN_LENGTH));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::TOKEN_EXPIRY));
+
+            // Get token lifetime from security settings
+            $settingsService = SettingsService::getInstance();
+            $tokenLifetime = $settingsService->getSecuritySetting('csrf_token_lifetime', 3600);
+            $expiresAt = date('Y-m-d H:i:s', time() + $tokenLifetime);
 
             // Get user ID from session if available
             $userId = $_SESSION['user']['id'] ?? null;
-                         
-            $success = $this->db->executeInsertUpdate(
-                "INSERT INTO csrf_tokens (token, session_id, user_id, expires_at) 
-                    VALUES (:token, :session_id, :user_id, :expires_at)", 
+
+            $this->db->executeInsertUpdate(
+                "INSERT INTO csrf_tokens (token, session_id, user_id, expires_at)
+                    VALUES (:token, :session_id, :user_id, :expires_at)",
                 [
                     ':token' => $token,
                     ':session_id' => session_id(),
                     ':user_id' => $userId,
                     ':expires_at' => $expiresAt
-                ]        
+                ]
             );
             // set token session value
             $_SESSION['csrf_token'] = $token;
-            
+
             return $token;
         } catch (Exception $e) {
             error_log("CSRF token generation failed: " . $e->getMessage());
@@ -96,11 +102,17 @@ class CsrfMiddleware
 
     /**
      * Handle CSRF protection for requests
-     * 
+     *
      * @throws Exception If CSRF validation fails
      */
     public function handleToken(): void
     {
+        // Check if CSRF protection is enabled
+        $settingsService = SettingsService::getInstance();
+        if (!$settingsService->isSecurityFeatureEnabled('csrf_protection_enabled')) {
+            return; // CSRF protection disabled
+        }
+
         // Random cleanup of expired tokens
         if (mt_rand() / mt_getrandmax() < self::CLEANUP_PROBABILITY) {
             $this->cleanupExpiredTokens();
@@ -110,7 +122,7 @@ class CsrfMiddleware
         if (!isset($_SESSION['csrf_token'])) {
             $this->generateToken();
         }
-        
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validatePostRequest();
         }
@@ -139,15 +151,36 @@ class CsrfMiddleware
     private function validatePostRequest(): void
     {
         try {
-            if (!isset($_POST['csrf_token'])) {
+            // Check if AJAX CSRF protection is enabled
+            $settingsService = SettingsService::getInstance();
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                      strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+            if ($isAjax && !$settingsService->isSecurityFeatureEnabled('csrf_ajax_protection')) {
+                return; // AJAX CSRF protection disabled
+            }
+
+            // Get token from POST data or AJAX headers
+            $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+
+            if (!$token) {
                 throw new Exception('CSRF token is missing from the request');
             }
-             
-            $this->validateToken($_POST['csrf_token']);
+
+            $this->validateToken($token);
         } catch (Exception $e) {
+            // Log security event
+            $securityService = SecurityService::getInstance();
+            $securityService->logSecurityEvent('csrf_validation_failed', [
+                'method' => $_SERVER['REQUEST_METHOD'],
+                'uri' => $_SERVER['REQUEST_URI'],
+                'is_ajax' => $isAjax ?? false,
+                'error' => $e->getMessage()
+            ]);
+
             error_log("CSRF validation failed: " . $e->getMessage());
             $_SESSION['error'] = 'Security validation failed. Please try again.';
-            
+
             header('Location: ' . $this->getSafeRedirectUrl());
             exit;
         }
@@ -166,17 +199,14 @@ class CsrfMiddleware
      */
     private function getSafeRedirectUrl(): string
     {
-        $safeUrls = ['/login', '/dashboard', '/'];
+        $securityService = SecurityService::getInstance();
         $referrer = $_SERVER['HTTP_REFERER'] ?? '';
-        
-        // Check if referrer is a local URL and is safe
+
+        // Use security service to validate redirect URL
         if (!empty($referrer)) {
-            $parsedUrl = parse_url($referrer);
-            if (isset($parsedUrl['path']) && in_array($parsedUrl['path'], $safeUrls)) {
-                return $parsedUrl['path'];
-            }
+            return $securityService->getSafeRedirectUrl($referrer, '/login');
         }
-        
+
         return '/login';
     }
 }

@@ -182,6 +182,89 @@ class SettingsService
     }
 
     /**
+     * Get security settings
+     */
+    public function getSecuritySettings(): array
+    {
+        return [
+            'session_samesite' => $this->getSetting('security', 'session_samesite', 'Lax'),
+            'validate_session_domain' => $this->getSettingBool('security', 'validate_session_domain', true),
+            'regenerate_session_on_auth' => $this->getSettingBool('security', 'regenerate_session_on_auth', true),
+            'csrf_protection_enabled' => $this->getSettingBool('security', 'csrf_protection_enabled', true),
+            'csrf_ajax_protection' => $this->getSettingBool('security', 'csrf_ajax_protection', true),
+            'csrf_token_lifetime' => $this->getSettingInt('security', 'csrf_token_lifetime', 3600),
+            'max_input_size' => $this->getSettingInt('security', 'max_input_size', 1048576),
+            'strict_input_validation' => $this->getSettingBool('security', 'strict_input_validation', true),
+            'html_sanitization' => $this->getSettingBool('security', 'html_sanitization', true),
+            'validate_redirects' => $this->getSettingBool('security', 'validate_redirects', true),
+            'allowed_redirect_domains' => $this->getSetting('security', 'allowed_redirect_domains', ''),
+            'enable_csp' => $this->getSettingBool('security', 'enable_csp', true),
+            'csp_policy' => $this->getSetting('security', 'csp_policy', 'moderate'),
+            'additional_headers' => $this->getSettingBool('security', 'additional_headers', true),
+            'hide_error_details' => $this->getSettingBool('security', 'hide_error_details', true),
+            'log_security_events' => $this->getSettingBool('security', 'log_security_events', true),
+            'rate_limit_attempts' => $this->getSettingInt('security', 'rate_limit_attempts', 60)
+        ];
+    }
+
+    /**
+     * Get specific security setting
+     */
+    public function getSecuritySetting(string $key, $default = null)
+    {
+        $settings = $this->getSecuritySettings();
+        return $settings[$key] ?? $default;
+    }
+
+    /**
+     * Check if a security feature is enabled
+     */
+    public function isSecurityFeatureEnabled(string $feature): bool
+    {
+        return $this->getSettingBool('security', $feature, true);
+    }
+
+    /**
+     * Get allowed redirect domains as array
+     */
+    public function getAllowedRedirectDomains(): array
+    {
+        $domains = $this->getSetting('security', 'allowed_redirect_domains', '');
+        if (empty($domains)) {
+            return [];
+        }
+
+        return array_filter(
+            array_map('trim', explode("\n", $domains)),
+            function($domain) {
+                return !empty($domain) && filter_var('http://' . $domain, FILTER_VALIDATE_URL);
+            }
+        );
+    }
+
+    /**
+     * Get Content Security Policy based on settings
+     */
+    public function getContentSecurityPolicy(): string
+    {
+        if (!$this->isSecurityFeatureEnabled('enable_csp')) {
+            return '';
+        }
+
+        $policy = $this->getSetting('security', 'csp_policy', 'moderate');
+
+        switch ($policy) {
+            case 'strict':
+                return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+            case 'permissive':
+                return "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:;";
+            case 'moderate':
+            default:
+                return "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self'; frame-ancestors 'self';";
+        }
+    }
+
+    /**
      * Clear settings cache
      */
     public function clearCache(): void
@@ -222,6 +305,25 @@ class SettingsService
                 'default_sprint_length' => '14',
                 'auto_start_next_sprint' => '0',
                 'sprint_planning_enabled' => '1'
+            ],
+            'security' => [
+                'session_samesite' => 'Lax',
+                'validate_session_domain' => '1',
+                'regenerate_session_on_auth' => '1',
+                'csrf_protection_enabled' => '1',
+                'csrf_ajax_protection' => '1',
+                'csrf_token_lifetime' => '3600',
+                'max_input_size' => '1048576',
+                'strict_input_validation' => '1',
+                'html_sanitization' => '1',
+                'validate_redirects' => '1',
+                'allowed_redirect_domains' => '',
+                'enable_csp' => '1',
+                'csp_policy' => 'moderate',
+                'additional_headers' => '1',
+                'hide_error_details' => '1',
+                'log_security_events' => '1',
+                'rate_limit_attempts' => '60'
             ],
             'templates' => [
                 'project_show_quick_templates' => '1',

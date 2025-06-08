@@ -79,8 +79,9 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                     <label for="role" class="sr-only">Role</label>
                     <select name="role_id" id="role" class="block w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200">
                         <option value="">All Roles</option>
-                        <?php 
-                        $roles = (new \App\Models\Role())->getAll(['is_deleted' => 0])['records'];
+                        <?php
+                        $rolesResult = (new \App\Models\Role())->getAll(['is_deleted' => 0], 1, 1000);
+                        $roles = $rolesResult['records'];
                         foreach ($roles as $role): ?>
                             <option value="<?= htmlspecialchars((string)$role->id) ?>"><?= htmlspecialchars($role->name) ?></option>
                         <?php endforeach; ?>
@@ -91,8 +92,9 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                     <label for="company" class="sr-only">Company</label>
                     <select name="company_id" id="company" class="block w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200">
                         <option value="">All Companies</option>
-                        <?php 
-                        $companies = (new \App\Models\Company())->getAll(['is_deleted' => 0])['records'];
+                        <?php
+                        $companiesResult = (new \App\Models\Company())->getAll(['is_deleted' => 0], 1, 1000);
+                        $companies = $companiesResult['records'];
                         foreach ($companies as $company): ?>
                             <option value="<?= htmlspecialchars((string)$company->id) ?>"><?= htmlspecialchars($company->name) ?></option>
                         <?php endforeach; ?>

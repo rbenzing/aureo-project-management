@@ -8,6 +8,7 @@ use App\Core\Database;
 use PDO;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 abstract class BaseModel
 {
@@ -154,7 +155,13 @@ abstract class BaseModel
 
             return $success ? $this->db->lastInsertId() : false;
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to create {$this->table} record: " . $e->getMessage());
+            try {
+                $securityService = SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to create {$this->table} record");
+                throw new RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new RuntimeException("Failed to create {$this->table} record");
+            }
         }
     }
 
@@ -194,7 +201,13 @@ abstract class BaseModel
 
             return $this->db->executeInsertUpdate($sql, $params);
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to update {$this->table} record: " . $e->getMessage());
+            try {
+                $securityService = SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to update {$this->table} record");
+                throw new RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new RuntimeException("Failed to update {$this->table} record");
+            }
         }
     }
 

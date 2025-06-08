@@ -89,32 +89,39 @@ $breadcrumbs = [
             <!-- Main Content -->
             <main class="container mx-auto p-6 flex-grow">
                 <?php include BASE_PATH . '/../src/views/layouts/notifications.php'; ?>
-                <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
+
+                <!-- Page Header with Breadcrumb and New Task Button -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <!-- Breadcrumb Section -->
+                    <div class="flex-1">
+                        <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
+                    </div>
+
+                    <!-- Action Buttons Section -->
+                    <div class="flex-shrink-0 flex space-x-3">
+                        <a href="/tasks/create" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Task
+                        </a>
+                        <a href="/tasks/sprint-planning" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            Sprint Planning
+                        </a>
+                    </div>
+                </div>
 
                 <!-- Backlog Header -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Backlog</h1>
-                                <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                    Manage your product backlog - tasks not yet assigned to sprints
-                                </p>
-                            </div>
-                            <div class="flex space-x-3">
-                                <a href="/tasks/create" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    Add Task
-                                </a>
-                                <a href="/tasks/sprint-planning" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
-                                    Sprint Planning
-                                </a>
-                            </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Backlog</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">
+                                Manage your product backlog - tasks not yet assigned to sprints
+                            </p>
                         </div>
                     </div>
 

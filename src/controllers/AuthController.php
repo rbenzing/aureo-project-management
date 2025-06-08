@@ -10,6 +10,7 @@ use App\Middleware\SessionMiddleware;
 use App\Models\User;
 use App\Utils\Email;
 use App\Utils\Validator;
+use App\Services\SecurityService;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -96,8 +97,8 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::login: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred during login.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::login', 'An error occurred during login.');
             header('Location: /login');
             exit;
         }
@@ -115,8 +116,8 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in AuthController::logout: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred during logout.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::logout', 'An error occurred during logout.');
             header('Location: /dashboard');
             exit;
         }
@@ -182,8 +183,8 @@ class AuthController
             header('Location: /register');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in AuthController::register: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred during registration.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::register', 'An error occurred during registration.');
             header('Location: /register');
             exit;
         }
@@ -233,8 +234,8 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::resetPassword: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred during password reset.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::resetPassword', 'An error occurred during password reset.');
             header('Location: /login');
             exit;
         }
@@ -291,8 +292,8 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::activate: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred during account activation.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::activate', 'An error occurred during account activation.');
             header('Location: /login');
             exit;
         }
@@ -339,8 +340,8 @@ class AuthController
             header('Location: /forgot-password');
             exit;
         } catch (\Exception $e) {
-            error_log("Error in AuthController::forgotPassword: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred. Please try again later.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::forgotPassword');
             header('Location: /forgot-password');
             exit;
         }

@@ -13,6 +13,7 @@ use App\Utils\Email;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 class UserController
 {
@@ -150,8 +151,10 @@ class UserController
         try {
             $this->authMiddleware->hasPermission('create_users');
             
-            $companies = $this->companyModel->getAll(['is_deleted' => 0]);
-            $roles = $this->roleModel->getAll(['is_deleted' => 0]);
+            $companiesResult = $this->companyModel->getAll(['is_deleted' => 0], 1, 1000);
+            $companies = $companiesResult['records'];
+            $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
+            $roles = $rolesResult['records'];
             
             include __DIR__ . '/../Views/Users/create.php';
         } catch (\Exception $e) {
@@ -217,8 +220,8 @@ class UserController
             header('Location: /users/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in UserController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the user.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'UserController::create', 'An error occurred while creating the user.');
             header('Location: /users/create');
             exit;
         }
@@ -245,8 +248,10 @@ class UserController
                 throw new InvalidArgumentException('User not found');
             }
 
-            $companies = $this->companyModel->getAll(['is_deleted' => 0]);
-            $roles = $this->roleModel->getAll(['is_deleted' => 0]);
+            $companiesResult = $this->companyModel->getAll(['is_deleted' => 0], 1, 1000);
+            $companies = $companiesResult['records'];
+            $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
+            $roles = $rolesResult['records'];
 
             include __DIR__ . '/../Views/Users/edit.php';
         } catch (InvalidArgumentException $e) {

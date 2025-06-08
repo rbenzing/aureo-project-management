@@ -99,11 +99,16 @@ try {
 // Delete entity function
 function deleteEntity(entityType, id) {
     if (confirm('Are you sure you want to delete this ' + entityType + '?')) {
+        // Get CSRF token from meta tag or session
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                         '<?= $_SESSION['csrf_token'] ?? '' ?>';
+
         fetch('/' + entityType + '/delete/' + id, {
             method: 'DELETE',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
             }
         })
         .then(response => response.json())

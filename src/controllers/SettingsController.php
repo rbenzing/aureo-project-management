@@ -76,6 +76,25 @@ class SettingsController
                     'milestone_show_custom_templates' => '1',
                     'sprint_show_quick_templates' => '1',
                     'sprint_show_custom_templates' => '1'
+                ],
+                'security' => [
+                    'session_samesite' => 'Lax',
+                    'validate_session_domain' => '1',
+                    'regenerate_session_on_auth' => '1',
+                    'csrf_protection_enabled' => '1',
+                    'csrf_ajax_protection' => '1',
+                    'csrf_token_lifetime' => '3600',
+                    'max_input_size' => '1048576',
+                    'strict_input_validation' => '1',
+                    'html_sanitization' => '1',
+                    'validate_redirects' => '1',
+                    'allowed_redirect_domains' => '',
+                    'enable_csp' => '1',
+                    'csp_policy' => 'moderate',
+                    'additional_headers' => '1',
+                    'hide_error_details' => '1',
+                    'log_security_events' => '1',
+                    'rate_limit_attempts' => '60'
                 ]
             ];
 
@@ -119,7 +138,7 @@ class SettingsController
 
         try {
             // Process each category of settings
-            $categories = ['general', 'projects', 'tasks', 'milestones', 'sprints', 'templates'];
+            $categories = ['general', 'projects', 'tasks', 'milestones', 'sprints', 'templates', 'security'];
             
             foreach ($categories as $category) {
                 if (isset($data[$category]) && is_array($data[$category])) {
@@ -186,16 +205,60 @@ class SettingsController
             case 'milestone_show_custom_templates':
             case 'sprint_show_quick_templates':
             case 'sprint_show_custom_templates':
+            // Security boolean settings
+            case 'validate_session_domain':
+            case 'regenerate_session_on_auth':
+            case 'csrf_protection_enabled':
+            case 'csrf_ajax_protection':
+            case 'strict_input_validation':
+            case 'html_sanitization':
+            case 'validate_redirects':
+            case 'enable_csp':
+            case 'additional_headers':
+            case 'hide_error_details':
+            case 'log_security_events':
                 return in_array($value, ['0', '1']) ? $value : '0';
-            
+
             case 'milestone_notification_days':
                 $days = (int)$value;
                 return (string)max(1, min(30, $days)); // Between 1 and 30 days
-            
+
             case 'default_sprint_length':
                 $length = (int)$value;
                 return (string)max(1, min(30, $length)); // Between 1 and 30 days
-            
+
+            // Security numeric settings
+            case 'csrf_token_lifetime':
+                $lifetime = (int)$value;
+                return (string)max(1800, min(86400, $lifetime)); // Between 30 minutes and 24 hours
+
+            case 'max_input_size':
+                $size = (int)$value;
+                return (string)max(262144, min(10485760, $size)); // Between 256KB and 10MB
+
+            case 'rate_limit_attempts':
+                $attempts = (int)$value;
+                return (string)max(0, min(1000, $attempts)); // Between 0 and 1000
+
+            // Security string settings
+            case 'session_samesite':
+                return in_array($value, ['Strict', 'Lax', 'None']) ? $value : 'Lax';
+
+            case 'csp_policy':
+                return in_array($value, ['strict', 'moderate', 'permissive']) ? $value : 'moderate';
+
+            case 'allowed_redirect_domains':
+                // Validate and sanitize domain list
+                $domains = array_filter(
+                    array_map('trim', explode("\n", $value)),
+                    function($domain) {
+                        return !empty($domain) &&
+                               preg_match('/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $domain) &&
+                               filter_var('http://' . $domain, FILTER_VALIDATE_URL);
+                    }
+                );
+                return implode("\n", $domains);
+
             default:
                 return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         }

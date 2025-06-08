@@ -14,6 +14,7 @@ use App\Models\Template;
 use App\Utils\Validator;
 use App\Utils\Time;
 use App\Services\SettingsService;
+use App\Services\SecurityService;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -103,8 +104,8 @@ class TaskController
             header('Location: /tasks');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in TaskController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching tasks.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'TaskController::index', 'An error occurred while fetching tasks.');
             header('Location: /dashboard');
             exit;
         }
@@ -435,8 +436,8 @@ class TaskController
             header('Location: /tasks/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in TaskController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the task.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'TaskController::create', 'An error occurred while creating the task.');
             header('Location: /tasks/create');
             exit;
         }
@@ -767,9 +768,11 @@ class TaskController
 
             $_SESSION['success'] = 'Timer stopped successfully. Time logged: ' . gmdate('H:i:s', $duration);
 
-            // Redirect back to the referring page or task view
+            // Redirect back to the referring page or task view (with security validation)
+            $securityService = SecurityService::getInstance();
             $referer = $_SERVER['HTTP_REFERER'] ?? "/tasks/view/{$taskId}";
-            header("Location: {$referer}");
+            $safeRedirect = $securityService->getSafeRedirectUrl($referer, "/tasks/view/{$taskId}");
+            header("Location: {$safeRedirect}");
             exit;
 
         } catch (InvalidArgumentException $e) {

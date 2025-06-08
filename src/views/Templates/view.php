@@ -13,24 +13,38 @@ use App\Models\Template;
 
 // Parse markdown content for display
 function parseMarkdown($content) {
-    // Simple markdown parsing - convert common markdown to HTML
-    $content = htmlspecialchars($content);
-    
-    // Headers
+    // Use security service for HTML sanitization
+    try {
+        $securityService = \App\Services\SecurityService::getInstance();
+
+        // Apply HTML sanitization based on security settings
+        $settingsService = \App\Services\SettingsService::getInstance();
+        if ($settingsService->isSecurityFeatureEnabled('html_sanitization')) {
+            $content = $securityService->sanitizeRichContent($content);
+        } else {
+            // Fallback to basic sanitization
+            $content = htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+    } catch (\Exception $e) {
+        // Fallback to basic sanitization if security service fails
+        $content = htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    // Headers (only if content is already sanitized)
     $content = preg_replace('/^### (.*$)/m', '<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-4 mb-2">$1</h3>', $content);
     $content = preg_replace('/^## (.*$)/m', '<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-6 mb-3">$1</h2>', $content);
     $content = preg_replace('/^# (.*$)/m', '<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-6 mb-4">$1</h1>', $content);
-    
+
     // Bold and italic
     $content = preg_replace('/\*\*(.*?)\*\*/', '<strong class="font-semibold">$1</strong>', $content);
     $content = preg_replace('/\*(.*?)\*/', '<em class="italic">$1</em>', $content);
-    
+
     // Lists
     $content = preg_replace('/^- (.*$)/m', '<li class="ml-4">• $1</li>', $content);
-    
+
     // Line breaks
     $content = nl2br($content);
-    
+
     return $content;
 }
 ?>

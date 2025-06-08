@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\Milestone;
 use App\Models\Sprint;
 use App\Core\Database;
+use App\Services\SecurityService;
 use RuntimeException;
 use InvalidArgumentException;
 
@@ -71,8 +72,8 @@ class DashboardController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in DashboardController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the dashboard.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'DashboardController::index', 'An error occurred while loading the dashboard.');
             header('Location: /login');
             exit;
         }

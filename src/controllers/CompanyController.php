@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 class CompanyController
 {
@@ -59,8 +60,8 @@ class CompanyController
             
             include __DIR__ . '/../Views/Companies/index.php';
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching companies.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'CompanyController::index', 'An error occurred while fetching companies.');
             header('Location: /dashboard');
             exit;
         }
@@ -175,8 +176,8 @@ class CompanyController
             header('Location: /companies/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in CompanyController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the company.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'CompanyController::create', 'An error occurred while creating the company.');
             header('Location: /companies/create');
             exit;
         }

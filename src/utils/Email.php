@@ -11,6 +11,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+use App\Services\SecurityService;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -116,13 +117,20 @@ class Email {
 
         $domain = Config::get('domain');
         $scheme = Config::get('scheme');
+
+        // Sanitize domain and scheme to prevent header injection
+        $securityService = SecurityService::getInstance();
+        $domain = $securityService->sanitizeHtml($domain);
+        $scheme = $securityService->sanitizeHtml($scheme);
+        $activationToken = $securityService->sanitizeHtml($activationToken);
+
         $activationLink = "$scheme://$domain/activate/{$activationToken}";
-        
+
         $subject = "Activate Your Account";
-        
+
         $body = "<h1>Welcome!</h1>
             <p>Please click the link below to activate your account:</p>
-            <a href='$activationLink'>$activationLink</a>";
+            <a href='" . htmlspecialchars($activationLink, ENT_QUOTES, 'UTF-8') . "'>" . htmlspecialchars($activationLink, ENT_QUOTES, 'UTF-8') . "</a>";
         
         return $emailInstance->sendHtml($email, $subject, $body);
     }
@@ -140,13 +148,20 @@ class Email {
 
         $domain = Config::get('domain');
         $scheme = Config::get('scheme');
+
+        // Sanitize domain and scheme to prevent header injection
+        $securityService = SecurityService::getInstance();
+        $domain = $securityService->sanitizeHtml($domain);
+        $scheme = $securityService->sanitizeHtml($scheme);
+        $resetToken = $securityService->sanitizeHtml($resetToken);
+
         $resetLink = "$scheme://$domain/reset-password/{$resetToken}";
 
         $subject = "Password Reset Request";
 
         $body = "<h1>Password Reset</h1>
             <p>You requested a password reset. Please click the link below to reset your password:</p>
-            <a href='$resetLink'>$resetLink</a>";
+            <a href='" . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . "'>" . htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8') . "</a>";
 
         return $emailInstance->sendHtml($email, $subject, $body);
     }

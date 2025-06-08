@@ -21,21 +21,47 @@ $cspHeader = "Content-Security-Policy: ".
     "base-uri 'self';";
 header($cspHeader);
 
-// additional headers
-header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: DENY");
-header("X-XSS-Protection: 1; mode=block");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Permissions-Policy: geolocation=(), microphone=()");
-
 // Include Composer's autoloader
 require_once BASE_PATH . '/../vendor/autoload.php';
+
+// Apply security headers based on settings
+try {
+    $securityService = \App\Services\SecurityService::getInstance();
+    $securityService->applySecurityHeaders();
+} catch (\Exception $e) {
+    // Fallback to basic security headers if settings not available
+    header("X-Content-Type-Options: nosniff");
+    header("X-Frame-Options: DENY");
+    header("X-XSS-Protection: 1; mode=block");
+    header("Referrer-Policy: strict-origin-when-cross-origin");
+    header("Permissions-Policy: geolocation=(), microphone=()");
+}
 
 // Error handling
 try {
 
     // Load configuration
     \App\Core\Config::init();
+
+    // Security checks
+    $securityService = \App\Services\SecurityService::getInstance();
+
+    // Rate limiting check
+    if (!$securityService->checkRateLimit()) {
+        http_response_code(429);
+        echo "Too many requests. Please try again later.";
+        exit;
+    }
+
+    // Input size validation for POST requests
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = file_get_contents('php://input');
+        if (!$securityService->validateInputSize($input)) {
+            http_response_code(413);
+            echo "Request too large.";
+            exit;
+        }
+    }
 
     // Initialize middleware stack
     (new \App\Middleware\CsrfMiddleware())->handleToken();
@@ -191,11 +217,33 @@ try {
     // Database errors
     error_log($e->getMessage());
     http_response_code(500);
-    echo "Database error occurred";
+
+    // Check if we should hide error details
+    try {
+        $securityService = \App\Services\SecurityService::getInstance();
+        if ($securityService->shouldHideErrorDetails()) {
+            echo "An error occurred. Please try again later.";
+        } else {
+            echo "Database error occurred";
+        }
+    } catch (\Exception $securityException) {
+        echo "Database error occurred";
+    }
 } catch (\Exception $e) {
     // Other errors
     error_log($e->getMessage());
     $code = $e->getCode() ?: 500;
     http_response_code($code);
-    echo $e->getMessage();
+
+    // Check if we should hide error details
+    try {
+        $securityService = \App\Services\SecurityService::getInstance();
+        if ($securityService->shouldHideErrorDetails()) {
+            echo "An error occurred. Please try again later.";
+        } else {
+            echo $e->getMessage();
+        }
+    } catch (\Exception $securityException) {
+        echo "An error occurred. Please try again later.";
+    }
 }

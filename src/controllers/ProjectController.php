@@ -15,6 +15,7 @@ use App\Utils\Validator;
 use App\Utils\Sort;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 class ProjectController
 {
@@ -251,8 +252,8 @@ class ProjectController
             header('Location: /projects/create');
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in ProjectController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the project.';
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'ProjectController::create', 'An error occurred while creating the project.');
             header('Location: /projects/create');
             exit;
         }

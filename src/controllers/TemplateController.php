@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Utils\Validator;
 use RuntimeException;
 use InvalidArgumentException;
+use App\Services\SecurityService;
 
 class TemplateController
 {
@@ -72,9 +73,8 @@ class TemplateController
 
             include __DIR__ . '/../Views/Templates/index.php';
         } catch (\Exception $e) {
-            error_log("Exception in TemplateController::index: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
-            $_SESSION['error'] = 'An error occurred while fetching templates: ' . $e->getMessage();
+            $securityService = SecurityService::getInstance();
+            $_SESSION['error'] = $securityService->handleError($e, 'TemplateController::index', 'An error occurred while fetching templates.');
             header('Location: /dashboard');
             exit;
         }

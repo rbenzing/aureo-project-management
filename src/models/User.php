@@ -9,6 +9,7 @@ use PDO;
 use RuntimeException;
 use InvalidArgumentException;
 use DateTime;
+use App\Services\SecurityService;
 
 /**
  * User Model
@@ -211,7 +212,13 @@ class User extends BaseModel
             
             return $user ?: null;
         } catch (\Exception $e) {
-            throw new RuntimeException("Failed to find user with details: " . $e->getMessage());
+            try {
+                $securityService = SecurityService::getInstance();
+                $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to find user with details");
+                throw new RuntimeException($safeMessage);
+            } catch (\Exception $securityException) {
+                throw new RuntimeException("Failed to find user with details");
+            }
         }
     }
     
