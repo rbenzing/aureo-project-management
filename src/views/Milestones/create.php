@@ -30,7 +30,7 @@ use App\Services\SettingsService;
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-6 flex-grow">
+    <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
@@ -91,7 +91,10 @@ use App\Services\SettingsService;
                             data-epic-url="/api/projects/{id}/epics">
                             <option value="">Select Project</option>
                             <?php foreach ($projects as $project): ?>
-                                <option value="<?= htmlspecialchars((string)$project->id) ?>"><?= htmlspecialchars($project->name) ?></option>
+                                <option value="<?= htmlspecialchars((string)$project->id) ?>"
+                                    <?= ($selectedProjectId && $project->id == $selectedProjectId) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($project->name) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -381,6 +384,11 @@ use App\Services\SettingsService;
 
             // Initial state
             toggleEpicSelection();
+
+            // Load epics if project is pre-selected
+            if (projectSelect.value) {
+                loadEpics();
+            }
         });
     </script>
 </body>

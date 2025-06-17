@@ -41,7 +41,7 @@ $errors = $errors ?? [];
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="container p-6 overflow-y-auto mx-auto">
+    <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 overflow-y-auto">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>

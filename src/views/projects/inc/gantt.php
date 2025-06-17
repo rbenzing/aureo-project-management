@@ -14,24 +14,49 @@ $viewType = $_GET['gantt_type'] ?? 'projects';
 $currentYear = date('Y');
 
 // Get selected project ID (if any)
-$selectedProjectId = isset($_GET['project_id']) ? filter_var($_GET['project_id'], FILTER_VALIDATE_INT) : null;
-$selectedProject = null;
-
-// If project ID is provided, get the specific project details
-if ($selectedProjectId !== null) {
-    foreach ($projects as $project) {
-        if ($project->id == $selectedProjectId) {
-            $selectedProject = $project;
-            break;
-        }
+$selectedProjectId = null;
+if (isset($_GET['project_id']) && !empty($_GET['project_id'])) {
+    $selectedProjectId = filter_var($_GET['project_id'], FILTER_VALIDATE_INT);
+    // If filter_var returns false, set to null
+    if ($selectedProjectId === false) {
+        $selectedProjectId = null;
     }
 }
+$selectedProject = null;
 
 // Load all available projects for the dropdown if not already passed from controller
 if (!isset($allProjects) || empty($allProjects)) {
-    $projectModel = new \App\Models\Project();
-    $allProjects = $projectModel->getAll(['is_deleted' => 0])['records'];
+    try {
+        $projectModel = new \App\Models\Project();
+        $allProjects = $projectModel->getAll(['is_deleted' => 0])['records'];
+    } catch (\Exception $e) {
+        error_log("Error loading projects for gantt dropdown: " . $e->getMessage());
+        $allProjects = [];
+    }
 }
+
+// If project ID is provided, get the specific project details with full data
+if ($selectedProjectId !== null) {
+    try {
+        $projectModel = new \App\Models\Project();
+        $selectedProject = $projectModel->findWithDetails($selectedProjectId);
+
+        // If project not found or deleted, reset selection
+        if (!$selectedProject || $selectedProject->is_deleted) {
+            $selectedProject = null;
+            $selectedProjectId = null;
+        }
+    } catch (\Exception $e) {
+        error_log("Error loading project details for gantt: " . $e->getMessage());
+        $selectedProject = null;
+        $selectedProjectId = null;
+    }
+}
+
+// Initialize data arrays
+$tasks = [];
+$milestones = [];
+$sprints = [];
 
 // Get data for the selected view type
 if ($selectedProject !== null) {
@@ -42,6 +67,21 @@ if ($selectedProject !== null) {
         $milestones = $selectedProject->milestones;
     } elseif ($viewType === 'sprints' && isset($selectedProject->sprints)) {
         $sprints = $selectedProject->sprints;
+
+        // For sprints view, we also need to load tasks for each sprint
+        if (!empty($sprints)) {
+            try {
+                $sprintModel = new \App\Models\Sprint();
+                foreach ($sprints as $sprint) {
+                    if (!isset($sprint->tasks)) {
+                        $sprint->tasks = $sprintModel->getSprintTasks($sprint->id);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log("Error loading sprint tasks for gantt: " . $e->getMessage());
+                // Continue with sprints but without tasks
+            }
+        }
     }
 } else {
     // When viewing all projects (default)
@@ -266,7 +306,7 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
         <div class="min-w-[1200px]">
             <!-- Timeline header -->
             <div class="flex border-b border-gray-200 dark:border-gray-700">
-                <div class="w-48 p-3 font-medium text-gray-700 dark:text-gray-300">
+                <div class="w-1/4 p-3 font-medium text-gray-700 dark:text-gray-300">
                     <?php if ($viewType === 'projects'): ?>
                         Project
                     <?php elseif ($viewType === 'tasks'): ?>
@@ -277,7 +317,7 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                         Sprint
                     <?php endif; ?>
                 </div>
-                
+
                 <?php foreach ($dateRanges as $range): ?>
                     <div class="flex-1 p-3 text-center border-l border-gray-200 dark:border-gray-700 font-medium text-gray-700 dark:text-gray-300">
                         <?= $range['label'] ?>
@@ -287,13 +327,22 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
             
             <!-- PROJECTS GANTT -->
             <?php if ($viewType === 'projects'): ?>
-                <?php if (!empty($projects)): ?>
-                    <?php foreach ($projects as $project): 
-                        // Skip if selectedProject is set and this isn't it
-                        if ($selectedProjectId !== null && $selectedProjectId != $project->id) continue;
-                    ?>
-                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-indigo-800 dark:hover:bg-gray-750">
-                            <div class="w-48 p-3">
+                <?php
+                // Determine which projects to display
+                $projectsToDisplay = [];
+                if ($selectedProject !== null) {
+                    // Show only the selected project
+                    $projectsToDisplay = [$selectedProject];
+                } else {
+                    // Show all projects
+                    $projectsToDisplay = $projects ?? [];
+                }
+                ?>
+
+                <?php if (!empty($projectsToDisplay)): ?>
+                    <?php foreach ($projectsToDisplay as $project): ?>
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-1/4 p-3">
                                 <a href="/projects/view/<?= $project->id ?>" class="group">
                                     <div class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                         <?= htmlspecialchars($project->name) ?>
@@ -303,8 +352,8 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                                     </div>
                                 </a>
                             </div>
-                            
-                            <?php foreach ($dateRanges as $range): 
+
+                            <?php foreach ($dateRanges as $range):
                                 $inRange = isInRange($project->start_date ?? null, $project->end_date ?? null, $range['start'], $range['end']);
                                 $statusColor = getStatusColor($project->status_id ?? 0, 'project');
                             ?>
@@ -320,7 +369,11 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="p-6 text-center text-gray-400">
-                        No projects found. Create your first project to visualize the gantt.
+                        <?php if ($selectedProject !== null): ?>
+                            Project not found or has no data to display.
+                        <?php else: ?>
+                            No projects found. Create your first project to visualize the gantt.
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 
@@ -328,8 +381,8 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
             <?php elseif ($viewType === 'tasks'): ?>
                 <?php if (!empty($tasks)): ?>
                     <?php foreach ($tasks as $task): ?>
-                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
-                            <div class="w-48 p-3">
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-1/4 p-3">
                                 <a href="/tasks/view/<?= $task->id ?>" class="group">
                                     <div class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                         <?= htmlspecialchars($task->title) ?>
@@ -364,8 +417,8 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
             <?php elseif ($viewType === 'milestones'): ?>
                 <?php if (!empty($milestones)): ?>
                     <?php foreach ($milestones as $milestone): ?>
-                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
-                            <div class="w-48 p-3">
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-1/4 p-3">
                                 <a href="/milestones/view/<?= $milestone->id ?>" class="group">
                                     <div class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                         <?= htmlspecialchars($milestone->title) ?>
@@ -400,8 +453,8 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
             <?php elseif ($viewType === 'sprints'): ?>
                 <?php if (!empty($sprints)): ?>
                     <?php foreach ($sprints as $sprint): ?>
-                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
-                            <div class="w-48 p-3">
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-1/4 p-3">
                                 <a href="/sprints/view/<?= $sprint->id ?>" class="group">
                                     <div class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                         <?= htmlspecialchars($sprint->name) ?>
@@ -429,8 +482,8 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                         <?php if (isset($sprint->tasks) && !empty($sprint->tasks)): ?>
                             <!-- Sprint Tasks Subgrid -->
                             <?php foreach ($sprint->tasks as $task): ?>
-                                <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 bg-gray-50 dark:bg-gray-900/20">
-                                    <div class="w-48 p-3 pl-8">
+                                <div class="flex border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 bg-gray-50 dark:bg-gray-900/20 transition-colors">
+                                    <div class="w-1/4 p-3 pl-8">
                                         <a href="/tasks/view/<?= $task->id ?>" class="group">
                                             <div class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                                 <?= htmlspecialchars($task->title) ?>

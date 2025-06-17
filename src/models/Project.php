@@ -428,8 +428,8 @@ class Project extends BaseModel
     }
 
     /**
-     * Get recent tasks by user
-     * 
+     * Get recent projects by user (projects where user has tasks or is owner)
+     *
      * @param int $userId
      * @param int $limit
      * @return array
@@ -437,32 +437,43 @@ class Project extends BaseModel
     public function getRecentByUser(int $userId, int $limit = 15): array
     {
         try {
-            $sql = "SELECT t.*, 
-                   p.name as project_name,
-                   ts.name as status_name
-            FROM tasks t
-            LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN statuses_task ts ON t.status_id = ts.id
-            WHERE t.assigned_to = :user_id 
-            AND t.is_deleted = 0
-            ORDER BY 
-                CASE 
-                    WHEN t.due_date < CURDATE() THEN 0  -- Overdue
-                    WHEN t.due_date = CURDATE() THEN 1  -- Due today
-                    ELSE 2                             -- Due later
-                END,
-                t.due_date ASC,
-                t.priority DESC
-            LIMIT :limit";
+            $sql = "SELECT DISTINCT p.*,
+                           c.name as company_name,
+                           ps.name as status_name,
+                           GREATEST(p.updated_at, COALESCE(MAX(t.updated_at), p.updated_at)) as last_activity
+                    FROM projects p
+                    LEFT JOIN companies c ON p.company_id = c.id
+                    LEFT JOIN statuses_project ps ON p.status_id = ps.id
+                    LEFT JOIN tasks t ON p.id = t.project_id AND t.assigned_to = :user_id AND t.is_deleted = 0
+                    WHERE (
+                        p.owner_id = :user_id
+                        OR EXISTS (
+                            SELECT 1 FROM tasks t2
+                            WHERE t2.project_id = p.id
+                            AND t2.assigned_to = :user_id
+                            AND t2.is_deleted = 0
+                        )
+                    )
+                    AND p.is_deleted = 0
+                    GROUP BY p.id, p.name, p.description, p.status_id, p.owner_id,
+                             p.company_id, p.start_date, p.due_date, p.created_at,
+                             p.updated_at, p.is_deleted, c.name, ps.name
+                    ORDER BY last_activity DESC
+                    LIMIT :limit";
 
             $stmt = $this->db->executeQuery($sql, [
                 ':user_id' => $userId,
                 ':limit' => $limit
             ]);
 
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $results = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // Debug logging to help troubleshoot
+            error_log("Recent projects query for user $userId returned " . count($results) . " results (projects where user is owner or has assigned tasks)");
+
+            return $results;
         } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching recent tasks: " . $e->getMessage());
+            throw new RuntimeException("Error fetching recent projects: " . $e->getMessage());
         }
     }
 }

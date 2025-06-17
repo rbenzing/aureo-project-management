@@ -22,7 +22,7 @@ try {
 ?>
 
 <footer class="bg-gray-800 text-white py-4 mt-auto">
-    <div class="container mx-auto px-4 text-center text-sm">
+    <div class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 text-center text-sm">
         &copy; <?php echo $currentYear; ?> <?php echo htmlspecialchars(Config::get('company_name')); ?>, All rights reserved.
     </div>
 </footer>

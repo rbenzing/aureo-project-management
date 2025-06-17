@@ -22,7 +22,7 @@ function hasHeaderPermission($permission)
 }
 ?>
 <header class="bg-indigo-600 text-white shadow-md">
-    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 flex justify-between items-center">
         <div class="flex flex-row items-center">
             <button id="sidebar-toggle" class="block bg-indigo-600 text-white p-2 rounded z-10" aria-label="Toggle Sidebar">
             ☰

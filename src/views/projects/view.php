@@ -62,7 +62,7 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
 
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
-    <main class="container mx-auto p-6">
+    <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>

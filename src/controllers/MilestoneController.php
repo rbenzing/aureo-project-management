@@ -141,7 +141,11 @@ class MilestoneController
             $projectsResult = $this->projectModel->getAll(['is_deleted' => 0], 1, 1000);
             $projects = $projectsResult['records'];
             $statuses = $this->milestoneModel->getMilestoneStatuses();
-            $epics = $this->milestoneModel->getProjectEpics($data['project_id'] ?? 0);
+            $projectId = filter_var($data['project_id'] ?? 0, FILTER_VALIDATE_INT);
+            $epics = $this->milestoneModel->getProjectEpics($projectId ?: 0);
+
+            // Store the selected project ID for the view
+            $selectedProjectId = $projectId ?: 0;
 
             // Get company ID from user session if available
             $companyId = $_SESSION['user']['profile']['company_id'] ?? null;

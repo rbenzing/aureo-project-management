@@ -26,7 +26,7 @@ use \App\Core\Config;
     <?php include BASE_PATH . '/../src/Views/Layouts/header.php'; ?>
 
     <!-- Main Content -->
-    <main class="container grow h-max mx-auto flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <main class="w-full grow h-max flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div class="p-6 sm:p-8">
                 <!-- Logo and Header -->

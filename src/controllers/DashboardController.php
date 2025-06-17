@@ -63,17 +63,64 @@ class DashboardController
             $userPermissions = $_SESSION['user']['permissions'] ?? [];
 
             // Fetch dashboard data only if user has relevant permissions
-            $dashboardData = $this->getDashboardData($userId, $userPermissions);
+            try {
+                $dashboardData = $this->getDashboardData($userId, $userPermissions);
+            } catch (\Exception $e) {
+                // Log the error but don't redirect to login - show error on dashboard
+                error_log("Dashboard data fetch error: " . $e->getMessage());
+                $_SESSION['error'] = 'Some dashboard data could not be loaded: ' . $e->getMessage();
+
+                // Provide empty dashboard data structure so the page can still render
+                $dashboardData = [
+                    'recent_projects' => [],
+                    'recent_tasks' => [],
+                    'upcoming_milestones' => [],
+                    'task_summary' => [
+                        'total' => 0,
+                        'completed' => 0,
+                        'in_progress' => 0,
+                        'overdue' => 0,
+                        'sprint_ready' => 0,
+                        'backlog_items' => 0,
+                        'bugs' => 0
+                    ],
+                    'time_tracking_summary' => [
+                        'total_hours' => 0,
+                        'billable_hours' => 0,
+                        'this_week' => 0,
+                        'this_month' => 0
+                    ],
+                    'project_summary' => [
+                        'total' => 0,
+                        'in_progress' => 0,
+                        'completed' => 0,
+                        'delayed' => 0,
+                        'on_hold' => 0
+                    ],
+                    'active_timer' => null,
+                    'active_sprints' => [],
+                    'story_points_summary' => [
+                        'this_week' => 0,
+                        'total' => 0,
+                        'completed' => 0,
+                        'remaining' => 0
+                    ],
+                    'task_type_distribution' => [
+                        'story' => 0,
+                        'bug' => 0,
+                        'task' => 0,
+                        'epic' => 0
+                    ],
+                    'priority_tasks' => []
+                ];
+            }
 
             include __DIR__ . '/../Views/Dashboard/index.php';
 
-        } catch (RuntimeException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /login');
-            exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'DashboardController::index', 'An error occurred while loading the dashboard.');
+            // Only redirect to login for actual authentication/authorization errors
+            error_log("Critical dashboard error: " . $e->getMessage());
+            $_SESSION['error'] = 'A critical error occurred while loading the dashboard.';
             header('Location: /login');
             exit;
         }
@@ -135,81 +182,139 @@ class DashboardController
 
             // Only fetch data if user has relevant permissions
             if (in_array('view_projects', $userPermissions)) {
-                $dashboardData['recent_projects'] = $this->projectModel->getRecentByUser($userId, 5);
+                try {
+                    $dashboardData['recent_projects'] = $this->projectModel->getRecentByUser($userId, 5);
+                    error_log("Dashboard: Fetched " . count($dashboardData['recent_projects']) . " recent projects for user $userId");
+                } catch (\Exception $e) {
+                    error_log("Error fetching recent projects: " . $e->getMessage());
+                    $dashboardData['recent_projects'] = [];
+                }
             }
 
             if (in_array('view_tasks', $userPermissions)) {
-                $dashboardData['recent_tasks'] = $this->taskModel->getByUserId($userId, 15);
-                $dashboardData['priority_tasks'] = $this->getPriorityTasks($userId);
-                $dashboardData['task_type_distribution'] = $this->getTaskTypeDistribution($userId);
-                $dashboardData['story_points_summary'] = $this->getStoryPointsSummary($userId);
+                try {
+                    $dashboardData['recent_tasks'] = $this->taskModel->getByUserId($userId, 15);
+                    error_log("Dashboard: Fetched " . count($dashboardData['recent_tasks']) . " recent tasks for user $userId");
+
+                    $dashboardData['priority_tasks'] = $this->getPriorityTasks($userId);
+                    error_log("Dashboard: Fetched " . count($dashboardData['priority_tasks']) . " priority tasks for user $userId");
+
+                    $dashboardData['task_type_distribution'] = $this->getTaskTypeDistribution($userId);
+                    error_log("Dashboard: Task type distribution - " . json_encode($dashboardData['task_type_distribution']));
+
+                    $dashboardData['story_points_summary'] = $this->getStoryPointsSummary($userId);
+                    error_log("Dashboard: Story points summary - " . json_encode($dashboardData['story_points_summary']));
+                } catch (\Exception $e) {
+                    error_log("Error fetching task data: " . $e->getMessage());
+                    // Keep default empty values for task data
+                }
             }
 
             if (in_array('view_milestones', $userPermissions)) {
-                $dashboardData['upcoming_milestones'] = $this->milestoneModel->getAllWithProgress(5, 1, [
-                    'due_date' => ['>', date('Y-m-d')],
-                    'is_deleted' => 0
-                ]);
+                try {
+                    $dashboardData['upcoming_milestones'] = $this->milestoneModel->getAllWithProgress(5, 1, [
+                        'due_date' => ['>', date('Y-m-d')],
+                        'is_deleted' => 0
+                    ]);
+                    error_log("Dashboard: Fetched " . count($dashboardData['upcoming_milestones']) . " upcoming milestones");
+                } catch (\Exception $e) {
+                    error_log("Error fetching milestones: " . $e->getMessage());
+                    $dashboardData['upcoming_milestones'] = [];
+                }
             }
 
             // Enhanced Task summary with new metrics - only if user has task permissions
             if (in_array('view_tasks', $userPermissions)) {
-                $dashboardData['task_summary'] = $this->getTaskSummary($userId);
+                try {
+                    $dashboardData['task_summary'] = $this->getTaskSummary($userId);
+                    error_log("Dashboard: Task summary - " . json_encode($dashboardData['task_summary']));
+                } catch (\Exception $e) {
+                    error_log("Error fetching task summary: " . $e->getMessage());
+                    // Keep default empty values
+                }
             }
 
             // Enhanced Time tracking summary - only if user has time tracking permissions
             if (in_array('view_time_tracking', $userPermissions)) {
-                $dashboardData['time_tracking_summary'] = [
-                    'total_hours' => $this->taskModel->getTotalTimeSpent($userId),
-                    'billable_hours' => $this->taskModel->getTotalBillableTime($userId),
-                    'this_week' => $this->taskModel->getWeeklyTimeSpent($userId),
-                    'this_month' => $this->taskModel->getMonthlyTimeSpent($userId)
-                ];
+                try {
+                    $dashboardData['time_tracking_summary'] = [
+                        'total_hours' => $this->taskModel->getTotalTimeSpent($userId),
+                        'billable_hours' => $this->taskModel->getTotalBillableTime($userId),
+                        'this_week' => $this->taskModel->getWeeklyTimeSpent($userId),
+                        'this_month' => $this->taskModel->getMonthlyTimeSpent($userId)
+                    ];
+                    error_log("Dashboard: Time tracking summary - " . json_encode($dashboardData['time_tracking_summary']));
+                } catch (\Exception $e) {
+                    error_log("Error fetching time tracking data: " . $e->getMessage());
+                    // Keep default empty values
+                }
             }
 
             // Project status summary - only if user has project permissions
             if (in_array('view_projects', $userPermissions)) {
-                $dashboardData['project_summary'] = [
-                    'total' => $this->projectModel->count(['owner_id' => $userId, 'is_deleted' => 0]),
-                    'in_progress' => $this->projectModel->count([
-                        'owner_id' => $userId,
-                        'status_id' => 2, // In Progress status
-                        'is_deleted' => 0
-                    ]),
-                    'completed' => $this->projectModel->count([
-                        'owner_id' => $userId,
-                        'status_id' => 3, // Completed status
-                        'is_deleted' => 0
-                    ]),
-                    'delayed' => $this->projectModel->count([
-                        'owner_id' => $userId,
-                        'status_id' => 6, // Delayed status
-                        'is_deleted' => 0
-                    ]),
-                    'on_hold' => $this->projectModel->count([
-                        'owner_id' => $userId,
-                        'status_id' => 4, // On Hold status
-                        'is_deleted' => 0
-                    ])
-                ];
+                try {
+                    $dashboardData['project_summary'] = [
+                        'total' => $this->projectModel->count(['owner_id' => $userId, 'is_deleted' => 0]),
+                        'in_progress' => $this->projectModel->count([
+                            'owner_id' => $userId,
+                            'status_id' => 2, // In Progress status
+                            'is_deleted' => 0
+                        ]),
+                        'completed' => $this->projectModel->count([
+                            'owner_id' => $userId,
+                            'status_id' => 3, // Completed status
+                            'is_deleted' => 0
+                        ]),
+                        'delayed' => $this->projectModel->count([
+                            'owner_id' => $userId,
+                            'status_id' => 6, // Delayed status
+                            'is_deleted' => 0
+                        ]),
+                        'on_hold' => $this->projectModel->count([
+                            'owner_id' => $userId,
+                            'status_id' => 4, // On Hold status
+                            'is_deleted' => 0
+                        ])
+                    ];
+                    error_log("Dashboard: Project summary - " . json_encode($dashboardData['project_summary']));
+                } catch (\Exception $e) {
+                    error_log("Error fetching project summary: " . $e->getMessage());
+                    // Keep default empty values
+                }
             }
 
             // Active sprints with enhanced data - only if user has sprint permissions
             if (in_array('view_sprints', $userPermissions)) {
-                $dashboardData['active_sprints'] = $this->sprintModel->getProjectSprints($userId, 'active');
+                try {
+                    $dashboardData['active_sprints'] = $this->sprintModel->getProjectSprints($userId, 'active');
+                    error_log("Dashboard: Fetched " . count($dashboardData['active_sprints']) . " active sprints for user $userId");
+                } catch (\Exception $e) {
+                    error_log("Error fetching active sprints: " . $e->getMessage());
+                    $dashboardData['active_sprints'] = [];
+                }
             }
 
             // Active timer check - only if user has time tracking permissions
             if (in_array('view_time_tracking', $userPermissions)) {
-                $activeTimer = $_SESSION['active_timer'] ?? null;
-                if ($activeTimer) {
-                    $activeTask = $this->taskModel->find($activeTimer['task_id']);
-                    if ($activeTask && !$activeTask->is_deleted) {
-                        $activeTimer['task'] = $activeTask;
-                        $activeTimer['duration'] = time() - $activeTimer['start_time'];
+                try {
+                    $activeTimer = $_SESSION['active_timer'] ?? null;
+                    if ($activeTimer) {
+                        $activeTask = $this->taskModel->find($activeTimer['task_id']);
+                        if ($activeTask && !$activeTask->is_deleted) {
+                            $activeTimer['task'] = $activeTask;
+                            $activeTimer['duration'] = time() - $activeTimer['start_time'];
+                            error_log("Dashboard: Active timer found for task " . $activeTimer['task_id'] . " (" . $activeTask->title . ")");
+                        } else {
+                            error_log("Dashboard: Active timer references deleted/missing task " . $activeTimer['task_id']);
+                        }
+                    } else {
+                        error_log("Dashboard: No active timer for user $userId");
                     }
+                    $dashboardData['active_timer'] = $activeTimer;
+                } catch (\Exception $e) {
+                    error_log("Error processing active timer: " . $e->getMessage());
+                    $dashboardData['active_timer'] = null;
                 }
-                $dashboardData['active_timer'] = $activeTimer;
             }
 
             return $dashboardData;
@@ -268,12 +373,15 @@ class DashboardController
             $stmt = $db->executeQuery($sql, [':user_id' => $userId]);
             $completedPoints = (int) $stmt->fetchColumn();
 
-            return [
+            $result = [
                 'this_week' => $weeklyPoints,
                 'total' => $totalPoints,
                 'completed' => $completedPoints,
                 'remaining' => $totalPoints - $completedPoints
             ];
+
+            error_log("Story points calculation for user $userId: " . json_encode($result));
+            return $result;
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating story points summary: " . $e->getMessage());
         }
@@ -311,6 +419,7 @@ class DashboardController
                 $distribution[$result['task_type']] = (int) $result['count'];
             }
 
+            error_log("Task type distribution for user $userId: " . json_encode($distribution));
             return $distribution;
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating task type distribution: " . $e->getMessage());
@@ -351,7 +460,10 @@ class DashboardController
                     LIMIT 5";
 
             $stmt = $db->executeQuery($sql, [':user_id' => $userId]);
-            return $stmt->fetchAll(\PDO::FETCH_OBJ);
+            $results = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            error_log("Priority tasks for user $userId: " . count($results) . " tasks found");
+            return $results;
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching priority tasks: " . $e->getMessage());
         }
@@ -461,7 +573,10 @@ class DashboardController
                     )";
 
             $stmt = $db->executeQuery($sql, [':user_id' => $userId]);
-            return (int) $stmt->fetchColumn();
+            $count = (int) $stmt->fetchColumn();
+
+            error_log("Backlog count for user $userId: $count items");
+            return $count;
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting user backlog items: " . $e->getMessage());
         }

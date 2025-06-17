@@ -44,8 +44,88 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-6 flex-grow">
+    <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
+
+        <!-- Debug Information -->
+        <?php if (isset($_GET['debug'])): ?>
+            <div class="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+                <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-3">🐛 Dashboard Debug Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                    <!-- User Info -->
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">User Info</h4>
+                        <div class="text-xs space-y-1">
+                            <div>ID: <?= $_SESSION['user']['profile']['id'] ?? 'Not set' ?></div>
+                            <div>Name: <?= htmlspecialchars(($_SESSION['user']['profile']['first_name'] ?? '') . ' ' . ($_SESSION['user']['profile']['last_name'] ?? '')) ?></div>
+                            <div>Permissions: <?= count($_SESSION['user']['permissions'] ?? []) ?> total</div>
+                        </div>
+                    </div>
+
+                    <!-- Projects Debug -->
+                    <?php if (hasUserPermission('view_projects')): ?>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Projects</h4>
+                        <div class="text-xs space-y-1">
+                            <div>Recent: <?= count($dashboardData['recent_projects'] ?? []) ?></div>
+                            <div>Summary Total: <?= $dashboardData['project_summary']['total'] ?? 0 ?></div>
+                            <div>In Progress: <?= $dashboardData['project_summary']['in_progress'] ?? 0 ?></div>
+                            <div>Completed: <?= $dashboardData['project_summary']['completed'] ?? 0 ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Tasks Debug -->
+                    <?php if (hasUserPermission('view_tasks')): ?>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Tasks</h4>
+                        <div class="text-xs space-y-1">
+                            <div>Recent: <?= count($dashboardData['recent_tasks'] ?? []) ?></div>
+                            <div>Priority: <?= count($dashboardData['priority_tasks'] ?? []) ?></div>
+                            <div>Total: <?= $dashboardData['task_summary']['total'] ?? 0 ?></div>
+                            <div>Completed: <?= $dashboardData['task_summary']['completed'] ?? 0 ?></div>
+                            <div>Overdue: <?= $dashboardData['task_summary']['overdue'] ?? 0 ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Milestones Debug -->
+                    <?php if (hasUserPermission('view_milestones')): ?>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Milestones</h4>
+                        <div class="text-xs space-y-1">
+                            <div>Upcoming: <?= count($dashboardData['upcoming_milestones'] ?? []) ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Time Tracking Debug -->
+                    <?php if (hasUserPermission('view_time_tracking')): ?>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Time Tracking</h4>
+                        <div class="text-xs space-y-1">
+                            <div>Total Hours: <?= number_format(($dashboardData['time_tracking_summary']['total_hours'] ?? 0) / 3600, 1) ?></div>
+                            <div>This Week: <?= number_format(($dashboardData['time_tracking_summary']['this_week'] ?? 0) / 3600, 1) ?></div>
+                            <div>Active Timer: <?= isset($dashboardData['active_timer']) && $dashboardData['active_timer'] ? 'Yes' : 'No' ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Sprints Debug -->
+                    <?php if (hasUserPermission('view_sprints')): ?>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded border">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Sprints</h4>
+                        <div class="text-xs space-y-1">
+                            <div>Active: <?= count($dashboardData['active_sprints'] ?? []) ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div class="mt-3 text-xs text-yellow-700 dark:text-yellow-300">
+                    💡 Check browser console and server logs for detailed debug information. Remove ?debug=1 from URL to hide this panel.
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Breadcrumb -->
         <?= Breadcrumb::render('dashboard', []) ?>
@@ -427,6 +507,18 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                 
                 <!-- Upcoming Tasks Tab -->
                 <div class="p-4 task-content" id="upcoming-tasks">
+                    <?php
+                    // Debug info for tasks
+                    if (isset($_GET['debug'])) {
+                        echo "<div class='mb-4 p-2 bg-green-100 text-black text-xs'>";
+                        echo "<strong>Tasks Debug:</strong><br>";
+                        echo "• Recent tasks: " . count($dashboardData['recent_tasks'] ?? []) . "<br>";
+                        echo "• Priority tasks: " . count($dashboardData['priority_tasks'] ?? []) . "<br>";
+                        echo "• Task types: " . json_encode($dashboardData['task_type_distribution'] ?? []) . "<br>";
+                        echo "• Story points this week: " . ($dashboardData['story_points_summary']['this_week'] ?? 0) . "<br>";
+                        echo "</div>";
+                    }
+                    ?>
                     <?php 
                     $upcomingTasks = array_filter($dashboardData['recent_tasks'], function($task) {
                         return !empty($task->due_date) &&
@@ -689,6 +781,24 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                     </div>
 
                     <div class="p-4">
+                        <?php
+                        // Temporary debug info
+                        if (isset($_GET['debug'])) {
+                            echo "<div class='mb-4 p-2 bg-yellow-100 text-black text-xs'>";
+                            echo "<strong>Recent Projects Debug:</strong><br>";
+                            echo "• Projects count: " . count($dashboardData['recent_projects'] ?? []) . "<br>";
+                            echo "• User has view_projects permission: " . (hasUserPermission('view_projects') ? 'Yes' : 'No') . "<br>";
+                            echo "• Current user ID: " . ($_SESSION['user']['profile']['id'] ?? 'Not set') . "<br>";
+                            echo "• Query filters: Projects where user is owner OR has assigned tasks<br>";
+                            if (!empty($dashboardData['recent_projects'])) {
+                                echo "• First project: " . htmlspecialchars($dashboardData['recent_projects'][0]->name ?? 'No name') . "<br>";
+                                echo "• Project owner: " . ($dashboardData['recent_projects'][0]->owner_id ?? 'Not set') . "<br>";
+                            } else {
+                                echo "• No projects found - user may not own any projects or have assigned tasks<br>";
+                            }
+                            echo "</div>";
+                        }
+                        ?>
                         <?php if (!empty($dashboardData['recent_projects'])): ?>
                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                 <?php foreach (array_slice($dashboardData['recent_projects'], 0, 4) as $project): ?>
@@ -696,7 +806,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
                                                 <a href="/projects/view/<?= $project->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                                    <?= htmlspecialchars($project->project_name) ?>
+                                                    <?= htmlspecialchars($project->name) ?>
                                                 </a>
                                                 <div class="text-xs text-gray-500 dark:text-gray-400">
                                                     <?= htmlspecialchars($project->company_name ?? '') ?>
@@ -743,6 +853,20 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                     </div>
 
                     <div class="p-4">
+                        <?php
+                        // Debug info for milestones
+                        if (isset($_GET['debug'])) {
+                            echo "<div class='mb-4 p-2 bg-blue-100 text-black text-xs'>";
+                            echo "<strong>Milestones Debug:</strong><br>";
+                            echo "• Count: " . count($dashboardData['upcoming_milestones'] ?? []) . "<br>";
+                            echo "• Filter: due_date > " . date('Y-m-d') . " AND is_deleted = 0<br>";
+                            if (!empty($dashboardData['upcoming_milestones'])) {
+                                echo "• First milestone: " . htmlspecialchars($dashboardData['upcoming_milestones'][0]->title ?? 'No title') . "<br>";
+                                echo "• Due date: " . ($dashboardData['upcoming_milestones'][0]->due_date ?? 'Not set') . "<br>";
+                            }
+                            echo "</div>";
+                        }
+                        ?>
                         <?php if (!empty($dashboardData['upcoming_milestones'])): ?>
                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                 <?php foreach (array_slice($dashboardData['upcoming_milestones'], 0, 4) as $milestone): ?>
@@ -908,7 +1032,27 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                         View All →
                     </a>
                 </div>
-            
+
+            <?php
+            // Debug info for active sprints
+            if (isset($_GET['debug'])) {
+                echo "<div class='mb-4 p-2 bg-purple-100 text-black text-xs'>";
+                echo "<strong>Active Sprints Debug:</strong><br>";
+                echo "• Count: " . count($dashboardData['active_sprints'] ?? []) . "<br>";
+                echo "• Filter: status = 'active' for user projects<br>";
+                if (!empty($dashboardData['active_sprints'])) {
+                    $sprint = $dashboardData['active_sprints'][0];
+                    echo "• First sprint: " . htmlspecialchars($sprint->name ?? 'No name') . "<br>";
+                    echo "• Start date: " . ($sprint->start_date ?? 'Not set') . "<br>";
+                    echo "• End date: " . ($sprint->end_date ?? 'Not set') . "<br>";
+                    echo "• Status: " . ($sprint->status_name ?? 'Unknown') . "<br>";
+                } else {
+                    echo "• No active sprints found for user's projects<br>";
+                }
+                echo "</div>";
+            }
+            ?>
+
             <?php if (isset($dashboardData['active_sprints']) && !empty($dashboardData['active_sprints'])): ?>
                 <ul class="space-y-4">
                     <?php foreach (array_slice($dashboardData['active_sprints'], 0, 3) as $sprint): 
@@ -989,6 +1133,21 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
 <!-- JavaScript for Active Timer and Tab Switching -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Debug logging to console
+        <?php if (isset($_GET['debug'])): ?>
+        console.log('🐛 Dashboard Debug Data:', {
+            user_id: <?= $_SESSION['user']['profile']['id'] ?? 'null' ?>,
+            permissions: <?= json_encode($_SESSION['user']['permissions'] ?? []) ?>,
+            recent_projects: <?= json_encode($dashboardData['recent_projects'] ?? []) ?>,
+            recent_tasks: <?= json_encode($dashboardData['recent_tasks'] ?? []) ?>,
+            task_summary: <?= json_encode($dashboardData['task_summary'] ?? []) ?>,
+            project_summary: <?= json_encode($dashboardData['project_summary'] ?? []) ?>,
+            time_tracking: <?= json_encode($dashboardData['time_tracking_summary'] ?? []) ?>,
+            active_timer: <?= json_encode($dashboardData['active_timer'] ?? null) ?>,
+            upcoming_milestones: <?= json_encode($dashboardData['upcoming_milestones'] ?? []) ?>,
+            active_sprints: <?= json_encode($dashboardData['active_sprints'] ?? []) ?>
+        });
+        <?php endif; ?>
         // Active timer counter
         const activeTimerElement = document.getElementById('active-timer');
         if (activeTimerElement) {
