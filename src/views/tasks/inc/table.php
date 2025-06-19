@@ -12,37 +12,7 @@ use App\Utils\Time;
 
 include_once __DIR__ . '/helper_functions.php';
 
-// Define task status labels and colors to match projects style
-$taskStatusMap = [
-    1 => [
-        'label' => 'OPEN',
-        'color' => 'bg-blue-600'
-    ],
-    2 => [
-        'label' => 'IN PROGRESS',
-        'color' => 'bg-yellow-500'
-    ],
-    3 => [
-        'label' => 'ON HOLD',
-        'color' => 'bg-purple-500'
-    ],
-    4 => [
-        'label' => 'IN REVIEW',
-        'color' => 'bg-indigo-500'
-    ],
-    5 => [
-        'label' => 'CLOSED',
-        'color' => 'bg-gray-500'
-    ],
-    6 => [
-        'label' => 'COMPLETED',
-        'color' => 'bg-green-500'
-    ],
-    7 => [
-        'label' => 'CANCELLED',
-        'color' => 'bg-red-500'
-    ]
-];
+// Using centralized status helper system
 ?>
 
 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -71,7 +41,8 @@ $taskStatusMap = [
                 data-priority="<?= $task->priority ?>"
                 data-status="<?= $task->status_name ?>"
                 data-due-date="<?= $task->due_date ?? '' ?>"
-                data-assigned="<?= !empty($task->first_name) ? $task->first_name . ' ' . $task->last_name : '' ?>">
+                data-assigned="<?= !empty($task->first_name) ? $task->first_name . ' ' . $task->last_name : '' ?>"
+                data-is-subtask="<?= $task->is_subtask ? '1' : '0' ?>">
                 <td class="px-6 py-4">
                     <div class="flex items-center">
                         <?php if ($task->is_subtask): ?>
@@ -134,13 +105,10 @@ $taskStatusMap = [
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <?php
-                    // Get status info using the same style as projects
                     $statusId = $task->status_id ?? 1;
-                    $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                    $statusInfo = getTaskStatusInfo($statusId);
+                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
                     ?>
-                    <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $statusInfo['color'] ?>">
-                        <?= $statusInfo['label'] ?>
-                    </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <?php if (!empty($task->due_date)): ?>

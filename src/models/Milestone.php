@@ -205,15 +205,21 @@ class Milestone extends BaseModel
                 p.name AS project_name,
                 s.name AS status_name,
                 CASE
-                    WHEN m.start_date IS NULL OR m.due_date IS NULL THEN NULL
-                    WHEN DATEDIFF(m.due_date, m.start_date) = 0 THEN 100
                     WHEN m.complete_date IS NOT NULL THEN 100
-                    ELSE 
-                        LEAST(
-                            (DATEDIFF(CURDATE(), m.start_date) * 100.0) / 
-                            DATEDIFF(m.due_date, m.start_date),
-                            100
-                        )
+                    WHEN m.status_id = 3 THEN 100
+                    ELSE COALESCE(
+                        (
+                            SELECT
+                                CASE
+                                    WHEN COUNT(t.id) = 0 THEN 0
+                                    ELSE ROUND((SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
+                                END
+                            FROM milestone_tasks mt
+                            JOIN tasks t ON mt.task_id = t.id
+                            WHERE mt.milestone_id = m.id
+                            AND t.is_deleted = 0
+                        ), 0
+                    )
                 END AS completion_rate,
                 CASE
                     WHEN m.due_date IS NULL THEN NULL
@@ -262,15 +268,21 @@ class Milestone extends BaseModel
                     p.name AS project_name,
                     s.name AS status_name,
                     CASE
-                        WHEN m.start_date IS NULL OR m.due_date IS NULL THEN NULL
-                        WHEN DATEDIFF(m.due_date, m.start_date) = 0 THEN 100
                         WHEN m.complete_date IS NOT NULL THEN 100
-                        ELSE
-                            LEAST(
-                                (DATEDIFF(CURDATE(), m.start_date) * 100.0) /
-                                DATEDIFF(m.due_date, m.start_date),
-                                100
-                            )
+                        WHEN m.status_id = 3 THEN 100
+                        ELSE COALESCE(
+                            (
+                                SELECT
+                                    CASE
+                                        WHEN COUNT(t.id) = 0 THEN 0
+                                        ELSE ROUND((SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
+                                    END
+                                FROM milestone_tasks mt
+                                JOIN tasks t ON mt.task_id = t.id
+                                WHERE mt.milestone_id = m.id
+                                AND t.is_deleted = 0
+                            ), 0
+                        )
                     END AS completion_rate,
                     CASE
                         WHEN m.due_date IS NULL THEN NULL
@@ -349,7 +361,7 @@ class Milestone extends BaseModel
 
     /**
      * Get tasks associated with a milestone
-     * 
+     *
      * @param int $milestoneId
      * @return array
      */
@@ -365,6 +377,70 @@ class Milestone extends BaseModel
 
         $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Get sprints related to a milestone
+     * This includes sprints that share tasks with the milestone or are in the same project
+     *
+     * @param int $milestoneId
+     * @return array
+     */
+    public function getRelatedSprints(int $milestoneId): array
+    {
+        try {
+            // First get the milestone's project_id
+            $milestoneQuery = "SELECT project_id FROM milestones WHERE id = :milestone_id AND is_deleted = 0";
+            $milestoneStmt = $this->db->executeQuery($milestoneQuery, [':milestone_id' => $milestoneId]);
+            $milestone = $milestoneStmt->fetch(PDO::FETCH_OBJ);
+
+            if (!$milestone) {
+                return [];
+            }
+
+            // Get sprints in the same project with basic info
+            $sql = "SELECT DISTINCT s.*,
+                        ss.name as status_name,
+                        COALESCE(shared_count.shared_tasks, 0) as shared_tasks,
+                        COALESCE(total_count.total_sprint_tasks, 0) as total_sprint_tasks,
+                        COALESCE(completed_count.completed_tasks, 0) as completed_tasks
+                    FROM sprints s
+                    LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
+                    LEFT JOIN (
+                        SELECT st.sprint_id, COUNT(DISTINCT st.task_id) as shared_tasks
+                        FROM sprint_tasks st
+                        INNER JOIN milestone_tasks mt ON st.task_id = mt.task_id
+                        WHERE mt.milestone_id = :milestone_id
+                        GROUP BY st.sprint_id
+                    ) shared_count ON s.id = shared_count.sprint_id
+                    LEFT JOIN (
+                        SELECT st.sprint_id, COUNT(DISTINCT st.task_id) as total_sprint_tasks
+                        FROM sprint_tasks st
+                        INNER JOIN tasks t ON st.task_id = t.id
+                        WHERE t.is_deleted = 0
+                        GROUP BY st.sprint_id
+                    ) total_count ON s.id = total_count.sprint_id
+                    LEFT JOIN (
+                        SELECT st.sprint_id, COUNT(DISTINCT t.id) as completed_tasks
+                        FROM sprint_tasks st
+                        INNER JOIN tasks t ON st.task_id = t.id
+                        WHERE t.status_id = 6 AND t.is_deleted = 0
+                        GROUP BY st.sprint_id
+                    ) completed_count ON s.id = completed_count.sprint_id
+                    WHERE s.is_deleted = 0
+                    AND s.project_id = :project_id
+                    ORDER BY shared_tasks DESC, s.start_date DESC";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':milestone_id' => $milestoneId,
+                ':project_id' => $milestone->project_id
+            ]);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error in getRelatedSprints: " . $e->getMessage());
+            return []; // Return empty array on error to not break the page
+        }
     }
 
     /**
@@ -453,6 +529,84 @@ class Milestone extends BaseModel
 
         if ($stmt->fetchColumn() > 0) {
             throw new InvalidArgumentException('Circular epic reference detected');
+        }
+    }
+
+    /**
+     * Get sprints directly associated with this milestone
+     *
+     * @param int $milestoneId
+     * @return array
+     */
+    public function getAssociatedSprints(int $milestoneId): array
+    {
+        try {
+            $sql = "SELECT s.*,
+                        ss.name as status_name,
+                        p.name as project_name,
+                        sm.created_at as assigned_at
+                    FROM sprints s
+                    JOIN sprint_milestones sm ON s.id = sm.sprint_id
+                    LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
+                    LEFT JOIN projects p ON s.project_id = p.id
+                    WHERE sm.milestone_id = :milestone_id
+                    AND s.is_deleted = 0
+                    ORDER BY s.start_date DESC";
+
+            $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting associated sprints: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get available milestones for sprint planning
+     *
+     * @param int $projectId
+     * @param string $type 'epic', 'milestone', or 'all'
+     * @return array
+     */
+    public function getAvailableForSprint(int $projectId, string $type = 'all'): array
+    {
+        try {
+            $sql = "SELECT m.*,
+                        ms.name as status_name,
+                        (
+                            SELECT COUNT(mt.task_id)
+                            FROM milestone_tasks mt
+                            JOIN tasks t ON mt.task_id = t.id
+                            WHERE mt.milestone_id = m.id
+                            AND t.is_deleted = 0
+                            AND t.is_ready_for_sprint = 1
+                        ) as ready_task_count,
+                        (
+                            SELECT COUNT(mt.task_id)
+                            FROM milestone_tasks mt
+                            JOIN tasks t ON mt.task_id = t.id
+                            WHERE mt.milestone_id = m.id
+                            AND t.is_deleted = 0
+                        ) as total_task_count
+                    FROM milestones m
+                    LEFT JOIN statuses_milestone ms ON m.status_id = ms.id
+                    WHERE m.project_id = :project_id
+                    AND m.is_deleted = 0";
+
+            $params = [':project_id' => $projectId];
+
+            if ($type !== 'all') {
+                $sql .= " AND m.milestone_type = :type";
+                $params[':type'] = $type;
+            }
+
+            $sql .= " ORDER BY m.milestone_type DESC, m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, $params);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting available milestones for sprint: " . $e->getMessage());
+            return [];
         }
     }
 }

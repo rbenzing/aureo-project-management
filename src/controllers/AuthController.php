@@ -116,8 +116,11 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::logout', 'An error occurred during logout.');
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'AuthController::logout',
+                'An error occurred during logout.'
+            );
             header('Location: /dashboard');
             exit;
         }

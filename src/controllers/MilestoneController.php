@@ -103,6 +103,7 @@ class MilestoneController
             // Initialize optional variables
             $epic = null;
             $relatedMilestones = [];
+            $relatedSprints = [];
 
             // If this is a milestone under an epic, fetch the epic
             if ($milestone->epic_id) {
@@ -112,6 +113,15 @@ class MilestoneController
             // If this is an epic, fetch its milestones
             if ($milestone->milestone_type === 'epic') {
                 $relatedMilestones = $this->milestoneModel->getEpicMilestones($id);
+            }
+
+            // Get related sprints (sprints that share tasks or are in the same project)
+            // Use try-catch to ensure this new feature doesn't break existing functionality
+            try {
+                $relatedSprints = $this->milestoneModel->getRelatedSprints($id);
+            } catch (\Exception $e) {
+                error_log("Error fetching related sprints for milestone {$id}: " . $e->getMessage());
+                $relatedSprints = []; // Default to empty array if there's an error
             }
 
             include __DIR__ . '/../Views/Milestones/view.php';
@@ -142,10 +152,12 @@ class MilestoneController
             $projects = $projectsResult['records'];
             $statuses = $this->milestoneModel->getMilestoneStatuses();
             $projectId = filter_var($data['project_id'] ?? 0, FILTER_VALIDATE_INT);
+            $epicId = filter_var($data['epic_id'] ?? 0, FILTER_VALIDATE_INT);
             $epics = $this->milestoneModel->getProjectEpics($projectId ?: 0);
 
-            // Store the selected project ID for the view
+            // Store the selected values for the view
             $selectedProjectId = $projectId ?: 0;
+            $selectedEpicId = $epicId ?: 0;
 
             // Get company ID from user session if available
             $companyId = $_SESSION['user']['profile']['company_id'] ?? null;
@@ -403,6 +415,40 @@ class MilestoneController
             $_SESSION['error'] = 'An error occurred while deleting the milestone.';
             header('Location: /milestones');
             exit;
+        }
+    }
+
+    /**
+     * API endpoint to get epics for a specific project
+     * @param string $requestMethod
+     * @param array $data
+     */
+    public function getProjectEpicsApi(string $requestMethod, array $data): void
+    {
+        try {
+            // Set JSON content type
+            header('Content-Type: application/json');
+
+            // Check permissions
+            $this->authMiddleware->hasPermission('view_milestones');
+
+            $projectId = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
+            if (!$projectId) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid project ID']);
+                return;
+            }
+
+            // Get epics for the project
+            $epics = $this->milestoneModel->getProjectEpics($projectId);
+
+            // Return JSON response
+            echo json_encode($epics);
+
+        } catch (\Exception $e) {
+            error_log("Exception in MilestoneController::getProjectEpicsApi: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to load epics']);
         }
     }
 }

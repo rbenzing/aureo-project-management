@@ -29,15 +29,6 @@ $statusOptions = [
 
 <!-- Toolbar for Table View -->
 <div class="flex flex-wrap items-center gap-4">
-    <!-- New Project Button -->
-    <?php if (isset($_SESSION['user']['permissions']) && in_array('create_projects', $_SESSION['user']['permissions'])): ?>
-        <a href="/projects/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            New Project
-        </a>
-    <?php endif; ?>
     
     <!-- Search Form -->
     <form action="/projects" method="GET" class="flex-grow sm:flex-grow-0 flex flex-wrap md:flex-nowrap gap-2">

@@ -253,6 +253,46 @@ class Config
     }
 
     /**
+     * Check if application is in debug mode
+     * @return bool
+     */
+    public static function isDebug(): bool
+    {
+        return self::get('debug', false);
+    }
+
+    /**
+     * Get debug-aware error message
+     * @param \Exception $e The exception
+     * @param string $context Context information (e.g., 'TaskController::update')
+     * @param string $userMessage User-friendly message for production
+     * @param string|null $entityId Optional entity ID for context
+     * @return string Debug-aware error message
+     */
+    public static function getErrorMessage(\Exception $e, string $context, string $userMessage, ?string $entityId = null): string
+    {
+        // Always log detailed error for developers
+        error_log("Exception in {$context}: " . $e->getMessage());
+        error_log("Exception trace: " . $e->getTraceAsString());
+        if ($entityId) {
+            error_log("Entity ID: " . $entityId);
+        }
+
+        // Return debug-aware message
+        if (self::isDebug()) {
+            $debugInfo = ' (File: ' . basename($e->getFile()) . ':' . $e->getLine();
+            if ($entityId) {
+                $debugInfo .= ', ID: ' . $entityId;
+            }
+            $debugInfo .= ')';
+
+            return 'DEBUG: ' . $e->getMessage() . $debugInfo;
+        } else {
+            return $userMessage;
+        }
+    }
+
+    /**
      * Get all configuration values
      * @return array
      */

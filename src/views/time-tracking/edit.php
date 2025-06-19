@@ -211,7 +211,7 @@ include BASE_PATH . '/../src/Views/Layouts/form_components.php';
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Content-Type': 'application/json',
-                        'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value
+                        'X-CSRF-Token': window.csrfToken || document.querySelector('input[name="csrf_token"]')?.value || ''
                     }
                 })
                 .then(response => response.json())

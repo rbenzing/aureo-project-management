@@ -24,6 +24,7 @@ class Sprint extends BaseModel
     public int $project_id;
     public string $name;
     public ?string $description = null;
+    public ?string $sprint_goal = null;
     public string $start_date;
     public string $end_date;
     public int $status_id = 1; // Default: Planning
@@ -38,17 +39,26 @@ class Sprint extends BaseModel
         'project_id',
         'name',
         'description',
+        'sprint_goal',
         'start_date',
         'end_date',
         'status_id'
     ];
 
     /**
+     * Sprint relationship types
+     */
+    const RELATIONSHIP_PROJECT = 'project';
+    const RELATIONSHIP_MILESTONE = 'milestone';
+    const RELATIONSHIP_EPIC = 'epic';
+
+    /**
      * Define searchable fields
      */
     protected array $searchable = [
         'name',
-        'description'
+        'description',
+        'sprint_goal'
     ];
 
     /**
@@ -124,6 +134,8 @@ class Sprint extends BaseModel
         if ($sprint) {
             $sprint->tasks = $this->getSprintTasks($id);
             $sprint->velocity = $this->getSprintVelocity($id);
+            $sprint->relationships = $this->getSprintRelationships($id);
+            $sprint->milestones = $this->getSprintMilestones($id);
         }
 
         return $sprint ?: null;
@@ -419,15 +431,18 @@ class Sprint extends BaseModel
     }
 
     /**
-     * Assign a single task to a sprint
+     * Assign a single task to a sprint with optional subtask inheritance
      *
      * @param int $sprintId
      * @param int $taskId
+     * @param bool $includeSubtasks Whether to automatically include subtasks
      * @return bool
      */
-    public function assignTask(int $sprintId, int $taskId): bool
+    public function assignTask(int $sprintId, int $taskId, bool $includeSubtasks = true): bool
     {
         try {
+            $this->db->beginTransaction();
+
             // Check if task is already assigned to this sprint
             $sql = "SELECT COUNT(*) FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
             $stmt = $this->db->executeQuery($sql, [
@@ -436,20 +451,73 @@ class Sprint extends BaseModel
             ]);
 
             if ($stmt->fetchColumn() > 0) {
+                $this->db->commit();
                 return true; // Already assigned
             }
 
             // Remove task from any other active sprints first
             $this->removeTaskFromActiveSprints($taskId);
 
-            // Assign task to the new sprint
+            // Assign main task to the new sprint
             $sql = "INSERT INTO sprint_tasks (sprint_id, task_id) VALUES (:sprint_id, :task_id)";
-            return $this->db->executeInsertUpdate($sql, [
+            $result = $this->db->executeInsertUpdate($sql, [
                 ':sprint_id' => $sprintId,
                 ':task_id' => $taskId
             ]);
+
+            if (!$result) {
+                $this->db->rollback();
+                return false;
+            }
+
+            // If includeSubtasks is true, also assign all subtasks
+            if ($includeSubtasks) {
+                $this->assignSubtasksToSprint($sprintId, $taskId);
+            }
+
+            $this->db->commit();
+            return true;
         } catch (\Exception $e) {
+            $this->db->rollback();
             throw new RuntimeException("Error assigning task to sprint: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Assign all subtasks of a parent task to sprint
+     *
+     * @param int $sprintId
+     * @param int $parentTaskId
+     * @return bool
+     */
+    public function assignSubtasksToSprint(int $sprintId, int $parentTaskId): bool
+    {
+        try {
+            // Get all subtasks of the parent task
+            $sql = "SELECT id FROM tasks
+                    WHERE parent_task_id = :parent_task_id
+                    AND is_subtask = 1
+                    AND is_deleted = 0";
+
+            $stmt = $this->db->executeQuery($sql, [':parent_task_id' => $parentTaskId]);
+            $subtasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            foreach ($subtasks as $subtask) {
+                // Remove subtask from any other active sprints
+                $this->removeTaskFromActiveSprints($subtask->id);
+
+                // Assign subtask to the sprint
+                $sql = "INSERT IGNORE INTO sprint_tasks (sprint_id, task_id) VALUES (:sprint_id, :task_id)";
+                $this->db->executeInsertUpdate($sql, [
+                    ':sprint_id' => $sprintId,
+                    ':task_id' => $subtask->id
+                ]);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            error_log("Error assigning subtasks to sprint: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -471,6 +539,491 @@ class Sprint extends BaseModel
             return $this->db->executeInsertUpdate($sql, [':task_id' => $taskId]);
         } catch (\Exception $e) {
             throw new RuntimeException("Error removing task from active sprints: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove task and its subtasks from sprint
+     *
+     * @param int $sprintId
+     * @param int $taskId
+     * @param bool $includeSubtasks Whether to also remove subtasks
+     * @return bool
+     */
+    public function removeTaskFromSprint(int $sprintId, int $taskId, bool $includeSubtasks = true): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Remove main task from sprint
+            $sql = "DELETE FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
+            $result = $this->db->executeInsertUpdate($sql, [
+                ':sprint_id' => $sprintId,
+                ':task_id' => $taskId
+            ]);
+
+            // If includeSubtasks is true, also remove all subtasks
+            if ($includeSubtasks) {
+                $this->removeSubtasksFromSprint($sprintId, $taskId);
+            }
+
+            $this->db->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            error_log("Error removing task from sprint: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove all subtasks of a parent task from sprint
+     *
+     * @param int $sprintId
+     * @param int $parentTaskId
+     * @return bool
+     */
+    public function removeSubtasksFromSprint(int $sprintId, int $parentTaskId): bool
+    {
+        try {
+            $sql = "DELETE st FROM sprint_tasks st
+                    JOIN tasks t ON st.task_id = t.id
+                    WHERE st.sprint_id = :sprint_id
+                    AND t.parent_task_id = :parent_task_id
+                    AND t.is_subtask = 1
+                    AND t.is_deleted = 0";
+
+            return $this->db->executeInsertUpdate($sql, [
+                ':sprint_id' => $sprintId,
+                ':parent_task_id' => $parentTaskId
+            ]);
+        } catch (\Exception $e) {
+            error_log("Error removing subtasks from sprint: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get tasks with subtask information for sprint
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    public function getSprintTasksWithSubtasks(int $sprintId): array
+    {
+        try {
+            $sql = "SELECT t.*,
+                        ts.name as status_name,
+                        u.first_name,
+                        u.last_name,
+                        CASE WHEN t.is_subtask = 1 THEN pt.title ELSE NULL END as parent_title,
+                        (
+                            SELECT COUNT(*)
+                            FROM tasks st
+                            WHERE st.parent_task_id = t.id
+                            AND st.is_subtask = 1
+                            AND st.is_deleted = 0
+                        ) as subtask_count,
+                        (
+                            SELECT COUNT(*)
+                            FROM tasks st
+                            JOIN sprint_tasks sst ON st.id = sst.task_id
+                            WHERE st.parent_task_id = t.id
+                            AND st.is_subtask = 1
+                            AND st.is_deleted = 0
+                            AND sst.sprint_id = :sprint_id
+                        ) as subtasks_in_sprint
+                    FROM tasks t
+                    JOIN sprint_tasks st ON t.id = st.task_id
+                    LEFT JOIN statuses_task ts ON t.status_id = ts.id
+                    LEFT JOIN users u ON t.assigned_to = u.id
+                    LEFT JOIN tasks pt ON t.parent_task_id = pt.id
+                    WHERE st.sprint_id = :sprint_id
+                    AND t.is_deleted = 0
+                    ORDER BY t.is_subtask ASC, t.parent_task_id ASC, t.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting sprint tasks with subtasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get active sprints where user has tasks assigned
+     *
+     * @param int $userId
+     * @return array
+     */
+    public function getActiveSprintsForUser(int $userId): array
+    {
+        try {
+            $sql = "SELECT DISTINCT s.*,
+                        p.name as project_name,
+                        ss.name as status_name
+                    FROM sprints s
+                    JOIN projects p ON s.project_id = p.id
+                    JOIN statuses_sprint ss ON s.status_id = ss.id
+                    JOIN sprint_tasks st ON s.id = st.sprint_id
+                    JOIN tasks t ON st.task_id = t.id
+                    WHERE t.assigned_to = :user_id
+                    AND s.status_id = 2 -- Active status
+                    AND s.is_deleted = 0
+                    AND t.is_deleted = 0
+                    ORDER BY s.start_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $result ?: [];
+        } catch (\Exception $e) {
+            error_log("Error getting active sprints for user: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get active sprints in projects user has access to
+     *
+     * @param int $userId
+     * @return array
+     */
+    public function getActiveSprintsInUserProjects(int $userId): array
+    {
+        try {
+            $sql = "SELECT s.*,
+                        p.name as project_name,
+                        ss.name as status_name
+                    FROM sprints s
+                    JOIN projects p ON s.project_id = p.id
+                    JOIN statuses_sprint ss ON s.status_id = ss.id
+                    WHERE p.owner_id = :user_id
+                    AND s.status_id = 2 -- Active status
+                    AND s.is_deleted = 0
+                    AND p.is_deleted = 0
+                    ORDER BY s.start_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+            $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $result ?: [];
+        } catch (\Exception $e) {
+            error_log("Error getting active sprints in user projects: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Add milestones to sprint
+     *
+     * @param int $sprintId
+     * @param array $milestoneIds
+     * @return bool
+     */
+    public function addMilestones(int $sprintId, array $milestoneIds): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Remove existing milestone associations
+            $sql = "DELETE FROM sprint_milestones WHERE sprint_id = :sprint_id";
+            $this->db->executeInsertUpdate($sql, [':sprint_id' => $sprintId]);
+
+            // Add new milestone associations
+            if (!empty($milestoneIds)) {
+                $values = [];
+                $params = [];
+
+                foreach ($milestoneIds as $index => $milestoneId) {
+                    $values[] = "(:sprint_id, :milestone_id_{$index})";
+                    $params[":milestone_id_{$index}"] = $milestoneId;
+                }
+
+                $params[':sprint_id'] = $sprintId;
+
+                $sql = "INSERT INTO sprint_milestones (sprint_id, milestone_id) VALUES " . implode(', ', $values);
+                $this->db->executeInsertUpdate($sql, $params);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            error_log("Error adding milestones to sprint: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get milestones associated with a sprint
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    public function getSprintMilestones(int $sprintId): array
+    {
+        try {
+            $sql = "SELECT m.*,
+                        ms.name as status_name,
+                        sm.created_at as assigned_at
+                    FROM milestones m
+                    JOIN sprint_milestones sm ON m.id = sm.milestone_id
+                    LEFT JOIN statuses_milestone ms ON m.status_id = ms.id
+                    WHERE sm.sprint_id = :sprint_id
+                    AND m.is_deleted = 0
+                    ORDER BY m.milestone_type DESC, m.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting sprint milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get sprints associated with a milestone
+     *
+     * @param int $milestoneId
+     * @return array
+     */
+    public function getSprintsByMilestone(int $milestoneId): array
+    {
+        try {
+            $sql = "SELECT s.*,
+                        ss.name as status_name,
+                        p.name as project_name,
+                        sm.created_at as assigned_at
+                    FROM sprints s
+                    JOIN sprint_milestones sm ON s.id = sm.sprint_id
+                    LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
+                    LEFT JOIN projects p ON s.project_id = p.id
+                    WHERE sm.milestone_id = :milestone_id
+                    AND s.is_deleted = 0
+                    ORDER BY s.start_date DESC";
+
+            $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting sprints by milestone: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get sprint relationship type and related entities
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    public function getSprintRelationships(int $sprintId): array
+    {
+        try {
+            $relationships = [
+                'type' => self::RELATIONSHIP_PROJECT,
+                'project' => null,
+                'milestones' => [],
+                'epics' => []
+            ];
+
+            // Get project information
+            $sprint = $this->find($sprintId);
+            if ($sprint) {
+                $projectModel = new \App\Models\Project();
+                $relationships['project'] = $projectModel->find($sprint->project_id);
+            }
+
+            // Get associated milestones
+            $milestones = $this->getSprintMilestones($sprintId);
+            $relationships['milestones'] = array_filter($milestones, function($m) {
+                return $m->milestone_type === 'milestone';
+            });
+
+            $relationships['epics'] = array_filter($milestones, function($m) {
+                return $m->milestone_type === 'epic';
+            });
+
+            // Determine relationship type
+            if (!empty($relationships['epics'])) {
+                $relationships['type'] = self::RELATIONSHIP_EPIC;
+            } elseif (!empty($relationships['milestones'])) {
+                $relationships['type'] = self::RELATIONSHIP_MILESTONE;
+            }
+
+            return $relationships;
+        } catch (\Exception $e) {
+            error_log("Error getting sprint relationships: " . $e->getMessage());
+            return [
+                'type' => self::RELATIONSHIP_PROJECT,
+                'project' => null,
+                'milestones' => [],
+                'epics' => []
+            ];
+        }
+    }
+
+    /**
+     * Get available tasks for sprint planning based on milestones
+     *
+     * @param array $milestoneIds
+     * @return array
+     */
+    public function getTasksFromMilestones(array $milestoneIds): array
+    {
+        if (empty($milestoneIds)) {
+            return [];
+        }
+
+        try {
+            $placeholders = str_repeat('?,', count($milestoneIds) - 1) . '?';
+            $sql = "SELECT DISTINCT t.*,
+                        ts.name as status_name,
+                        u.first_name,
+                        u.last_name,
+                        m.title as milestone_title,
+                        m.milestone_type
+                    FROM tasks t
+                    JOIN milestone_tasks mt ON t.id = mt.task_id
+                    JOIN milestones m ON mt.milestone_id = m.id
+                    LEFT JOIN statuses_task ts ON t.status_id = ts.id
+                    LEFT JOIN users u ON t.assigned_to = u.id
+                    WHERE mt.milestone_id IN ($placeholders)
+                    AND t.is_deleted = 0
+                    AND m.is_deleted = 0
+                    AND t.is_ready_for_sprint = 1
+                    AND t.id NOT IN (
+                        SELECT st.task_id FROM sprint_tasks st
+                        JOIN sprints s ON st.sprint_id = s.id
+                        WHERE s.status_id IN (1, 2) AND s.is_deleted = 0
+                    )
+                    ORDER BY
+                        m.milestone_type DESC,
+                        CASE
+                            WHEN t.priority = 'high' THEN 1
+                            WHEN t.priority = 'medium' THEN 2
+                            WHEN t.priority = 'low' THEN 3
+                            ELSE 4
+                        END,
+                        t.backlog_priority ASC,
+                        t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, $milestoneIds);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Error getting tasks from milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Create sprint from milestone(s)
+     *
+     * @param array $data Sprint data
+     * @param array $milestoneIds Milestone IDs to associate
+     * @param array $taskIds Task IDs to include
+     * @return int Sprint ID
+     */
+    public function createFromMilestones(array $data, array $milestoneIds = [], array $taskIds = []): int
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Create the sprint
+            $sprintId = $this->create($data);
+
+            // Associate milestones if provided
+            if (!empty($milestoneIds)) {
+                $this->addMilestones($sprintId, $milestoneIds);
+            }
+
+            // Associate tasks if provided
+            if (!empty($taskIds)) {
+                $this->addTasks($sprintId, $taskIds);
+            }
+
+            $this->db->commit();
+            return $sprintId;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            error_log("Error creating sprint from milestones: " . $e->getMessage());
+            throw new RuntimeException("Failed to create sprint from milestones: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get sprint capacity based on associated milestones and tasks
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    public function getSprintCapacityBreakdown(int $sprintId): array
+    {
+        try {
+            $breakdown = [
+                'total_story_points' => 0,
+                'total_estimated_hours' => 0,
+                'by_milestone' => [],
+                'by_epic' => [],
+                'direct_tasks' => []
+            ];
+
+            // Get sprint tasks with milestone associations
+            $sql = "SELECT t.*,
+                        COALESCE(t.story_points, 0) as story_points,
+                        COALESCE(t.estimated_time, 0) as estimated_time,
+                        m.id as milestone_id,
+                        m.title as milestone_title,
+                        m.milestone_type
+                    FROM tasks t
+                    JOIN sprint_tasks st ON t.id = st.task_id
+                    LEFT JOIN milestone_tasks mt ON t.id = mt.task_id
+                    LEFT JOIN milestones m ON mt.milestone_id = m.id
+                    WHERE st.sprint_id = :sprint_id
+                    AND t.is_deleted = 0
+                    ORDER BY m.milestone_type DESC, m.title ASC, t.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            foreach ($tasks as $task) {
+                $breakdown['total_story_points'] += $task->story_points;
+                $breakdown['total_estimated_hours'] += $task->estimated_time / 3600; // Convert to hours
+
+                if ($task->milestone_id) {
+                    $key = $task->milestone_type === 'epic' ? 'by_epic' : 'by_milestone';
+                    $milestoneKey = $task->milestone_id;
+
+                    if (!isset($breakdown[$key][$milestoneKey])) {
+                        $breakdown[$key][$milestoneKey] = [
+                            'title' => $task->milestone_title,
+                            'story_points' => 0,
+                            'estimated_hours' => 0,
+                            'task_count' => 0
+                        ];
+                    }
+
+                    $breakdown[$key][$milestoneKey]['story_points'] += $task->story_points;
+                    $breakdown[$key][$milestoneKey]['estimated_hours'] += $task->estimated_time / 3600;
+                    $breakdown[$key][$milestoneKey]['task_count']++;
+                } else {
+                    $breakdown['direct_tasks'][] = [
+                        'id' => $task->id,
+                        'title' => $task->title,
+                        'story_points' => $task->story_points,
+                        'estimated_hours' => $task->estimated_time / 3600
+                    ];
+                }
+            }
+
+            return $breakdown;
+        } catch (\Exception $e) {
+            error_log("Error getting sprint capacity breakdown: " . $e->getMessage());
+            return [
+                'total_story_points' => 0,
+                'total_estimated_hours' => 0,
+                'by_milestone' => [],
+                'by_epic' => [],
+                'direct_tasks' => []
+            ];
         }
     }
 }

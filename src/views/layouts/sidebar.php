@@ -86,6 +86,12 @@ $adminItems = [
         'permission' => 'view_templates'
     ],
     [
+        'label' => 'Sprint Templates',
+        'path' => '/sprint-templates',
+        'icon' => '🏃',
+        'permission' => 'view_templates'
+    ],
+    [
         'label' => 'Companies',
         'path' => '/companies',
         'icon' => '🏢',

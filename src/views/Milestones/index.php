@@ -205,7 +205,7 @@ $totalPages = $totalPages ?? 1;
                     row.style.display = shouldShow ? '' : 'none';
                 });
 
-                // Timeline rows
+                // Timeline rows - apply filters but let timeline navigation handle visibility
                 const timelineRows = document.querySelectorAll('.milestone-timeline-row');
                 timelineRows.forEach(row => {
                     let shouldShow = true;
@@ -235,8 +235,16 @@ $totalPages = $totalPages ?? 1;
                         shouldShow = false;
                     }
 
-                    row.style.display = shouldShow ? '' : 'none';
+                    // Store filter result in data attribute for timeline navigation to use
+                    row.dataset.filteredOut = shouldShow ? 'false' : 'true';
                 });
+
+                // Trigger timeline update if timeline view is active
+                if (document.getElementById('timeline-view') && !document.getElementById('timeline-view').classList.contains('hidden')) {
+                    // Trigger timeline refresh to apply filters
+                    const timelineRefreshEvent = new CustomEvent('timelineRefresh');
+                    document.dispatchEvent(timelineRefreshEvent);
+                }
 
                 // Card view
                 const cards = document.querySelectorAll('.milestone-card');

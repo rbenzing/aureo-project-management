@@ -94,9 +94,10 @@ unset($_SESSION['form_data']);
                                 class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Select a status</option>
                                 <?php foreach ($statuses as $status): ?>
+                                    <?php $statusInfo = getProjectStatusInfo($status->id); ?>
                                     <option value="<?php echo $status->id; ?>"
                                         <?php echo (isset($formData['status_id']) ? $formData['status_id'] : $project->status_id) == $status->id ? ' selected' : ''; ?>>
-                                        <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $status->name))); ?>
+                                        <?php echo htmlspecialchars($statusInfo['label']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

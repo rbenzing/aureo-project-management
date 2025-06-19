@@ -152,7 +152,16 @@ class SettingsService
         return [
             'default_sprint_length' => $this->getSettingInt('sprints', 'default_sprint_length', 14),
             'auto_start_next_sprint' => $this->getSettingBool('sprints', 'auto_start_next_sprint', false),
-            'sprint_planning_enabled' => $this->getSettingBool('sprints', 'sprint_planning_enabled', true)
+            'sprint_planning_enabled' => $this->getSettingBool('sprints', 'sprint_planning_enabled', true),
+            'estimation_method' => $this->getSetting('sprints', 'estimation_method', 'hours'),
+            'team_capacity_hours' => $this->getSettingInt('sprints', 'team_capacity_hours', 40),
+            'team_capacity_story_points' => $this->getSettingInt('sprints', 'team_capacity_story_points', 20),
+            'velocity_tracking_enabled' => $this->getSettingBool('sprints', 'velocity_tracking_enabled', true),
+            'burndown_charts_enabled' => $this->getSettingBool('sprints', 'burndown_charts_enabled', true),
+            'auto_move_incomplete_tasks' => $this->getSettingBool('sprints', 'auto_move_incomplete_tasks', true),
+            'sprint_notifications_enabled' => $this->getSettingBool('sprints', 'sprint_notifications_enabled', true),
+            'working_days' => $this->getSetting('sprints', 'working_days', 'monday,tuesday,wednesday,thursday,friday'),
+            'retrospective_enabled' => $this->getSettingBool('sprints', 'retrospective_enabled', true)
         ];
     }
 
@@ -304,7 +313,16 @@ class SettingsService
             'sprints' => [
                 'default_sprint_length' => '14',
                 'auto_start_next_sprint' => '0',
-                'sprint_planning_enabled' => '1'
+                'sprint_planning_enabled' => '1',
+                'estimation_method' => 'hours',
+                'team_capacity_hours' => '40',
+                'team_capacity_story_points' => '20',
+                'velocity_tracking_enabled' => '1',
+                'burndown_charts_enabled' => '1',
+                'auto_move_incomplete_tasks' => '1',
+                'sprint_notifications_enabled' => '1',
+                'working_days' => 'monday,tuesday,wednesday,thursday,friday',
+                'retrospective_enabled' => '1'
             ],
             'security' => [
                 'session_samesite' => 'Lax',

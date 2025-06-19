@@ -90,7 +90,7 @@ $breadcrumbs = [
             <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
                 <?php include BASE_PATH . '/../src/views/layouts/notifications.php'; ?>
 
-                <!-- Page Header with Breadcrumb and New Task Button -->
+                <!-- Page Header with Breadcrumb and Action Buttons -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <!-- Breadcrumb Section -->
                     <div class="flex-1">
@@ -114,131 +114,161 @@ $breadcrumbs = [
                     </div>
                 </div>
 
-                <!-- Backlog Header -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <!-- Backlog Stats Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                        <div class="rounded-full bg-indigo-100 dark:bg-indigo-900 p-3 mr-4">
+                            <svg class="w-6 h-6 text-indigo-500 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Backlog</h1>
-                            <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                Manage your product backlog - tasks not yet assigned to sprints
-                            </p>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Items</div>
+                            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                <?= $totalTasks ?? 0 ?>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Backlog Stats -->
-                    <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400"><?= $totalTasks ?? 0 ?></div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Items</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    <?php 
-                                    $readyCount = 0;
-                                    if (!empty($tasks)) {
-                                        foreach ($tasks as $task) {
-                                            if ($task->is_ready_for_sprint ?? false) $readyCount++;
-                                        }
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                        <div class="rounded-full bg-green-100 dark:bg-green-900 p-3 mr-4">
+                            <svg class="w-6 h-6 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Ready for Sprint</div>
+                            <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                <?php
+                                $readyCount = 0;
+                                if (!empty($tasks)) {
+                                    foreach ($tasks as $task) {
+                                        if ($task->is_ready_for_sprint ?? false) $readyCount++;
                                     }
-                                    echo $readyCount;
-                                    ?>
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Ready for Sprint</div>
+                                }
+                                echo $readyCount;
+                                ?>
                             </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                    <?php 
-                                    $unestimatedCount = 0;
-                                    if (!empty($tasks)) {
-                                        foreach ($tasks as $task) {
-                                            if (empty($task->story_points)) $unestimatedCount++;
-                                        }
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                        <div class="rounded-full bg-yellow-100 dark:bg-yellow-900 p-3 mr-4">
+                            <svg class="w-6 h-6 text-yellow-500 dark:text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Unestimated</div>
+                            <div class="text-xl font-semibold text-yellow-600 dark:text-yellow-400">
+                                <?php
+                                $unestimatedCount = 0;
+                                if (!empty($tasks)) {
+                                    foreach ($tasks as $task) {
+                                        if (empty($task->story_points)) $unestimatedCount++;
                                     }
-                                    echo $unestimatedCount;
-                                    ?>
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Unestimated</div>
+                                }
+                                echo $unestimatedCount;
+                                ?>
                             </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-red-600 dark:text-red-400">
-                                    <?php 
-                                    $highPriorityCount = 0;
-                                    if (!empty($tasks)) {
-                                        foreach ($tasks as $task) {
-                                            if ($task->priority === 'high') $highPriorityCount++;
-                                        }
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                        <div class="rounded-full bg-red-100 dark:bg-red-900 p-3 mr-4">
+                            <svg class="w-6 h-6 text-red-500 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">High Priority</div>
+                            <div class="text-xl font-semibold text-red-600 dark:text-red-400">
+                                <?php
+                                $highPriorityCount = 0;
+                                if (!empty($tasks)) {
+                                    foreach ($tasks as $task) {
+                                        if ($task->priority === 'high') $highPriorityCount++;
                                     }
-                                    echo $highPriorityCount;
-                                    ?>
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">High Priority</div>
+                                }
+                                echo $highPriorityCount;
+                                ?>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Filters and Project Selection -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
-                    <div class="px-6 py-4">
-                        <div class="flex flex-wrap gap-4 items-center">
-                            <!-- Project Filter -->
-                            <div class="flex-1 min-w-64">
-                                <label for="project-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Filter by Project
-                                </label>
-                                <select id="project-filter" onchange="filterByProject(this.value)" 
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                                    <option value="">All Projects</option>
-                                    <?php if (!empty($projects)): ?>
-                                        <?php foreach ($projects as $project): ?>
-                                            <option value="<?= $project->id ?>" <?= ($selectedProjectId == $project->id) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($project->name) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                            </div>
+                <!-- Page Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Backlog</h1>
+                        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
+                        </button>
+                    </div>
 
-                            <!-- Status Filters -->
-                            <div class="flex-1 min-w-64">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Filter by Type/Status
-                                </label>
-                                <select id="status-filter" onchange="filterTasks(this.value)" 
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                                    <?php foreach ($filterOptions as $value => $label): ?>
-                                        <option value="<?= $value ?>"><?= $label ?></option>
+                    <div class="flex space-x-4">
+                        <!-- Project Filter -->
+                        <div class="relative min-w-[200px]">
+                            <select id="project-filter" onchange="filterByProject(this.value)"
+                                    class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">All Projects</option>
+                                <?php if (!empty($projects)): ?>
+                                    <?php foreach ($projects as $project): ?>
+                                        <option value="<?= $project->id ?>" <?= ($selectedProjectId == $project->id) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($project->name) ?>
+                                        </option>
                                     <?php endforeach; ?>
-                                </select>
+                                <?php endif; ?>
+                            </select>
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
                             </div>
-
-                            <!-- Search -->
-                            <div class="flex-1 min-w-64">
-                                <label for="search-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Search Tasks
-                                </label>
-                                <input type="text" id="search-input" placeholder="Search by title, description, or project..."
-                                       onkeyup="searchTasks(this.value)"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
                             </div>
+                        </div>
 
-                            <!-- Reset Filters Button -->
-                            <div class="flex flex-col justify-end">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 opacity-0">
-                                    Reset
-                                </label>
-                                <button type="button" onclick="resetFilters()"
-                                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm h-[42px] flex items-center justify-center">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    Reset
-                                </button>
+                        <!-- Status Filter -->
+                        <div class="relative min-w-[160px]">
+                            <select id="status-filter" onchange="filterTasks(this.value)"
+                                    class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <?php foreach ($filterOptions as $value => $label): ?>
+                                    <option value="<?= $value ?>"><?= $label ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                                </svg>
+                            </div>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="relative flex-grow min-w-[200px]">
+                            <input type="text" id="search-input" placeholder="Search tasks..."
+                                   onkeyup="searchTasks(this.value)"
+                                   class="h-10 w-full appearance-none py-2 pr-10 pl-10 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
                             </div>
                         </div>
                     </div>
                 </div>
+
+
 
                 <!-- Backlog Items Table -->
                 <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
@@ -304,6 +334,7 @@ $breadcrumbs = [
                                             data-task-id="<?= $task->id ?>"
                                             data-priority="<?= $task->priority ?>"
                                             data-task-type="<?= $task->task_type ?? 'task' ?>"
+                                            data-is-subtask="<?= $task->is_subtask ? '1' : '0' ?>"
                                             data-ready="<?= $task->is_ready_for_sprint ? '1' : '0' ?>"
                                             data-story-points="<?= $task->story_points ?? '' ?>"
                                             data-project-id="<?= $task->project_id ?? '' ?>"
@@ -345,14 +376,26 @@ $breadcrumbs = [
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 py-1 text-xs rounded-full
                                                     <?php
-                                                    switch($task->task_type ?? 'task') {
-                                                        case 'story': echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                                        case 'bug': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                                        case 'epic': echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'; break;
-                                                        default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; break;
+                                                    $displayType = $task->task_type ?? 'task';
+                                                    // If it's a subtask, show different styling
+                                                    if ($task->is_subtask && $displayType === 'task') {
+                                                        echo 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+                                                    } else {
+                                                        switch($displayType) {
+                                                            case 'story': echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
+                                                            case 'bug': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
+                                                            case 'epic': echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'; break;
+                                                            default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; break;
+                                                        }
                                                     }
                                                     ?>">
-                                                    <?= ucfirst($task->task_type ?? 'task') ?>
+                                                    <?php
+                                                    if ($task->is_subtask && $displayType === 'task') {
+                                                        echo 'Subtask';
+                                                    } else {
+                                                        echo ucfirst($displayType);
+                                                    }
+                                                    ?>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">
@@ -504,8 +547,15 @@ $breadcrumbs = [
                     if (currentFilters.type === 'ready') {
                         shouldShow = row.getAttribute('data-ready') === '1';
                     } else if (currentFilters.type === 'story' || currentFilters.type === 'bug' ||
-                              currentFilters.type === 'task' || currentFilters.type === 'epic') {
-                        shouldShow = row.getAttribute('data-task-type') === currentFilters.type;
+                              currentFilters.type === 'task' || currentFilters.type === 'epic' || currentFilters.type === 'subtask') {
+                        const taskType = row.getAttribute('data-task-type');
+                        const isSubtask = row.getAttribute('data-is-subtask') === '1';
+
+                        if (currentFilters.type === 'subtask') {
+                            shouldShow = isSubtask && taskType === 'task';
+                        } else {
+                            shouldShow = taskType === currentFilters.type && !isSubtask;
+                        }
                     } else if (currentFilters.type === 'high-priority') {
                         shouldShow = row.getAttribute('data-priority') === 'high';
                     } else if (currentFilters.type === 'unestimated') {
@@ -636,7 +686,8 @@ $breadcrumbs = [
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
                 },
                 body: JSON.stringify({ tasks: taskIds })
             })

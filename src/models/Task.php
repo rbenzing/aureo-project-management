@@ -172,9 +172,12 @@ class Task extends BaseModel
         // Use mapped field or default to due_date
         $dbField = $fieldMap[$sortField] ?? 't.due_date';
 
+        // Build hierarchical ordering: tasks first, then subtasks under their parent tasks
+        $hierarchicalOrder = "COALESCE(t.parent_task_id, t.id), t.is_subtask ASC";
+
         // Special handling for priority (convert to numeric for proper sorting)
         if ($sortField === 'priority') {
-            return "ORDER BY CASE
+            return "ORDER BY {$hierarchicalOrder}, CASE
                         WHEN t.priority = 'high' THEN 3
                         WHEN t.priority = 'medium' THEN 2
                         WHEN t.priority = 'low' THEN 1
@@ -184,10 +187,10 @@ class Task extends BaseModel
 
         // Special handling for due_date (null values last)
         if ($sortField === 'due_date') {
-            return "ORDER BY CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, t.due_date {$sortDirection}";
+            return "ORDER BY {$hierarchicalOrder}, CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, t.due_date {$sortDirection}";
         }
 
-        return "ORDER BY {$dbField} {$sortDirection}";
+        return "ORDER BY {$hierarchicalOrder}, {$dbField} {$sortDirection}";
     }
 
     /**
@@ -231,6 +234,49 @@ class Task extends BaseModel
             return $tasks ?: null;
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching tasks details: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get tasks with full details excluding subtasks
+     * @return ?array
+     */
+    public function getAllWithDetailsNoSubtasks(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): ?array
+    {
+        try {
+            $offset = ($page - 1) * $limit;
+
+            // Build ORDER BY clause
+            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+
+            $sql = "SELECT t.*,
+                p.name as project_name,
+                ts.name as status_name,
+                u.first_name,
+                u.last_name
+            FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN users u ON t.assigned_to = u.id
+            WHERE t.is_deleted = 0 AND p.is_deleted = 0 AND t.is_subtask = 0
+            {$orderBy}
+            LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':limit' => $limit,
+                ':offset' => $offset,
+            ]);
+            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // Format times for display
+            foreach ($tasks as $task) {
+                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
+            }
+
+            return $tasks;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Error fetching tasks without subtasks: " . $e->getMessage());
         }
     }
 
@@ -409,6 +455,29 @@ class Task extends BaseModel
             return $subtasks;
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching subtasks: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get count of subtasks for a parent task
+     *
+     * @param int $taskId
+     * @return int
+     */
+    public function getSubtaskCount(int $taskId): int
+    {
+        try {
+            $sql = "SELECT COUNT(*)
+                    FROM tasks
+                    WHERE parent_task_id = :task_id
+                    AND is_subtask = 1
+                    AND is_deleted = 0";
+
+            $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            error_log("Error getting subtask count: " . $e->getMessage());
+            return 0;
         }
     }
 
@@ -927,14 +996,15 @@ class Task extends BaseModel
     }
 
     /**
-     * Get status name by ID
+     * Get status name by ID with proper formatting
      */
     private function getStatusName(int $statusId): string
     {
         try {
-            $sql = "SELECT name FROM statuses_task WHERE id = :id";
-            $stmt = $this->db->executeQuery($sql, [':id' => $statusId]);
-            return $stmt->fetchColumn() ?: 'Unknown Status';
+            // Use centralized status helper for consistent formatting
+            require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+            $statusInfo = getTaskStatusInfo($statusId);
+            return $statusInfo['label'];
         } catch (\Exception $e) {
             return 'Unknown Status';
         }

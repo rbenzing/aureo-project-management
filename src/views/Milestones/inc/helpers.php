@@ -9,16 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 // Helper Functions for milestone views
-function getStatusClasses($statusId) {
-    $classes = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Not Started
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', // In Progress
-        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', // Completed
-        4 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', // On Hold
-        5 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', // Delayed
-    ];
-    return $classes[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-}
+// Status functions moved to centralized view_helpers.php
 
 function getProgressBarColor($completion, $dueDate, $statusId) {
     // If completed, always show green

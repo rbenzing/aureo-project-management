@@ -37,9 +37,11 @@ try {
     header("Permissions-Policy: geolocation=(), microphone=()");
 }
 
+// Initialize logging service first
+$logger = \App\Services\LoggerService::getInstance();
+
 // Error handling
 try {
-
     // Load configuration
     \App\Core\Config::init();
 
@@ -113,6 +115,7 @@ try {
     $router->post('tasks/create', ['controller' => 'Task', 'action' => 'create']);
     $router->get('tasks/edit/:id', ['controller' => 'Task', 'action' => 'editForm', 'params' => ['id']]);
     $router->post('tasks/update', ['controller' => 'Task', 'action' => 'update']);
+    $router->post('tasks/update-status', ['controller' => 'Task', 'action' => 'updateStatus']);
     $router->post('tasks/delete/:id', ['controller' => 'Task', 'action' => 'delete', 'params' => ['id']]);
     $router->post('tasks/start-timer/:task_id', ['controller' => 'Task', 'action' => 'startTimer', 'params' => ['task_id']]);
     $router->post('tasks/stop-timer/:task_id', ['controller' => 'Task', 'action' => 'stopTimer', 'params' => ['task_id']]);
@@ -121,6 +124,21 @@ try {
     // API Routes for AJAX
     $router->post('api/tasks/update-backlog-priorities', ['controller' => 'Task', 'action' => 'updateBacklogPriorities']);
     $router->post('api/sprints/assign-task', ['controller' => 'Sprint', 'action' => 'assignTask']);
+    $router->get('api/projects/:id/epics', ['controller' => 'Milestone', 'action' => 'getProjectEpicsApi', 'params' => ['id']]);
+
+    // Favorites API Routes
+    $router->get('api/favorites', ['controller' => 'Favorites', 'action' => 'index']);
+    $router->post('api/favorites/add', ['controller' => 'Favorites', 'action' => 'add']);
+    $router->post('api/favorites/remove', ['controller' => 'Favorites', 'action' => 'remove']);
+    $router->post('api/favorites/update-order', ['controller' => 'Favorites', 'action' => 'updateOrder']);
+    $router->get('api/favorites/check', ['controller' => 'Favorites', 'action' => 'check']);
+
+    // Favorites API Routes
+    $router->get('api/favorites', ['controller' => 'Favorites', 'action' => 'index']);
+    $router->post('api/favorites/add', ['controller' => 'Favorites', 'action' => 'add']);
+    $router->post('api/favorites/remove', ['controller' => 'Favorites', 'action' => 'remove']);
+    $router->post('api/favorites/update-order', ['controller' => 'Favorites', 'action' => 'updateOrder']);
+    $router->get('api/favorites/check', ['controller' => 'Favorites', 'action' => 'check']);
 
     // User Routes
     $router->get('users', ['controller' => 'User', 'action' => 'index']);
@@ -169,12 +187,16 @@ try {
 
     // Sprint Routes
     $router->get('sprints', ['controller' => 'Sprint', 'action' => 'index']);
+    $router->get('sprints/current', ['controller' => 'Sprint', 'action' => 'current']);
+    $router->get('sprints/planning', ['controller' => 'Sprint', 'action' => 'planning']);
     $router->get('sprints/page/:page', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['page']]);
     $router->get('sprints/project/:id', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['id']]);
     $router->get('sprints/project/:id/page/:page', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['id', 'page']]);
     $router->get('sprints/view/:id', ['controller' => 'Sprint', 'action' => 'view', 'params' => ['id']]);
+    $router->get('sprints/board/:id', ['controller' => 'Sprint', 'action' => 'board', 'params' => ['id']]);
     $router->get('sprints/create', ['controller' => 'Sprint', 'action' => 'createForm']);
     $router->post('sprints/create', ['controller' => 'Sprint', 'action' => 'create']);
+    $router->post('sprints/create-from-planning', ['controller' => 'Sprint', 'action' => 'createFromPlanning']);
     $router->get('sprints/edit/:id', ['controller' => 'Sprint', 'action' => 'editForm', 'params' => ['id']]);
     $router->post('sprints/update/:id', ['controller' => 'Sprint', 'action' => 'update', 'params' => ['id']]);
     $router->post('sprints/delete/:id', ['controller' => 'Sprint', 'action' => 'delete', 'params' => ['id']]);
@@ -183,6 +205,10 @@ try {
     $router->post('sprints/delay/:id', ['controller' => 'Sprint', 'action' => 'delaySprint', 'params' => ['id']]);
     $router->post('sprints/cancel/:id', ['controller' => 'Sprint', 'action' => 'cancelSprint', 'params' => ['id']]);
     $router->post('sprints/add-tasks/:id', ['controller' => 'Sprint', 'action' => 'addTasks', 'params' => ['id']]);
+    $router->post('sprints/create-from-milestones', ['controller' => 'Sprint', 'action' => 'createFromMilestones']);
+    $router->get('api/sprints/milestones/:project_id', ['controller' => 'Sprint', 'action' => 'getMilestonesForPlanning', 'params' => ['project_id']]);
+    $router->post('api/sprints/tasks-from-milestones', ['controller' => 'Sprint', 'action' => 'getTasksFromMilestones']);
+    $router->get('api/sprints/project/:project_id', ['controller' => 'Sprint', 'action' => 'getProjectSprintsApi', 'params' => ['project_id']]);
 
     // Template Routes
     $router->get('templates', ['controller' => 'Template', 'action' => 'index']);
@@ -200,6 +226,17 @@ try {
     $router->get('project-templates', ['controller' => 'Template', 'action' => 'index']);
     $router->get('project-templates/get/:id', ['controller' => 'Template', 'action' => 'getTemplate', 'params' => ['id']]);
 
+    // Sprint Template Routes
+    $router->get('sprint-templates', ['controller' => 'SprintTemplate', 'action' => 'index']);
+    $router->get('sprint-templates/create', ['controller' => 'SprintTemplate', 'action' => 'createForm']);
+    $router->post('sprint-templates/create', ['controller' => 'SprintTemplate', 'action' => 'create']);
+    $router->get('sprint-templates/edit/:id', ['controller' => 'SprintTemplate', 'action' => 'editForm', 'params' => ['id']]);
+    $router->post('sprint-templates/update', ['controller' => 'SprintTemplate', 'action' => 'update']);
+    $router->post('sprint-templates/delete/:id', ['controller' => 'SprintTemplate', 'action' => 'delete', 'params' => ['id']]);
+    $router->get('sprint-templates/get/:id', ['controller' => 'SprintTemplate', 'action' => 'getTemplate', 'params' => ['id']]);
+    $router->get('sprint-templates/apply', ['controller' => 'SprintTemplate', 'action' => 'applyTemplate']);
+    $router->get('api/sprint-templates', ['controller' => 'SprintTemplate', 'action' => 'getTemplatesApi']);
+
     // Settings Routes
     $router->get('settings', ['controller' => 'Settings', 'action' => 'index']);
     $router->post('settings/update', ['controller' => 'Settings', 'action' => 'update']);
@@ -215,7 +252,7 @@ try {
     );
 } catch (\PDOException $e) {
     // Database errors
-    error_log($e->getMessage());
+    $logger->exception($e, ['type' => 'database_error']);
     http_response_code(500);
 
     // Check if we should hide error details
@@ -227,11 +264,12 @@ try {
             echo "Database error occurred";
         }
     } catch (\Exception $securityException) {
+        $logger->exception($securityException, ['type' => 'security_service_error']);
         echo "Database error occurred";
     }
 } catch (\Exception $e) {
     // Other errors
-    error_log($e->getMessage());
+    $logger->exception($e, ['type' => 'general_error']);
     $code = $e->getCode() ?: 500;
     http_response_code($code);
 
@@ -244,6 +282,7 @@ try {
             echo $e->getMessage();
         }
     } catch (\Exception $securityException) {
+        $logger->exception($securityException, ['type' => 'security_service_error']);
         echo "An error occurred. Please try again later.";
     }
 }

@@ -307,6 +307,7 @@ use App\Utils\Time;
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Content-Type': 'application/json',
+                        'X-CSRF-Token': window.csrfToken || ''
                     }
                 })
                 .then(response => response.json())

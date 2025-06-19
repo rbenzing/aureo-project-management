@@ -324,11 +324,12 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                         <!-- Status -->
                         <div>
                             <?php
-                            // Prepare status options
+                            // Prepare status options with proper labels
                             $statusOptions = [];
                             $selectedStatusId = $formData['status_id'] ?? ($duplicateTask && $duplicateTask->status_id == 1 ? $duplicateTask->status_id : '');
                             foreach ($statuses as $status) {
-                                $statusOptions[$status->id] = $status->name;
+                                $statusInfo = getTaskStatusInfo($status->id);
+                                $statusOptions[$status->id] = $statusInfo['label'];
                             }
                             ?>
                             <?= renderSelect([
@@ -356,12 +357,20 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
 
                         <!-- Task Type -->
                         <div>
+                            <?php
+                            // Determine the task type value - if duplicating a subtask, show 'subtask' instead of 'task'
+                            $taskTypeValue = $formData['task_type'] ?? ($duplicateTask ? $duplicateTask->task_type : ($projectSettings['default_task_type'] ?? 'task'));
+                            if ($duplicateTask && $duplicateTask->is_subtask && $taskTypeValue === 'task') {
+                                $taskTypeValue = 'subtask';
+                            }
+                            ?>
                             <?= renderSelect([
                                 'name' => 'task_type',
                                 'label' => 'Task Type',
-                                'value' => $formData['task_type'] ?? ($duplicateTask ? $duplicateTask->task_type : ($projectSettings['default_task_type'] ?? 'task')),
+                                'value' => $taskTypeValue,
                                 'options' => [
                                     'task' => 'Task',
+                                    'subtask' => 'Subtask',
                                     'story' => 'User Story',
                                     'bug' => 'Bug',
                                     'epic' => 'Epic'
@@ -419,11 +428,24 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
                                 'value' => $formData['parent_task_id'] ?? '',
                                 'options' => [], // Will be populated via JavaScript
-                                'empty_option' => 'None (Create as main task)',
+                                'empty_option' => 'None (Main task)',
                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+                                'help_text' => 'Select a parent task to make this a subtask',
                                 'error' => $errors['parent_task_id'] ?? ''
                             ]) ?>
                             <input type="hidden" name="is_subtask" id="is_subtask" value="0">
+                        </div>
+
+                        <!-- Start Date -->
+                        <div>
+                            <?= renderTextInput([
+                                'name' => 'start_date',
+                                'type' => 'date',
+                                'label' => 'Start Date',
+                                'value' => $formData['start_date'] ?? ($duplicateTask ? $duplicateTask->start_date : ''),
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+                                'error' => $errors['start_date'] ?? ''
+                            ]) ?>
                         </div>
 
                         <!-- Story Points -->
@@ -433,7 +455,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 'label' => 'Story Points',
                                 'value' => $formData['story_points'] ?? ($duplicateTask ? $duplicateTask->story_points : ''),
                                 'options' => [
-                                    '' => 'Not estimated',
+                                    '' => 'None',
                                     '1' => '1',
                                     '2' => '2',
                                     '3' => '3',
@@ -441,8 +463,8 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                     '8' => '8',
                                     '13' => '13'
                                 ],
-                                'help_text' => 'Fibonacci sequence for effort estimation',
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />',
+                                'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
                                 'error' => $errors['story_points'] ?? ''
                             ]) ?>
                         </div>
@@ -488,8 +510,22 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             ]) ?>
                         </div>
 
+                        <!-- Time Spent -->
+                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
+                        <div>
+                            <?= renderTextInput([
+                                'name' => 'time_spent',
+                                'type' => 'number',
+                                'label' => 'Time Spent (minutes)',
+                                'value' => $formData['time_spent'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->time_spent) : ''),
+                                'min' => '0',
+                                'step' => '15',
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+                                'error' => $errors['time_spent'] ?? ''
+                            ]) ?>
+                        </div>
+
                         <!-- Billable Toggle -->
-                        <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
                         <div>
                             <?= renderCheckbox([
                                 'name' => 'is_hourly',
@@ -501,16 +537,29 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                         </div>
 
                         <!-- Hourly Rate (conditional on billable) -->
-                        <div id="hourly-rate-container" class="hidden">
-                            <div class="mb-4">
-                                <label for="hourly_rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hourly Rate ($)</label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">$</span>
+                        <div id="billing-fields" class="hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="hourly_rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hourly Rate ($)</label>
+                                    <div class="relative rounded-md shadow-sm">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">$</span>
+                                        </div>
+                                        <input type="number" id="hourly_rate" name="hourly_rate" min="0" step="0.01"
+                                            value="<?php echo htmlspecialchars($formData['hourly_rate'] ?? ($duplicateTask ? $duplicateTask->hourly_rate : '')); ?>"
+                                            class="pl-7 pr-3 py-2 w-full border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm border-gray-300 dark:border-gray-600">
                                     </div>
-                                    <input type="number" id="hourly_rate" name="hourly_rate" min="0" step="0.01"
-                                        value="<?php echo htmlspecialchars($formData['hourly_rate'] ?? ($duplicateTask ? $duplicateTask->hourly_rate : '')); ?>"
-                                        class="pl-7 pr-3 py-2 w-full border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm border-gray-300 dark:border-gray-600">
+                                </div>
+                                <div>
+                                    <?= renderTextInput([
+                                        'name' => 'billable_time',
+                                        'type' => 'number',
+                                        'label' => 'Billable Time (minutes)',
+                                        'value' => $formData['billable_time'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->billable_time) : ''),
+                                        'min' => '0',
+                                        'step' => '15',
+                                        'error' => $errors['billable_time'] ?? ''
+                                    ]) ?>
                                 </div>
                             </div>
                         </div>
@@ -542,15 +591,30 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                 // Removed sessionStorage to ensure tips always show on page refresh
             });
 
+            // Date validation
+            const startDateInput = document.getElementById('start_date');
+            const dueDateInput = document.getElementById('due_date');
+
+            if (startDateInput && dueDateInput) {
+                dueDateInput.addEventListener('change', function() {
+                    if (startDateInput.value && dueDateInput.value) {
+                        if (new Date(dueDateInput.value) < new Date(startDateInput.value)) {
+                            alert('Due date cannot be earlier than start date');
+                            dueDateInput.value = '';
+                        }
+                    }
+                });
+            }
+
             // Handle Billable Toggle
             const billableCheckbox = document.getElementById('is_hourly');
-            const hourlyRateContainer = document.getElementById('hourly-rate-container');
+            const billingFieldsContainer = document.getElementById('billing-fields');
 
             function updateBillableVisibility() {
                 if (billableCheckbox.checked) {
-                    hourlyRateContainer.classList.remove('hidden');
+                    billingFieldsContainer.classList.remove('hidden');
                 } else {
-                    hourlyRateContainer.classList.add('hidden');
+                    billingFieldsContainer.classList.add('hidden');
                 }
             }
 

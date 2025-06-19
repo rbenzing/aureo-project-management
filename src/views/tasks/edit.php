@@ -34,20 +34,6 @@ function formatTimeInput($seconds) {
     return \App\Utils\Time::convertFromSeconds($seconds);
 }
 
-// Get priority and status classes
-function getPriorityClass($priority) {
-    switch (strtolower($priority)) {
-        case 'high':
-            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-        case 'medium':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-        case 'low':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-        default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-}
-
 function getStatusClass($statusId) {
     // Updated to match new consistent styling
     $statusMap = [
@@ -130,6 +116,14 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         <?php if ($markComplete): ?>
                             <input type="hidden" name="status_id" value="6"> <!-- Set to Completed -->
                             <input type="hidden" name="complete_date" value="<?= date('Y-m-d') ?>">
+                            <!-- Include required fields as hidden when marking complete -->
+                            <input type="hidden" name="title" value="<?= htmlspecialchars($task->title) ?>">
+                            <input type="hidden" name="priority" value="<?= htmlspecialchars($task->priority ?? 'none') ?>">
+                            <input type="hidden" name="task_type" value="<?= htmlspecialchars($task->task_type ?? 'task') ?>">
+                            <input type="hidden" name="project_id" value="<?= htmlspecialchars((string)($task->project_id ?? '')) ?>">
+                            <!-- Include boolean fields that validation expects -->
+                            <input type="hidden" name="is_hourly" value="<?= $task->is_hourly ? '1' : '0' ?>">
+                            <input type="hidden" name="is_ready_for_sprint" value="<?= $task->is_ready_for_sprint ? '1' : '0' ?>">
                         <?php endif; ?>
 
                         <?php if ($markComplete): ?>
@@ -242,6 +236,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
+                        <?php endif; ?>
 
                         <!-- Description -->
                         <?= renderTextarea([
@@ -266,17 +261,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             'error' => $errors['acceptance_criteria'] ?? ''
                         ]) ?>
 
-                        <?php if ($markComplete): ?>
-                        <!-- Completion Notes -->
-                        <?= renderTextarea([
-                            'name' => 'completion_notes',
-                            'label' => 'Completion Notes',
-                            'value' => $formData['completion_notes'] ?? '',
-                            'rows' => 3,
-                            'help_text' => 'Add any final notes about this task completion.',
-                            'error' => $errors['completion_notes'] ?? ''
-                        ]) ?>
-                        <?php endif; ?>
+
                 </div>
             </div>
 
@@ -315,10 +300,11 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         <!-- Status -->
                         <div>
                             <?php
-                            // Prepare status options
+                            // Prepare status options with proper labels
                             $statusOptions = [];
                             foreach ($statuses as $status) {
-                                $statusOptions[$status->id] = $status->name;
+                                $statusInfo = getTaskStatusInfo($status->id);
+                                $statusOptions[$status->id] = $statusInfo['label'];
                             }
                             ?>
                             <?= renderSelect([
@@ -348,12 +334,20 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
 
                         <!-- Task Type -->
                         <div>
+                            <?php
+                            // Determine the task type value - if it's a subtask, show 'subtask' instead of 'task'
+                            $taskTypeValue = $formData['task_type'] ?? $task->task_type ?? 'task';
+                            if ($task->is_subtask && $taskTypeValue === 'task') {
+                                $taskTypeValue = 'subtask';
+                            }
+                            ?>
                             <?= renderSelect([
                                 'name' => 'task_type',
                                 'label' => 'Task Type',
-                                'value' => $formData['task_type'] ?? $task->task_type ?? 'task',
+                                'value' => $taskTypeValue,
                                 'options' => [
                                     'task' => 'Task',
+                                    'subtask' => 'Subtask',
                                     'story' => 'User Story',
                                     'bug' => 'Bug',
                                     'epic' => 'Epic'
@@ -383,6 +377,28 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             ]) ?>
                         </div>
 
+                        <!-- Story Points -->
+                        <div>
+                            <?= renderSelect([
+                                'name' => 'story_points',
+                                'label' => 'Story Points',
+                                'value' => $formData['story_points'] ?? $task->story_points ?? '',
+                                'options' => [
+                                    '' => 'None',
+                                    '1' => '1',
+                                    '2' => '2',
+                                    '3' => '3',
+                                    '5' => '5',
+                                    '8' => '8',
+                                    '13' => '13'
+                                ],
+                                'disabled' => $markComplete,
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
+                                'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
+                                'error' => $errors['story_points'] ?? ''
+                            ]) ?>
+                        </div>
+
                         <!-- Backlog Priority (Hidden - controlled by drag & drop) -->
                         <div class="hidden">
                             <input type="hidden" name="backlog_priority" value="<?= htmlspecialchars((string)($formData['backlog_priority'] ?? $task->backlog_priority ?? '')) ?>">
@@ -409,6 +425,31 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             ]) ?>
                         </div>
 
+                        <!-- Parent Task (for subtasks) -->
+                        <div>
+                            <?php
+                            // Prepare parent task options from controller data
+                            $parentTaskOptions = [];
+                            if (isset($availableParentTasks)) {
+                                foreach ($availableParentTasks as $availableTask) {
+                                    $parentTaskOptions[$availableTask->id] = $availableTask->title;
+                                }
+                            }
+                            ?>
+                            <?= renderSelect([
+                                'name' => 'parent_task_id',
+                                'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
+                                'value' => $formData['parent_task_id'] ?? $task->parent_task_id ?? '',
+                                'options' => $parentTaskOptions,
+                                'empty_option' => 'None (Main task)',
+                                'disabled' => $markComplete,
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+                                'help_text' => 'Select a parent task to make this a subtask',
+                                'error' => $errors['parent_task_id'] ?? ''
+                            ]) ?>
+                            <input type="hidden" name="is_subtask" id="is_subtask" value="<?= $task->is_subtask ? '1' : '0' ?>">
+                        </div>
+
                         <!-- Start Date -->
                         <div>
                             <?= renderTextInput([
@@ -422,6 +463,22 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             ]) ?>
                         </div>
 
+                        <!-- Complete Date (visible when task is completed) -->
+                        <?php if ($task->status_id == 6 || $task->complete_date): ?>
+                        <div>
+                            <?= renderTextInput([
+                                'name' => 'complete_date',
+                                'type' => 'date',
+                                'label' => 'Complete Date',
+                                'value' => $formData['complete_date'] ?? ($task->complete_date ? date('Y-m-d', strtotime($task->complete_date)) : ''),
+                                'disabled' => $markComplete,
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+                                'help_text' => 'Date when this task was completed',
+                                'error' => $errors['complete_date'] ?? ''
+                            ]) ?>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Estimated Time -->
                         <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
@@ -429,7 +486,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                 'name' => 'estimated_time',
                                 'type' => 'number',
                                 'label' => 'Estimated Time (minutes)',
-                                'value' => $formData['estimated_time'] ?? $task->estimated_time ?? '',
+                                'value' => $formData['estimated_time'] ?? formatTimeInput($task->estimated_time) ?? '',
                                 'min' => '0',
                                 'step' => '15',
                                 'disabled' => $markComplete,
@@ -458,7 +515,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                 'name' => 'time_spent',
                                 'type' => 'number',
                                 'label' => 'Time Spent (minutes)',
-                                'value' => $formData['time_spent'] ?? $task->time_spent ?? '',
+                                'value' => $formData['time_spent'] ?? formatTimeInput($task->time_spent) ?? '',
                                 'min' => '0',
                                 'step' => '15',
                                 'disabled' => $markComplete,
@@ -499,7 +556,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                         'name' => 'billable_time',
                                         'type' => 'number',
                                         'label' => 'Billable Time (minutes)',
-                                        'value' => $formData['billable_time'] ?? $task->billable_time ?? '',
+                                        'value' => $formData['billable_time'] ?? formatTimeInput($task->billable_time) ?? '',
                                         'min' => '0',
                                         'step' => '15',
                                         'disabled' => $markComplete,

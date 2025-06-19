@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Company;
 use App\Models\Project;
@@ -171,13 +172,20 @@ class CompanyController
             header('Location: /companies/view/' . $companyId);
             exit;
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'CompanyController::create (validation)',
+                $e->getMessage()
+            );
             $_SESSION['form_data'] = $data;
             header('Location: /companies/create');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'CompanyController::create', 'An error occurred while creating the company.');
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'CompanyController::create',
+                'An error occurred while creating the company.'
+            );
             header('Location: /companies/create');
             exit;
         }

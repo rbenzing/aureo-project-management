@@ -14,6 +14,19 @@ use App\Services\SettingsService;
 // Include view helpers for permission functions and formatting
 require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
 
+// Include sprint helpers for sprint status styling (with safety check)
+$sprintHelpersPath = BASE_PATH . '/../src/views/Sprints/inc/helpers.php';
+if (file_exists($sprintHelpersPath)) {
+    require_once $sprintHelpersPath;
+} else {
+    // Fallback function if sprint helpers are not available
+    if (!function_exists('getSprintStatusClass')) {
+        function getSprintStatusClass($statusId) {
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        }
+    }
+}
+
 // Helper functions for formatting and styling
 function formatDate($date) {
     if (!$date) return 'Not set';
@@ -21,21 +34,7 @@ function formatDate($date) {
     return $settingsService->formatDate($date);
 }
 
-function getStatusClass($statusId) {
-    // Updated to match new consistent styling
-    $statusMap = [
-        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-    ];
-
-    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-    return $status['color'] . ' bg-opacity-20 text-white';
-}
+// Remove local function - now using centralized helper
 
 // getMilestoneStatusClass function is now in view_helpers.php
 
@@ -73,9 +72,20 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                                 <?= htmlspecialchars($milestone->title) ?>
                             </h1>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getMilestoneStatusClass($milestone->status_id) ?>">
-                                <?= htmlspecialchars($milestone->status_name) ?>
-                            </span>
+                            <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors"
+                                    data-type="milestone"
+                                    data-item-id="<?= $milestone->id ?>"
+                                    data-title="<?= htmlspecialchars($milestone->title) ?>"
+                                    data-icon="🎯"
+                                    title="Add to favorites">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </button>
+                            <?php
+                            $statusInfo = getMilestoneStatusInfo($milestone->status_id);
+                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                            ?>
                         </div>
                         <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                             <span class="flex items-center">
@@ -119,14 +129,28 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
 
         <!-- Milestone Details Grid -->
         <?php
-        // Check if we have related milestones to show in the third column
-        $hasRelatedContent = ($milestone->milestone_type === 'epic' && !empty($relatedMilestones));
-        $gridCols = $hasRelatedContent ? 'md:grid-cols-4' : 'md:grid-cols-3';
-        $tasksColSpan = $hasRelatedContent ? 'md:col-span-2' : 'md:col-span-2';
+        // Check if we have related milestones to show in additional column
+        $hasRelatedMilestones = ($milestone->milestone_type === 'epic' && !empty($relatedMilestones));
+        $hasRelatedSprints = !empty($relatedSprints ?? []);
+
+        // Use CSS Grid with specific column widths: 30% for details, remaining space for tasks/milestones
+        if ($hasRelatedMilestones) {
+            // 30% details + 40% tasks + 30% related milestones
+            $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr 30%; gap: 1.5rem;"';
+            $detailsClass = '';
+            $tasksClass = '';
+            $milestonesClass = '';
+        } else {
+            // 30% details + 70% tasks
+            $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr; gap: 1.5rem;"';
+            $detailsClass = '';
+            $tasksClass = '';
+            $milestonesClass = '';
+        }
         ?>
-        <div class="grid grid-cols-1 <?= $gridCols ?> gap-6">
-            <!-- Milestone Details Column -->
-            <div class="md:col-span-1">
+        <div class="grid grid-cols-1 md:grid" <?= $gridStyle ?>>
+            <!-- Milestone Details Column (30% width) -->
+            <div class="<?= $detailsClass ?>">
                 <!-- Milestone Description -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
@@ -167,7 +191,10 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
 
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Status:</div>
                             <div class="text-gray-900 dark:text-white">
-                                <?= htmlspecialchars($milestone->status_name) ?>
+                                <?php
+                                $statusInfo = getMilestoneStatusInfo($milestone->status_id);
+                                echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                ?>
                             </div>
 
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Project:</div>
@@ -205,10 +232,68 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                         </div>
                     </div>
                 </div>
+
+                <!-- Related Sprints (in same column as details) -->
+                <?php if ($hasRelatedSprints): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Related Sprints</h3>
+                        <button type="button" class="section-toggle" data-target="related-sprints">
+                            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="related-sprints" class="p-4">
+                        <?php if (!empty($relatedSprints ?? [])): ?>
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <?php foreach ($relatedSprints as $sprint): ?>
+                                <li class="py-3">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <a href="/sprints/view/<?= $sprint->id ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                                                <?= htmlspecialchars($sprint->name) ?>
+                                            </a>
+                                            <div class="mt-1">
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= formatDate($sprint->start_date) ?> - <?= formatDate($sprint->end_date) ?>
+                                                </span>
+                                                <?php if ($sprint->shared_tasks > 0): ?>
+                                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                        <?= $sprint->shared_tasks ?> shared task<?= $sprint->shared_tasks > 1 ? 's' : '' ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-end space-y-1">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= getSprintStatusClass($sprint->status_id) ?>">
+                                                <?= htmlspecialchars($sprint->status_name) ?>
+                                            </span>
+                                            <?php if ($sprint->total_sprint_tasks > 0): ?>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= $sprint->completed_tasks ?>/<?= $sprint->total_sprint_tasks ?> tasks
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                            <div class="text-center py-6">
+                                <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No related sprints found</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Associated Tasks Column -->
-            <div class="<?= $tasksColSpan ?>">
+            <div class="<?= $tasksClass ?>">
 
                 <!-- Associated Tasks -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
@@ -245,9 +330,10 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                                                     </div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full <?= getStatusClass($task->status_id ?? 1) ?>">
-                                                        <?= htmlspecialchars($task->status_name) ?>
-                                                    </span>
+                                                    <?php
+                                                    $statusInfo = getTaskStatusInfo($task->status_id ?? 1);
+                                                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                                    ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                                     <?= $task->first_name && $task->last_name
@@ -274,9 +360,9 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                 </div>
             </div>
 
-            <!-- Related Content Column (only show if there's content) -->
-            <?php if ($hasRelatedContent): ?>
-            <div class="md:col-span-1">
+            <!-- Related Milestones Column -->
+            <?php if ($hasRelatedMilestones): ?>
+            <div class="<?= $milestonesClass ?>">
                 <!-- Related Milestones for Epic -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
@@ -298,9 +384,10 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                                         <span class="text-xs text-gray-500 dark:text-gray-400">
                                             <?= !empty($related->due_date) ? formatDate($related->due_date) : 'No due date' ?>
                                         </span>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= getMilestoneStatusClass($related->status_id) ?>">
-                                            <?= htmlspecialchars($related->status_name) ?>
-                                        </span>
+                                        <?php
+                                        $statusInfo = getMilestoneStatusInfo($related->status_id);
+                                        echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                        ?>
                                     </div>
                                 </li>
                             <?php endforeach; ?>
@@ -309,6 +396,8 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                 </div>
             </div>
             <?php endif; ?>
+
+
         </div>
 
             <!-- Delete Milestone Modal (Hidden by default) -->

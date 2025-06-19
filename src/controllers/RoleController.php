@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\CSRFMiddleware;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Utils\Validator;
@@ -15,12 +16,14 @@ use InvalidArgumentException;
 class RoleController
 {
     private AuthMiddleware $authMiddleware;
+    private CSRFMiddleware $csrfMiddleware;
     private Role $roleModel;
     private Permission $permissionModel;
 
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
+        $this->csrfMiddleware = new CSRFMiddleware();
         $this->roleModel = new Role();
         $this->permissionModel = new Permission();
     }
@@ -126,6 +129,11 @@ class RoleController
         try {
             $this->authMiddleware->hasPermission('create_roles');
 
+            // Validate CSRF token
+            if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
+                throw new InvalidArgumentException('Invalid CSRF token');
+            }
+
             $validator = new Validator($data, [
                 'name' => 'required|string|max:100|unique:roles,name',
                 'description' => 'nullable|string|max:500',
@@ -230,6 +238,11 @@ class RoleController
         try {
             $this->authMiddleware->hasPermission('edit_roles');
 
+            // Validate CSRF token
+            if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
+                throw new InvalidArgumentException('Invalid CSRF token');
+            }
+
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
                 throw new InvalidArgumentException('Invalid role ID');
@@ -302,6 +315,11 @@ class RoleController
 
         try {
             $this->authMiddleware->hasPermission('delete_roles');
+
+            // Validate CSRF token
+            if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
+                throw new InvalidArgumentException('Invalid CSRF token');
+            }
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {

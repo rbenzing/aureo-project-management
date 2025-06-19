@@ -30,44 +30,155 @@ include_once __DIR__ . '/inc/helpers.php';
     <?php include BASE_PATH . '/../src/Views/Layouts/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-6 flex-grow">
+    <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
         <!-- Project Selection or Project-Specific Content -->
         <?php if (empty($project)): ?>
+            <!-- Sprint Stats Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                    <div class="rounded-full bg-indigo-100 dark:bg-indigo-900 p-3 mr-4">
+                        <svg class="w-6 h-6 text-indigo-500 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Projects</div>
+                        <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                            <?= count($projects ?? []) ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                    <div class="rounded-full bg-green-100 dark:bg-green-900 p-3 mr-4">
+                        <svg class="w-6 h-6 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Sprints</div>
+                        <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                            <?php
+                            $totalActiveSprints = 0;
+                            if (!empty($projectSprintCounts)) {
+                                foreach ($projectSprintCounts as $counts) {
+                                    $totalActiveSprints += $counts['active'] ?? 0;
+                                }
+                            }
+                            echo $totalActiveSprints;
+                            ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                    <div class="rounded-full bg-blue-100 dark:bg-blue-900 p-3 mr-4">
+                        <svg class="w-6 h-6 text-blue-500 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Completed Sprints</div>
+                        <div class="text-xl font-semibold text-blue-600 dark:text-blue-400">
+                            <?php
+                            $totalCompletedSprints = 0;
+                            if (!empty($projectSprintCounts)) {
+                                foreach ($projectSprintCounts as $counts) {
+                                    $totalCompletedSprints += $counts['completed'] ?? 0;
+                                }
+                            }
+                            echo $totalCompletedSprints;
+                            ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center">
+                    <div class="rounded-full bg-yellow-100 dark:bg-yellow-900 p-3 mr-4">
+                        <svg class="w-6 h-6 text-yellow-500 dark:text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Planning Sprints</div>
+                        <div class="text-xl font-semibold text-yellow-600 dark:text-yellow-400">
+                            <?php
+                            $totalPlanningSprints = 0;
+                            if (!empty($projectSprintCounts)) {
+                                foreach ($projectSprintCounts as $counts) {
+                                    $totalPlanningSprints += $counts['planning'] ?? 0;
+                                }
+                            }
+                            echo $totalPlanningSprints;
+                            ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Title with Star Icon -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-2xl font-medium dark:text-white">Sprints</h1>
+                    <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors"
+                            data-type="page"
+                            data-title="Sprints"
+                            data-url="/sprints"
+                            data-icon="🚀"
+                            title="Add to favorites">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             <?php include __DIR__ . '/inc/project_selection.php'; ?>
         <?php else: ?>
             <!-- Project is selected - display sprints -->
-            
+
+
+
             <!-- Sprint Stats Summary -->
             <?php include __DIR__ . '/inc/sprint_stats.php'; ?>
 
-            <!-- Project Header with Navigation -->
-            <?php include __DIR__ . '/inc/project_header.php'; ?>
-
-            <!-- Page Header with Filters -->
-            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-                <div class="flex items-center">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Sprints</h2>
+            <!-- Page Title with Star Icon and Filters -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100"><?= htmlspecialchars($project->name ?? 'Project') ?></h1>
+                    <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors"
+                            data-type="page"
+                            data-title="<?= htmlspecialchars($project->name ?? 'Project') ?> - Sprints"
+                            data-url="/sprints/project/<?= $project->id ?? 0 ?>"
+                            data-icon="🚀"
+                            title="Add to favorites">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </button>
                     <?php if (!empty($sprints) && $activeSprintCount > 0): ?>
                         <span class="ml-3 px-2.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 text-xs font-medium rounded-full">
                             Active Sprint
                         </span>
                     <?php endif; ?>
                 </div>
-                
-                <div class="flex flex-col md:flex-row gap-3">
+
+                <!-- Search and Filter Controls -->
+                <div class="flex space-x-3">
                     <!-- Status Filter -->
                     <div class="relative min-w-[160px]">
                         <select id="status-filter" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="all">All Statuses</option>
-                            <option value="1">Planning</option>
-                            <option value="2">Active</option>
-                            <option value="3">Delayed</option>
-                            <option value="4">Completed</option>
-                            <option value="5">Cancelled</option>
+                            <?php
+                            for ($i = 1; $i <= 5; $i++) {
+                                $statusInfo = getSprintStatusInfo($i);
+                                echo '<option value="' . $i . '">' . htmlspecialchars($statusInfo['label']) . '</option>';
+                            }
+                            ?>
                         </select>
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +193,7 @@ include_once __DIR__ . '/inc/helpers.php';
                     </div>
 
                     <!-- Search -->
-                    <div class="relative flex-grow min-w-[200px]">
+                    <div class="relative min-w-[200px]">
                         <input
                             id="sprint-search"
                             type="search"
@@ -97,6 +208,8 @@ include_once __DIR__ . '/inc/helpers.php';
                     </div>
                 </div>
             </div>
+
+
 
             <!-- Active Sprint Panel (if exists) -->
             <?php 

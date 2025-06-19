@@ -11,7 +11,19 @@ if (!defined('BASE_PATH')) {
 
 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
     <div class="flex items-center">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mr-4"><?= $viewTitle ?></h1>
+        <div class="flex items-center space-x-2 mr-4">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white"><?= $viewTitle ?></h1>
+            <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors"
+                    data-type="page"
+                    data-title="<?= htmlspecialchars($viewTitle) ?>"
+                    data-url="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>"
+                    data-icon="✅"
+                    title="Add to favorites">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                </svg>
+            </button>
+        </div>
         
         <?php if ($isMyTasksView && !$viewingOwnTasks && isset($userDetails)): ?>
         <div class="flex items-center bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1">
@@ -29,7 +41,8 @@ if (!defined('BASE_PATH')) {
         <div class="relative">
             <select id="context-switcher" onchange="window.location.href=this.value" class="h-10 appearance-none w-full md:w-48 px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="/tasks/backlog" <?= $isBacklogView ? 'selected' : '' ?>>Backlog</option>
-                <option value="/tasks" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView) ? 'selected' : '' ?>>All Tasks</option>
+                <option value="/tasks" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView && !isset($_GET['no_subtasks'])) ? 'selected' : '' ?>>All Tasks</option>
+                <option value="/tasks?no_subtasks=1" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView && isset($_GET['no_subtasks'])) ? 'selected' : '' ?>>No Subtasks</option>
                 <option value="/tasks/assigned/<?= $currentUserId ?>" <?= $viewingOwnTasks ? 'selected' : '' ?>>My Tasks</option>
                 <?php if (isset($_SESSION['user']) && isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions'])): ?>
                 <option value="/tasks/unassigned" <?= $isUnassignedView ? 'selected' : '' ?>>Unassigned Tasks</option>

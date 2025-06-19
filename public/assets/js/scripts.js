@@ -26,10 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Close sidebar when clicking outside on mobile
+    // Close sidebar when clicking outside (on all screen sizes)
     document.addEventListener('click', function(event) {
-        if (window.innerWidth < 768 &&
-            !sidebar.contains(event.target) &&
+        if (!sidebar.contains(event.target) &&
             !toggleButton.contains(event.target) &&
             !sidebar.classList.contains('-translate-x-full')) {
             sidebar.classList.add('-translate-x-full');

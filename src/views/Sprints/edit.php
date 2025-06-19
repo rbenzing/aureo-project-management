@@ -142,12 +142,13 @@ use App\Core\Config;
                         required
                     >
                         <?php foreach ($statuses ?? [] as $status): ?>
-                            <option 
-                                value="<?= $status->id ?>" 
+                            <?php $statusInfo = getSprintStatusInfo($status->id); ?>
+                            <option
+                                value="<?= $status->id ?>"
                                 <?= isset($_SESSION['form_data']['status_id']) && $_SESSION['form_data']['status_id'] == $status->id ? 'selected' : '' ?>
                                 <?= (!isset($_SESSION['form_data']['status_id']) && isset($sprint->status_id) && $sprint->status_id == $status->id) ? 'selected' : '' ?>
                             >
-                                <?= htmlspecialchars($status->name) ?>
+                                <?= htmlspecialchars($statusInfo['label']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

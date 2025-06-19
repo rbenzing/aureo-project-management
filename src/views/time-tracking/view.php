@@ -235,6 +235,7 @@ include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Content-Type': 'application/json',
+                        'X-CSRF-Token': window.csrfToken || ''
                     }
                 })
                 .then(response => response.json())

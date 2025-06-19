@@ -149,74 +149,147 @@ function isDueSoon(?string $dueDate): bool
 }
 
 /**
- * Get CSS classes for task status - Updated for consistency
+ * Centralized Status Helper System
+ * Provides consistent status formatting for all entity types
+ */
+
+/**
+ * Get task status information
+ * @param int $statusId
+ * @return array ['label' => string, 'color' => string, 'class' => string]
+ */
+function getTaskStatusInfo(int $statusId): array
+{
+    $statusMap = [
+        1 => ['label' => 'Open', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'In Progress', 'color' => 'bg-yellow-500'],
+        3 => ['label' => 'On Hold', 'color' => 'bg-purple-500'],
+        4 => ['label' => 'In Review', 'color' => 'bg-indigo-500'],
+        5 => ['label' => 'Closed', 'color' => 'bg-gray-500'],
+        6 => ['label' => 'Completed', 'color' => 'bg-green-500'],
+        7 => ['label' => 'Cancelled', 'color' => 'bg-red-500']
+    ];
+
+    $status = $statusMap[$statusId] ?? ['label' => 'Unknown', 'color' => 'bg-gray-500'];
+    $status['class'] = $status['color'] . ' bg-opacity-20 text-white';
+    return $status;
+}
+
+/**
+ * Get project status information
+ * @param int $statusId
+ * @return array ['label' => string, 'color' => string, 'class' => string]
+ */
+function getProjectStatusInfo(int $statusId): array
+{
+    $statusMap = [
+        1 => ['label' => 'Ready', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'In Progress', 'color' => 'bg-yellow-500'],
+        3 => ['label' => 'Completed', 'color' => 'bg-green-500'],
+        4 => ['label' => 'On Hold', 'color' => 'bg-purple-500'],
+        6 => ['label' => 'Delayed', 'color' => 'bg-red-500'],
+        7 => ['label' => 'Cancelled', 'color' => 'bg-gray-500']
+    ];
+
+    $status = $statusMap[$statusId] ?? ['label' => 'Unknown', 'color' => 'bg-gray-500'];
+    $status['class'] = $status['color'] . ' bg-opacity-20 text-white';
+    return $status;
+}
+
+/**
+ * Get sprint status information
+ * @param int $statusId
+ * @return array ['label' => string, 'color' => string, 'class' => string]
+ */
+function getSprintStatusInfo(int $statusId): array
+{
+    $statusMap = [
+        1 => ['label' => 'Planning', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'Active', 'color' => 'bg-green-500'],
+        3 => ['label' => 'Delayed', 'color' => 'bg-red-500'],
+        4 => ['label' => 'Completed', 'color' => 'bg-gray-500'],
+        5 => ['label' => 'Cancelled', 'color' => 'bg-gray-500']
+    ];
+
+    $status = $statusMap[$statusId] ?? ['label' => 'Unknown', 'color' => 'bg-gray-500'];
+    $status['class'] = $status['color'] . ' bg-opacity-20 text-white';
+    return $status;
+}
+
+/**
+ * Get milestone status information
+ * @param int $statusId
+ * @return array ['label' => string, 'color' => string, 'class' => string]
+ */
+function getMilestoneStatusInfo(int $statusId): array
+{
+    $statusMap = [
+        1 => ['label' => 'Open', 'color' => 'bg-blue-600'],
+        2 => ['label' => 'In Progress', 'color' => 'bg-yellow-500'],
+        3 => ['label' => 'Completed', 'color' => 'bg-green-500'],
+        4 => ['label' => 'On Hold', 'color' => 'bg-purple-500'],
+        5 => ['label' => 'Cancelled', 'color' => 'bg-red-500']
+    ];
+
+    $status = $statusMap[$statusId] ?? ['label' => 'Unknown', 'color' => 'bg-gray-500'];
+    $status['class'] = $status['color'] . ' bg-opacity-20 text-white';
+    return $status;
+}
+
+/**
+ * Render a status pill with consistent styling
+ * @param string $label Status label
+ * @param string $colorClass Color class (e.g., 'bg-blue-600')
+ * @param string $size Size variant: 'sm', 'md', 'lg'
+ * @return string HTML for status pill
+ */
+function renderStatusPill(string $label, string $colorClass, string $size = 'md'): string
+{
+    $sizeClasses = [
+        'sm' => 'px-2 py-0.5 text-xs',
+        'md' => 'px-3 py-1 text-sm',
+        'lg' => 'px-4 py-2 text-base'
+    ];
+
+    $sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
+
+    return sprintf(
+        '<span class="%s %s bg-opacity-20 text-white font-medium rounded-full whitespace-nowrap">%s</span>',
+        $sizeClass,
+        $colorClass,
+        htmlspecialchars($label)
+    );
+}
+
+/**
+ * Legacy function for backward compatibility - Updated for consistency
  */
 function getTaskStatusClass(int $statusId): string
 {
-    // Updated to match new consistent styling across all pages
-    $statusMap = [
-        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-    ];
-
-    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-    return $status['color'] . ' bg-opacity-20 text-white';
+    $status = getTaskStatusInfo($statusId);
+    return $status['class'];
 }
 
 /**
- * Get CSS classes for project status
+ * Legacy functions - use the new centralized status info functions instead
+ * These are kept for backward compatibility but should be replaced
  */
 function getProjectStatusClass(int $statusId): string
 {
-    // Based on schema: 1=ready, 2=in_progress, 3=completed, 4=on_hold, 6=delayed, 7=cancelled
-    $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // ready
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // in_progress
-        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
-        4 => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', // on_hold
-        6 => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', // delayed
-        7 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // cancelled
-    ];
-
-    return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    $statusInfo = getProjectStatusInfo($statusId);
+    return $statusInfo['class'];
 }
 
-/**
- * Get CSS classes for milestone status
- */
 function getMilestoneStatusClass(int $statusId): string
 {
-    // Based on schema: 1=Not Started, 2=In Progress, 3=Completed
-    $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // Not Started
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // In Progress
-        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // Completed
-    ];
-
-    return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    $statusInfo = getMilestoneStatusInfo($statusId);
+    return $statusInfo['class'];
 }
 
-/**
- * Get CSS classes for sprint status - Global fallback version
- * Note: Sprint-specific pages should use the version from Sprints/inc/helpers.php
- */
 function getGlobalSprintStatusClass(int $statusId): string
 {
-    // Based on schema: 1=planning, 2=active, 3=completed, 4=cancelled, 5=delayed
-    $statusClasses = [
-        1 => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', // planning
-        2 => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', // active
-        3 => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', // completed
-        4 => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', // cancelled
-        5 => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', // delayed
-    ];
-
-    return $statusClasses[$statusId] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    $statusInfo = getSprintStatusInfo($statusId);
+    return $statusInfo['class'];
 }
 
 /**

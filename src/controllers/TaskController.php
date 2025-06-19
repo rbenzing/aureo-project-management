@@ -59,6 +59,9 @@ class TaskController
             $sortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'due_date';
             $sortDirection = isset($_GET['task_dir']) && $_GET['task_dir'] === 'desc' ? 'desc' : 'asc';
 
+            // Check for no subtasks filter
+            $noSubtasks = isset($_GET['no_subtasks']) && $_GET['no_subtasks'] == '1';
+
             // Determine the context based on the current route
             $currentPath = $_SERVER['REQUEST_URI'] ?? '';
             $isProjectContext = strpos($currentPath, '/tasks/project/') !== false;
@@ -87,8 +90,13 @@ class TaskController
                 $viewType = 'unassigned_tasks';
             } else {
                 // All tasks
-                $tasks = $this->taskModel->getAllWithDetails($limit, $page, $sortField, $sortDirection);
-                $totalTasks = $this->taskModel->count(['is_deleted' => 0]);
+                if ($noSubtasks) {
+                    $tasks = $this->taskModel->getAllWithDetailsNoSubtasks($limit, $page, $sortField, $sortDirection);
+                    $totalTasks = $this->taskModel->count(['is_deleted' => 0, 'is_subtask' => 0]);
+                } else {
+                    $tasks = $this->taskModel->getAllWithDetails($limit, $page, $sortField, $sortDirection);
+                    $totalTasks = $this->taskModel->count(['is_deleted' => 0]);
+                }
                 $viewType = 'all_tasks';
             }
 
@@ -306,7 +314,8 @@ class TaskController
             $this->authMiddleware->hasPermission('create_tasks');
 
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
-            $users = $this->userModel->getAll(['is_deleted' => 0]);
+            $usersResult = $this->userModel->getAll(['is_deleted' => 0], 1, 1000); // Get up to 1000 users
+            $users = $usersResult['records'];
             $statuses = $this->taskModel->getTaskStatuses();
 
             // Get settings for default values
@@ -362,9 +371,23 @@ class TaskController
                 $data['task_type'] = $projectSettings['default_task_type'];
             }
 
-            // Convert estimated time from settings unit to seconds if provided
-            if (!empty($data['estimated_time'])) {
-                $data['estimated_time'] = Time::convertToSeconds((float)$data['estimated_time']);
+            // Parse time fields from minutes to seconds if provided
+            if (isset($data['estimated_time']) && $data['estimated_time'] !== null && $data['estimated_time'] !== '') {
+                $data['estimated_time'] = Time::parseTimeToSeconds($data['estimated_time']);
+            } else {
+                $data['estimated_time'] = null;
+            }
+
+            if (isset($data['time_spent']) && $data['time_spent'] !== null && $data['time_spent'] !== '') {
+                $data['time_spent'] = Time::parseTimeToSeconds($data['time_spent']);
+            } else {
+                $data['time_spent'] = null;
+            }
+
+            if (isset($data['billable_time']) && $data['billable_time'] !== null && $data['billable_time'] !== '') {
+                $data['billable_time'] = Time::parseTimeToSeconds($data['billable_time']);
+            } else {
+                $data['billable_time'] = null;
             }
 
             $validator = new Validator($data, [
@@ -373,14 +396,17 @@ class TaskController
                 'priority' => 'required|in:none,low,medium,high',
                 'status_id' => 'required|integer|exists:statuses_task,id',
                 'project_id' => 'nullable|integer|exists:projects,id',
+                'start_date' => 'nullable|date',
                 'due_date' => 'nullable|date',
                 'estimated_time' => 'nullable|integer|min:0',
+                'time_spent' => 'nullable|integer|min:0',
+                'billable_time' => 'nullable|integer|min:0',
                 'hourly_rate' => 'nullable|integer|min:0',
                 'is_hourly' => 'boolean',
                 'parent_task_id' => 'nullable|integer|exists:tasks,id',
                 'story_points' => 'nullable|integer|min:1|max:13',
                 'acceptance_criteria' => 'nullable|string',
-                'task_type' => 'required|in:story,bug,task,epic',
+                'task_type' => 'required|in:story,bug,task,epic,subtask',
                 'backlog_priority' => 'nullable|integer|min:1',
                 'is_ready_for_sprint' => 'boolean'
             ]);
@@ -395,6 +421,17 @@ class TaskController
                 $assignedTo = filter_var($data['assigned_to'], FILTER_VALIDATE_INT);
             }
 
+            // Handle subtask logic - if task_type is 'subtask', set is_subtask=1 and task_type='task'
+            $taskType = $data['task_type'] ?? 'task';
+            $isSubtask = false;
+
+            if ($taskType === 'subtask') {
+                $isSubtask = true;
+                $taskType = 'task'; // Store as 'task' in database
+            } elseif (isset($data['parent_task_id']) && !empty($data['parent_task_id'])) {
+                $isSubtask = true; // Also set as subtask if parent task is selected
+            }
+
             $taskData = [
                 'title' => htmlspecialchars($data['title']),
                 'description' => isset($data['description']) ?
@@ -403,24 +440,29 @@ class TaskController
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
                 'assigned_to' => $assignedTo,
+                'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
-                'estimated_time' => isset($data['estimated_time']) ?
-                    filter_var($data['estimated_time'], FILTER_VALIDATE_INT) : null,
-                'hourly_rate' => isset($data['hourly_rate']) ?
+                'estimated_time' => isset($data['estimated_time']) && $data['estimated_time'] !== '' ?
+                    $data['estimated_time'] : null,
+                'time_spent' => isset($data['time_spent']) && $data['time_spent'] !== '' ?
+                    $data['time_spent'] : null,
+                'billable_time' => isset($data['billable_time']) && $data['billable_time'] !== '' ?
+                    $data['billable_time'] : null,
+                'hourly_rate' => isset($data['hourly_rate']) && $data['hourly_rate'] !== '' ?
                     filter_var($data['hourly_rate'], FILTER_VALIDATE_INT) : null,
-                'is_hourly' => isset($data['is_hourly']) ?
+                'is_hourly' => isset($data['is_hourly']) && $data['is_hourly'] !== '' ?
                     filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN) : false,
-                'parent_task_id' => isset($data['parent_task_id']) ?
+                'parent_task_id' => isset($data['parent_task_id']) && $data['parent_task_id'] !== '' ?
                     filter_var($data['parent_task_id'], FILTER_VALIDATE_INT) : null,
-                'is_subtask' => isset($data['parent_task_id']),
-                'story_points' => isset($data['story_points']) ?
+                'is_subtask' => $isSubtask,
+                'story_points' => isset($data['story_points']) && $data['story_points'] !== '' ?
                     filter_var($data['story_points'], FILTER_VALIDATE_INT) : null,
-                'acceptance_criteria' => isset($data['acceptance_criteria']) ?
+                'acceptance_criteria' => isset($data['acceptance_criteria']) && $data['acceptance_criteria'] !== '' ?
                     htmlspecialchars($data['acceptance_criteria']) : null,
-                'task_type' => $data['task_type'],
-                'backlog_priority' => isset($data['backlog_priority']) ?
+                'task_type' => $taskType,
+                'backlog_priority' => isset($data['backlog_priority']) && $data['backlog_priority'] !== '' ?
                     filter_var($data['backlog_priority'], FILTER_VALIDATE_INT) : null,
-                'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) ?
+                'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) && $data['is_ready_for_sprint'] !== '' ?
                     filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN) : false
             ];
 
@@ -471,8 +513,21 @@ class TaskController
             }
 
             $projects = $this->projectModel->getAll(['is_deleted' => 0]);
-            $users = $this->userModel->getAll(['is_deleted' => 0]);
+            $usersResult = $this->userModel->getAll(['is_deleted' => 0], 1, 1000); // Get up to 1000 users
+            $users = $usersResult['records'];
             $statuses = $this->taskModel->getTaskStatuses();
+
+            // Get available parent tasks from the same project
+            $availableParentTasks = [];
+            if ($task->project_id) {
+                $projectTasks = $this->taskModel->getByProjectId($task->project_id);
+                foreach ($projectTasks as $projectTask) {
+                    // Only main tasks can be parents, and task can't be its own parent
+                    if (!$projectTask->is_subtask && $projectTask->id !== $task->id) {
+                        $availableParentTasks[] = $projectTask;
+                    }
+                }
+            }
 
             // Get company ID from task's project
             $companyId = null;
@@ -523,7 +578,24 @@ class TaskController
                 throw new InvalidArgumentException('Invalid task ID');
             }
 
-            $data['estimated_time'] = Time::parseTimeToSeconds($data['estimated_time']);
+            // Parse time fields from minutes to seconds if provided
+            if (isset($data['estimated_time']) && $data['estimated_time'] !== null && $data['estimated_time'] !== '') {
+                $data['estimated_time'] = Time::parseTimeToSeconds($data['estimated_time']);
+            } else {
+                $data['estimated_time'] = null;
+            }
+
+            if (isset($data['time_spent']) && $data['time_spent'] !== null && $data['time_spent'] !== '') {
+                $data['time_spent'] = Time::parseTimeToSeconds($data['time_spent']);
+            } else {
+                $data['time_spent'] = null;
+            }
+
+            if (isset($data['billable_time']) && $data['billable_time'] !== null && $data['billable_time'] !== '') {
+                $data['billable_time'] = Time::parseTimeToSeconds($data['billable_time']);
+            } else {
+                $data['billable_time'] = null;
+            }
 
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
@@ -531,13 +603,19 @@ class TaskController
                 'priority' => 'required|in:none,low,medium,high',
                 'status_id' => 'required|integer|exists:statuses_task,id',
                 'project_id' => 'nullable|integer|exists:projects,id',
+                'assigned_to' => 'nullable|integer|exists:users,id',
+                'parent_task_id' => 'nullable|integer|exists:tasks,id',
+                'start_date' => 'nullable|date',
                 'due_date' => 'nullable|date',
+                'complete_date' => 'nullable|date',
                 'estimated_time' => 'nullable|integer|min:0',
+                'time_spent' => 'nullable|integer|min:0',
+                'billable_time' => 'nullable|integer|min:0',
                 'hourly_rate' => 'nullable|integer|min:0',
                 'is_hourly' => 'boolean',
                 'story_points' => 'nullable|integer|min:1|max:13',
                 'acceptance_criteria' => 'nullable|string',
-                'task_type' => 'required|in:story,bug,task,epic',
+                'task_type' => 'required|in:story,bug,task,epic,subtask',
                 'backlog_priority' => 'nullable|integer|min:1',
                 'is_ready_for_sprint' => 'boolean'
             ]);
@@ -546,29 +624,53 @@ class TaskController
                 throw new InvalidArgumentException(implode(', ', $validator->errors()));
             }
 
+            // Handle subtask logic - if task_type is 'subtask', set is_subtask=1 and task_type='task'
+            $taskType = $data['task_type'] ?? 'task';
+            $isSubtask = 0;
+
+            if ($taskType === 'subtask') {
+                $isSubtask = 1;
+                $taskType = 'task'; // Store as 'task' in database
+            } elseif (isset($data['parent_task_id']) && $data['parent_task_id'] !== '') {
+                $isSubtask = 1; // Also set as subtask if parent task is selected
+            }
+
             $taskData = [
                 'title' => htmlspecialchars($data['title']),
                 'description' => isset($data['description']) ?
                     htmlspecialchars($data['description']) : null,
                 'priority' => $data['priority'],
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
-                'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
+                'project_id' => isset($data['project_id']) && $data['project_id'] !== '' ?
+                    filter_var($data['project_id'], FILTER_VALIDATE_INT) :
+                    ($this->taskModel->find($id)->project_id ?? null),
+                'assigned_to' => isset($data['assigned_to']) && $data['assigned_to'] !== '' ?
+                    filter_var($data['assigned_to'], FILTER_VALIDATE_INT) : null,
+                'parent_task_id' => isset($data['parent_task_id']) && $data['parent_task_id'] !== '' ?
+                    filter_var($data['parent_task_id'], FILTER_VALIDATE_INT) : null,
+                'is_subtask' => $isSubtask,
+                'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
-                'estimated_time' => isset($data['estimated_time']) ?
-                    filter_var($data['estimated_time'], FILTER_VALIDATE_INT) : null,
-                'hourly_rate' => isset($data['hourly_rate']) ?
+                'complete_date' => $data['complete_date'] ?? null,
+                'estimated_time' => isset($data['estimated_time']) && $data['estimated_time'] !== '' ?
+                    $data['estimated_time'] : null,
+                'time_spent' => isset($data['time_spent']) && $data['time_spent'] !== '' ?
+                    $data['time_spent'] : null,
+                'billable_time' => isset($data['billable_time']) && $data['billable_time'] !== '' ?
+                    $data['billable_time'] : null,
+                'hourly_rate' => isset($data['hourly_rate']) && $data['hourly_rate'] !== '' ?
                     filter_var($data['hourly_rate'], FILTER_VALIDATE_INT) : null,
-                'is_hourly' => isset($data['is_hourly']) ?
-                    filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN) : false,
-                'story_points' => isset($data['story_points']) ?
+                'is_hourly' => isset($data['is_hourly']) && $data['is_hourly'] !== '' ?
+                    filter_var($data['is_hourly'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : 0,
+                'story_points' => isset($data['story_points']) && $data['story_points'] !== '' ?
                     filter_var($data['story_points'], FILTER_VALIDATE_INT) : null,
-                'acceptance_criteria' => isset($data['acceptance_criteria']) ?
+                'acceptance_criteria' => isset($data['acceptance_criteria']) && $data['acceptance_criteria'] !== '' ?
                     htmlspecialchars($data['acceptance_criteria']) : null,
-                'task_type' => $data['task_type'] ?? 'task',
-                'backlog_priority' => isset($data['backlog_priority']) ?
+                'task_type' => $taskType,
+                'backlog_priority' => isset($data['backlog_priority']) && $data['backlog_priority'] !== '' ?
                     filter_var($data['backlog_priority'], FILTER_VALIDATE_INT) : null,
-                'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) ?
-                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN) : false
+                'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) && $data['is_ready_for_sprint'] !== '' ?
+                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : 0
             ];
 
             $this->taskModel->update($id, $taskData);
@@ -578,15 +680,127 @@ class TaskController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
+            // Log form data for validation errors
+            error_log("Form data that failed validation: " . print_r($data, true));
+
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'TaskController::update (validation)',
+                'Please check your input: ' . $e->getMessage(),
+                (string)$id
+            );
             $_SESSION['form_data'] = $data;
             header("Location: /tasks/edit/{$id}");
             exit;
         } catch (\Exception $e) {
-            error_log("Exception in TaskController::update: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while updating the task.';
+            // Log additional context data
+            error_log("Form data received: " . print_r($data, true));
+            error_log("Processed task data: " . print_r($taskData ?? [], true));
+
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'TaskController::update',
+                'Unable to update task. Please check your input and try again. If the problem persists, contact support.',
+                (string)$id
+            );
             header("Location: /tasks/edit/{$id}");
             exit;
+        }
+    }
+
+    /**
+     * Update task status via API (for Kanban board)
+     * @param string $requestMethod
+     * @param array $data
+     * @throws RuntimeException
+     */
+    public function updateStatus(string $requestMethod, array $data): void
+    {
+        if ($requestMethod !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+
+        try {
+            $this->authMiddleware->hasPermission('edit_tasks');
+
+            // Get JSON input
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!isset($input['task_id']) || !isset($input['status_id'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Task ID and status ID are required']);
+                return;
+            }
+
+            $taskId = filter_var($input['task_id'], FILTER_VALIDATE_INT);
+            $statusId = filter_var($input['status_id'], FILTER_VALIDATE_INT);
+
+            if (!$taskId || !$statusId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid task ID or status ID']);
+                return;
+            }
+
+            // Fetch and validate task
+            $task = $this->taskModel->find($taskId);
+            if (!$task || $task->is_deleted) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                return;
+            }
+
+            // Check permissions
+            $userId = $_SESSION['user']['id'] ?? null;
+            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'You do not have permission to update this task']);
+                return;
+            }
+
+            // Validate status exists
+            $statuses = $this->taskModel->getTaskStatuses();
+            $validStatus = false;
+            foreach ($statuses as $status) {
+                if ($status->id == $statusId) {
+                    $validStatus = true;
+                    break;
+                }
+            }
+
+            if (!$validStatus) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid status ID']);
+                return;
+            }
+
+            // Update task status
+            $updateData = ['status_id' => $statusId];
+
+            // If moving to completed status, set complete date
+            if ($statusId == 6) { // Assuming 6 is completed status
+                $updateData['complete_date'] = date('Y-m-d H:i:s');
+            }
+
+            $result = $this->taskModel->update($taskId, $updateData);
+
+            if ($result) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Task status updated successfully',
+                    'task_id' => $taskId,
+                    'new_status_id' => $statusId
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
+            }
+
+        } catch (\Exception $e) {
+            error_log("Exception in TaskController::updateStatus: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'An error occurred while updating task status']);
         }
     }
 

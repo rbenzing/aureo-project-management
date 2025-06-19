@@ -215,4 +215,146 @@ class Template extends BaseModel
             throw new RuntimeException("Failed to set default template: " . $e->getMessage());
         }
     }
+
+    /**
+     * Get sprint templates with additional configuration data
+     *
+     * @param int|null $companyId Company ID or null for global templates
+     * @param int|null $projectId Project ID for project-specific templates
+     * @return array Array of sprint template objects with configuration
+     */
+    public function getSprintTemplates(?int $companyId = null, ?int $projectId = null): array
+    {
+        try {
+            $sql = "SELECT t.*,
+                        tc.sprint_length,
+                        tc.estimation_method,
+                        tc.default_capacity,
+                        tc.include_weekends,
+                        tc.auto_assign_subtasks,
+                        tc.ceremony_settings
+                    FROM {$this->table} t
+                    LEFT JOIN template_configurations tc ON t.id = tc.template_id
+                    WHERE t.is_deleted = 0
+                    AND t.template_type = 'sprint'
+                    AND (t.company_id IS NULL OR t.company_id = :company_id)";
+
+            $params = [':company_id' => $companyId];
+
+            if ($projectId) {
+                $sql .= " AND (tc.project_id IS NULL OR tc.project_id = :project_id)";
+                $params[':project_id'] = $projectId;
+            }
+
+            $sql .= " ORDER BY t.is_default DESC, t.name ASC";
+
+            $stmt = $this->db->executeQuery($sql, $params);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint templates: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Create sprint template with configuration
+     *
+     * @param array $templateData Template basic data
+     * @param array $configData Sprint-specific configuration
+     * @return int Template ID
+     */
+    public function createSprintTemplate(array $templateData, array $configData = []): int
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Create the basic template
+            $templateId = $this->create($templateData);
+
+            // Create sprint-specific configuration if provided
+            if (!empty($configData)) {
+                $this->createSprintTemplateConfiguration($templateId, $configData);
+            }
+
+            $this->db->commit();
+            return $templateId;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw new RuntimeException("Failed to create sprint template: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create sprint template configuration
+     *
+     * @param int $templateId Template ID
+     * @param array $configData Configuration data
+     * @return bool Success status
+     */
+    public function createSprintTemplateConfiguration(int $templateId, array $configData): bool
+    {
+        try {
+            $sql = "INSERT INTO template_configurations (
+                        template_id,
+                        project_id,
+                        sprint_length,
+                        estimation_method,
+                        default_capacity,
+                        include_weekends,
+                        auto_assign_subtasks,
+                        ceremony_settings,
+                        created_at
+                    ) VALUES (
+                        :template_id,
+                        :project_id,
+                        :sprint_length,
+                        :estimation_method,
+                        :default_capacity,
+                        :include_weekends,
+                        :auto_assign_subtasks,
+                        :ceremony_settings,
+                        NOW()
+                    )";
+
+            $params = [
+                ':template_id' => $templateId,
+                ':project_id' => $configData['project_id'] ?? null,
+                ':sprint_length' => $configData['sprint_length'] ?? 2,
+                ':estimation_method' => $configData['estimation_method'] ?? 'hours',
+                ':default_capacity' => $configData['default_capacity'] ?? 40,
+                ':include_weekends' => $configData['include_weekends'] ?? false,
+                ':auto_assign_subtasks' => $configData['auto_assign_subtasks'] ?? true,
+                ':ceremony_settings' => json_encode($configData['ceremony_settings'] ?? [])
+            ];
+
+            return $this->db->executeInsertUpdate($sql, $params);
+        } catch (\Exception $e) {
+            error_log("Failed to create sprint template configuration: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get sprint template configuration
+     *
+     * @param int $templateId Template ID
+     * @return object|null Configuration object or null if not found
+     */
+    public function getSprintTemplateConfiguration(int $templateId): ?object
+    {
+        try {
+            $sql = "SELECT * FROM template_configurations WHERE template_id = :template_id";
+            $stmt = $this->db->executeQuery($sql, [':template_id' => $templateId]);
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if ($result && !empty($result->ceremony_settings)) {
+                $result->ceremony_settings = json_decode($result->ceremony_settings, true);
+            }
+
+            return $result ?: null;
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint template configuration: " . $e->getMessage());
+            return null;
+        }
+    }
 }

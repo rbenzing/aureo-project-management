@@ -103,6 +103,15 @@ class ProjectController
             // Load companies for the filter dropdown
             $companies = $this->companyModel->getAllCompanies();
 
+            // Calculate project statistics for quick stats bar
+            $projectStats = [
+                'total' => $totalProjects,
+                'in_progress' => $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]),
+                'completed' => $this->projectModel->count(['status_id' => 3, 'is_deleted' => 0]),
+                'on_hold' => $this->projectModel->count(['status_id' => 4, 'is_deleted' => 0]),
+                'delayed' => $this->projectModel->count(['status_id' => 6, 'is_deleted' => 0])
+            ];
+
             $totalPages = ceil($totalProjects / $limit);
 
             include __DIR__ . '/../Views/Projects/index.php';

@@ -51,9 +51,10 @@ include_once __DIR__ . '/inc/helpers.php';
                             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                                 <?= htmlspecialchars($sprint->name ?? 'Sprint') ?>
                             </h1>
-                            <span class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-medium <?= getSprintStatusClass($sprint->status_id ?? 1) ?>">
-                                <?= getSprintStatusLabel($sprint->status_id ?? 1) ?>
-                            </span>
+                            <?php
+                            $statusInfo = getSprintStatusInfo($sprint->status_id ?? 1);
+                            echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm') . '</span>';
+                            ?>
                         </div>
                         <p class="text-gray-600 dark:text-gray-400 mt-1">
                             Project: <a href="/projects/view/<?= $project->id ?? 0 ?>" class="text-indigo-600 dark:text-indigo-400 hover:underline">
@@ -87,6 +88,24 @@ include_once __DIR__ . '/inc/helpers.php';
                     <a href="/sprints/project/<?= $project->id ?? 0 ?>" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
                         All Sprints
                     </a>
+
+                    <!-- Sprint Switcher -->
+                    <div class="relative min-w-[180px]">
+                        <select id="sprintSwitcher" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Switch Sprint...</option>
+                            <!-- Sprint options will be loaded via JavaScript -->
+                        </select>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
 
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="more-dropdown-toggle px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center">
@@ -140,12 +159,24 @@ include_once __DIR__ . '/inc/helpers.php';
         </div>
 
         <!-- Sprint Details Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
             <!-- Sprint Info Card -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Sprint Details</h2>
 
                 <div class="space-y-4">
+                    <!-- Sprint Goal -->
+                    <?php if (!empty($sprint->sprint_goal)): ?>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sprint Goal</h3>
+                        <div class="mt-1 p-3 bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-400 rounded-r-md">
+                            <p class="text-blue-800 dark:text-blue-200 font-medium">
+                                <?= nl2br(htmlspecialchars($sprint->sprint_goal)) ?>
+                            </p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Description -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</h3>
@@ -306,8 +337,114 @@ include_once __DIR__ . '/inc/helpers.php';
                 </div>
             </div>
 
-            <!-- Sprint Burndown Chart -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
+            <!-- Sprint Relationships (if milestone-based) -->
+            <?php if (!empty($sprint->relationships) && ($sprint->relationships['type'] !== 'project' || !empty($sprint->relationships['milestones']) || !empty($sprint->relationships['epics']))): ?>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Sprint Relationships</h2>
+
+                <div class="space-y-4">
+                    <!-- Sprint Type -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sprint Type</h3>
+                        <div class="mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                <?php
+                                switch ($sprint->relationships['type']) {
+                                    case 'epic':
+                                        echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                                        break;
+                                    case 'milestone':
+                                        echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                                        break;
+                                    default:
+                                        echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                                }
+                                ?>">
+                                <?= ucfirst($sprint->relationships['type']) ?>-based Sprint
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Associated Epics -->
+                    <?php if (!empty($sprint->relationships['epics'])): ?>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Associated Epics</h3>
+                        <div class="mt-2 space-y-2">
+                            <?php foreach ($sprint->relationships['epics'] as $epic): ?>
+                                <div class="flex items-center p-2 bg-purple-50 dark:bg-purple-900 rounded-md">
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+                                            EPIC
+                                        </span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="/milestones/view/<?= $epic->id ?>" class="text-sm font-medium text-purple-900 dark:text-purple-100 hover:underline">
+                                            <?= htmlspecialchars($epic->title) ?>
+                                        </a>
+                                        <?php if (!empty($epic->due_date)): ?>
+                                            <div class="text-xs text-purple-700 dark:text-purple-300">
+                                                Due: <?= date('M j, Y', strtotime($epic->due_date)) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Associated Milestones -->
+                    <?php if (!empty($sprint->relationships['milestones'])): ?>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Associated Milestones</h3>
+                        <div class="mt-2 space-y-2">
+                            <?php foreach ($sprint->relationships['milestones'] as $milestone): ?>
+                                <div class="flex items-center p-2 bg-blue-50 dark:bg-blue-900 rounded-md">
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200">
+                                            MILESTONE
+                                        </span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="/milestones/view/<?= $milestone->id ?>" class="text-sm font-medium text-blue-900 dark:text-blue-100 hover:underline">
+                                            <?= htmlspecialchars($milestone->title) ?>
+                                        </a>
+                                        <?php if (!empty($milestone->due_date)): ?>
+                                            <div class="text-xs text-blue-700 dark:text-blue-300">
+                                                Due: <?= date('M j, Y', strtotime($milestone->due_date)) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Project Information -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Project</h3>
+                        <div class="mt-1">
+                            <a href="/projects/view/<?= $sprint->relationships['project']->id ?? $project->id ?>" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <?= htmlspecialchars($sprint->relationships['project']->name ?? $project->name) ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Sprint Burndown Chart (conditional positioning) -->
+            <?php if (!empty($sprint->relationships) && ($sprint->relationships['type'] !== 'project' || !empty($sprint->relationships['milestones']) || !empty($sprint->relationships['epics']))): ?>
+                <!-- Burndown chart spans full width when relationships are shown -->
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <?php else: ?>
+                <!-- Burndown chart stays in the grid when no relationships -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <?php endif; ?>
                 <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Burndown Chart</h2>
 
                 <?php if (!empty($tasks)): ?>
@@ -323,7 +460,13 @@ include_once __DIR__ . '/inc/helpers.php';
                     </div>
                 <?php endif; ?>
             </div>
+            <?php if (!empty($sprint->relationships) && ($sprint->relationships['type'] !== 'project' || !empty($sprint->relationships['milestones']) || !empty($sprint->relationships['epics']))): ?>
+                <!-- Close the standalone burndown chart div when relationships exist -->
         </div>
+            <?php else: ?>
+                <!-- Close the grid layout when no relationships -->
+        </div>
+            <?php endif; ?>
 
         <!-- Sprint Tasks -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
@@ -436,6 +579,140 @@ include_once __DIR__ . '/inc/helpers.php';
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Load sprint switcher options
+            loadSprintSwitcher();
+
+            // Handle sprint switcher change
+            const sprintSwitcher = document.getElementById('sprintSwitcher');
+            if (sprintSwitcher) {
+                sprintSwitcher.addEventListener('change', function() {
+                    if (this.value) {
+                        window.location.href = '/sprints/view/' + this.value;
+                    }
+                });
+            }
+
+            // Load sprint switcher options
+            function loadSprintSwitcher() {
+                const projectId = <?= isset($project) && $project ? $project->id : 0 ?>;
+                const currentSprintId = <?= isset($sprint) && $sprint ? $sprint->id : 0 ?>;
+
+                if (!projectId) {
+                    console.warn('No project ID available for sprint switcher');
+                    return;
+                }
+
+                fetch(`/api/sprints/project/${projectId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.sprints) {
+                            populateSprintSwitcher(data.sprints, currentSprintId);
+                        } else {
+                            console.error('Failed to load sprints:', data.message || 'No sprints data');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading sprints:', error);
+                    });
+            }
+
+            function populateSprintSwitcher(sprints, currentSprintId) {
+                const sprintSwitcher = document.getElementById('sprintSwitcher');
+                if (!sprintSwitcher) {
+                    console.error('Sprint switcher element not found');
+                    return;
+                }
+
+                // Clear existing options except the first one
+                while (sprintSwitcher.children.length > 1) {
+                    sprintSwitcher.removeChild(sprintSwitcher.lastChild);
+                }
+
+                if (!sprints || sprints.length === 0) {
+                    console.warn('No sprints available for switcher');
+                    return;
+                }
+
+                // Group sprints by status
+                const sprintGroups = {
+                    active: [],
+                    planning: [],
+                    completed: [],
+                    other: []
+                };
+
+                sprints.forEach(sprint => {
+                    if (sprint.id == currentSprintId) return; // Skip current sprint
+
+                    switch (sprint.status_id) {
+                        case 2: // Active
+                            sprintGroups.active.push(sprint);
+                            break;
+                        case 1: // Planning
+                            sprintGroups.planning.push(sprint);
+                            break;
+                        case 4: // Completed
+                            sprintGroups.completed.push(sprint);
+                            break;
+                        default:
+                            sprintGroups.other.push(sprint);
+                    }
+                });
+
+                // Add grouped options
+                if (sprintGroups.active.length > 0) {
+                    const activeGroup = document.createElement('optgroup');
+                    activeGroup.label = 'Active Sprints';
+                    sprintGroups.active.forEach(sprint => {
+                        const option = document.createElement('option');
+                        option.value = sprint.id;
+                        option.textContent = sprint.name;
+                        activeGroup.appendChild(option);
+                    });
+                    sprintSwitcher.appendChild(activeGroup);
+                }
+
+                if (sprintGroups.planning.length > 0) {
+                    const planningGroup = document.createElement('optgroup');
+                    planningGroup.label = 'Planning Sprints';
+                    sprintGroups.planning.forEach(sprint => {
+                        const option = document.createElement('option');
+                        option.value = sprint.id;
+                        option.textContent = sprint.name;
+                        planningGroup.appendChild(option);
+                    });
+                    sprintSwitcher.appendChild(planningGroup);
+                }
+
+                if (sprintGroups.completed.length > 0) {
+                    const completedGroup = document.createElement('optgroup');
+                    completedGroup.label = 'Completed Sprints';
+                    sprintGroups.completed.forEach(sprint => {
+                        const option = document.createElement('option');
+                        option.value = sprint.id;
+                        option.textContent = sprint.name;
+                        completedGroup.appendChild(option);
+                    });
+                    sprintSwitcher.appendChild(completedGroup);
+                }
+
+                if (sprintGroups.other.length > 0) {
+                    const otherGroup = document.createElement('optgroup');
+                    otherGroup.label = 'Other Sprints';
+                    sprintGroups.other.forEach(sprint => {
+                        const option = document.createElement('option');
+                        option.value = sprint.id;
+                        option.textContent = sprint.name;
+                        otherGroup.appendChild(option);
+                    });
+                    sprintSwitcher.appendChild(otherGroup);
+                }
+            }
 
         // Dropdown toggle functionality
         function setupDropdown(toggleClass, menuClass) {

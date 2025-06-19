@@ -49,6 +49,52 @@ use App\Services\SettingsService;
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <input type="hidden" name="project_id" value="<?= htmlspecialchars($project->id ?? '') ?>">
 
+                <!-- Sprint Template Selection -->
+                <div>
+                    <label for="sprint_template" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sprint Template (Optional)</label>
+                    <select
+                        id="sprint_template"
+                        name="sprint_template"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                    >
+                        <option value="">Create from scratch</option>
+                        <!-- Sprint templates will be loaded via JavaScript -->
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose a template to pre-fill sprint settings and configuration</p>
+                </div>
+
+                <!-- Sprint Type Selection -->
+                <div>
+                    <label for="sprint_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sprint Type <span class="text-red-600">*</span></label>
+                    <select
+                        id="sprint_type"
+                        name="sprint_type"
+                        class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                        required
+                    >
+                        <option value="project" <?= ($_SESSION['form_data']['sprint_type'] ?? 'project') === 'project' ? 'selected' : '' ?>>
+                            Project-based Sprint
+                        </option>
+                        <option value="milestone" <?= ($_SESSION['form_data']['sprint_type'] ?? '') === 'milestone' ? 'selected' : '' ?>>
+                            Milestone/Epic-based Sprint
+                        </option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose whether this sprint is based on project tasks or specific milestones/epics</p>
+                </div>
+
+                <!-- Milestone Selection (shown when milestone type is selected) -->
+                <div id="milestone-selection" class="hidden">
+                    <label for="milestone_ids" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Milestones/Epics</label>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
+                        <div class="mb-3">
+                            <input type="text" id="milestone-search" placeholder="Search milestones..." class="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:text-white">
+                        </div>
+                        <div id="milestone-list" class="max-h-64 overflow-y-auto space-y-2 pr-2">
+                            <!-- Milestones will be loaded via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Sprint Name -->
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sprint Name <span class="text-red-600">*</span></label>
@@ -191,12 +237,13 @@ use App\Services\SettingsService;
                         required
                     >
                         <?php foreach ($sprint_statuses ?? [] as $status): ?>
-                            <option 
-                                value="<?= $status->id ?>" 
+                            <?php $statusInfo = getSprintStatusInfo($status->id); ?>
+                            <option
+                                value="<?= $status->id ?>"
                                 <?= isset($_SESSION['form_data']['status_id']) && $_SESSION['form_data']['status_id'] == $status->id ? 'selected' : '' ?>
                                 <?= (!isset($_SESSION['form_data']['status_id']) && $status->id == 1) ? 'selected' : '' ?>
                             >
-                                <?= htmlspecialchars($status->name) ?>
+                                <?= htmlspecialchars($statusInfo['label']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -271,6 +318,209 @@ use App\Services\SettingsService;
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Sprint Type Selection
+            const sprintTypeSelect = document.getElementById('sprint_type');
+            const milestoneSelection = document.getElementById('milestone-selection');
+            const projectTasksSection = document.querySelector('.task-item')?.closest('div').closest('div');
+
+            function toggleSprintType() {
+                const sprintType = sprintTypeSelect.value;
+
+                if (sprintType === 'milestone') {
+                    milestoneSelection.classList.remove('hidden');
+                    if (projectTasksSection) {
+                        projectTasksSection.style.display = 'none';
+                    }
+                    loadMilestones();
+                } else {
+                    milestoneSelection.classList.add('hidden');
+                    if (projectTasksSection) {
+                        projectTasksSection.style.display = 'block';
+                    }
+                }
+            }
+
+            sprintTypeSelect.addEventListener('change', toggleSprintType);
+
+            // Load milestones for the current project
+            function loadMilestones() {
+                const projectId = document.querySelector('input[name="project_id"]').value;
+                if (!projectId) return;
+
+                fetch(`/api/sprints/milestones/${projectId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderMilestones(data.milestones);
+                        } else {
+                            console.error('Failed to load milestones:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading milestones:', error);
+                    });
+            }
+
+            function renderMilestones(milestones) {
+                const milestoneList = document.getElementById('milestone-list');
+                milestoneList.innerHTML = '';
+
+                if (milestones.length === 0) {
+                    milestoneList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No milestones available for this project.</p>';
+                    return;
+                }
+
+                milestones.forEach(milestone => {
+                    const milestoneItem = document.createElement('div');
+                    milestoneItem.className = 'milestone-item flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md';
+
+                    milestoneItem.innerHTML = `
+                        <input
+                            type="checkbox"
+                            id="milestone-${milestone.id}"
+                            name="milestone_ids[]"
+                            value="${milestone.id}"
+                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        >
+                        <label for="milestone-${milestone.id}" class="ml-2 flex-1 cursor-pointer">
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                ${milestone.title}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ml-2 ${milestone.milestone_type === 'epic' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}">
+                                    ${milestone.milestone_type}
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                                <span class="px-1.5 py-0.5 text-xs rounded-full mr-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                    ${milestone.status_name || 'Open'}
+                                </span>
+                                ${milestone.ready_task_count || 0} ready tasks
+                                ${milestone.due_date ? `• Due: ${new Date(milestone.due_date).toLocaleDateString()}` : ''}
+                            </div>
+                        </label>
+                    `;
+
+                    milestoneList.appendChild(milestoneItem);
+                });
+            }
+
+            // Milestone search functionality
+            const milestoneSearchInput = document.getElementById('milestone-search');
+            if (milestoneSearchInput) {
+                milestoneSearchInput.addEventListener('input', function() {
+                    const searchText = this.value.toLowerCase();
+                    const milestoneItems = document.querySelectorAll('.milestone-item');
+
+                    milestoneItems.forEach(item => {
+                        const milestoneTitle = item.querySelector('label div:first-child').textContent.toLowerCase();
+                        if (milestoneTitle.includes(searchText)) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // Load sprint templates for the current project
+            function loadSprintTemplates() {
+                const projectId = document.querySelector('input[name="project_id"]').value;
+                if (!projectId) return;
+
+                fetch(`/api/sprint-templates?project_id=${projectId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderSprintTemplates(data.templates);
+                        } else {
+                            console.error('Failed to load sprint templates:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading sprint templates:', error);
+                    });
+            }
+
+            function renderSprintTemplates(templates) {
+                const templateSelect = document.getElementById('sprint_template');
+
+                // Clear existing options except the first one
+                while (templateSelect.children.length > 1) {
+                    templateSelect.removeChild(templateSelect.lastChild);
+                }
+
+                templates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.id;
+                    option.textContent = template.name;
+                    option.setAttribute('data-config', JSON.stringify(template.config || {}));
+                    templateSelect.appendChild(option);
+                });
+            }
+
+            function applySprintTemplate(templateId) {
+                const templateSelect = document.getElementById('sprint_template');
+                const selectedOption = templateSelect.querySelector(`option[value="${templateId}"]`);
+
+                if (!selectedOption) return;
+
+                const config = JSON.parse(selectedOption.getAttribute('data-config') || '{}');
+
+                // Apply template configuration to form fields
+                if (config.sprint_length) {
+                    const sprintLengthField = document.querySelector('input[name="sprint_length"]');
+                    if (sprintLengthField) sprintLengthField.value = config.sprint_length;
+                }
+
+                if (config.estimation_method) {
+                    const estimationField = document.querySelector('select[name="estimation_method"]');
+                    if (estimationField) estimationField.value = config.estimation_method;
+                }
+
+                if (config.default_capacity) {
+                    const capacityField = document.querySelector('input[name="default_capacity"]');
+                    if (capacityField) capacityField.value = config.default_capacity;
+                }
+
+                if (config.include_weekends !== undefined) {
+                    const weekendsField = document.querySelector('input[name="include_weekends"]');
+                    if (weekendsField) weekendsField.checked = config.include_weekends;
+                }
+
+                if (config.auto_assign_subtasks !== undefined) {
+                    const autoAssignField = document.querySelector('input[name="auto_assign_subtasks"]');
+                    if (autoAssignField) autoAssignField.checked = config.auto_assign_subtasks;
+                }
+
+                // Apply template description if form description is empty
+                const descriptionField = document.getElementById('description');
+                if (descriptionField && !descriptionField.value.trim()) {
+                    fetch(`/sprint-templates/get/${templateId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.template.description) {
+                                descriptionField.value = data.template.description;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading template description:', error);
+                        });
+                }
+            }
+
+            // Initialize sprint type on page load
+            toggleSprintType();
+
+            // Load sprint templates
+            loadSprintTemplates();
+
+            // Handle sprint template selection
+            const sprintTemplateSelect = document.getElementById('sprint_template');
+            sprintTemplateSelect.addEventListener('change', function() {
+                if (this.value) {
+                    applySprintTemplate(this.value);
+                }
+            });
+
             // Handle Templates Dropdowns
             const quickTemplateSelect = document.getElementById('quick_template');
             const customTemplateSelect = document.getElementById('custom_template');

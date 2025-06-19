@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\Milestone;
 use App\Models\Sprint;
 use App\Core\Database;
+use App\Core\Config;
 use App\Services\SecurityService;
 use RuntimeException;
 use InvalidArgumentException;
@@ -67,8 +68,11 @@ class DashboardController
                 $dashboardData = $this->getDashboardData($userId, $userPermissions);
             } catch (\Exception $e) {
                 // Log the error but don't redirect to login - show error on dashboard
-                error_log("Dashboard data fetch error: " . $e->getMessage());
-                $_SESSION['error'] = 'Some dashboard data could not be loaded: ' . $e->getMessage();
+                $_SESSION['error'] = Config::getErrorMessage(
+                    $e,
+                    'DashboardController::index (data fetch)',
+                    'Some dashboard data could not be loaded. Please refresh the page.'
+                );
 
                 // Provide empty dashboard data structure so the page can still render
                 $dashboardData = [
@@ -119,8 +123,11 @@ class DashboardController
 
         } catch (\Exception $e) {
             // Only redirect to login for actual authentication/authorization errors
-            error_log("Critical dashboard error: " . $e->getMessage());
-            $_SESSION['error'] = 'A critical error occurred while loading the dashboard.';
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'DashboardController::index (critical)',
+                'A critical error occurred while loading the dashboard.'
+            );
             header('Location: /login');
             exit;
         }

@@ -30,8 +30,12 @@ class SettingsController
      */
     public function index(string $requestMethod, array $data): void
     {
-        // Check authentication and permissions
-        $this->authMiddleware->hasPermission('view_settings');
+        // Check authentication and permissions - user needs at least one settings permission
+        $this->authMiddleware->hasAnyPermission([
+            'view_settings', 'edit_settings', 'edit_security_settings',
+            'manage_sprint_settings', 'manage_task_settings',
+            'manage_milestone_settings', 'manage_project_settings'
+        ]);
 
         try {
             // Get all settings grouped by category
@@ -65,7 +69,16 @@ class SettingsController
                 'sprints' => [
                     'default_sprint_length' => '14',
                     'auto_start_next_sprint' => '0',
-                    'sprint_planning_enabled' => '1'
+                    'sprint_planning_enabled' => '1',
+                    'estimation_method' => 'hours',
+                    'team_capacity_hours' => '40',
+                    'team_capacity_story_points' => '20',
+                    'velocity_tracking_enabled' => '1',
+                    'burndown_charts_enabled' => '1',
+                    'auto_move_incomplete_tasks' => '1',
+                    'sprint_notifications_enabled' => '1',
+                    'working_days' => 'monday,tuesday,wednesday,thursday,friday',
+                    'retrospective_enabled' => '1'
                 ],
                 'templates' => [
                     'project_show_quick_templates' => '1',
@@ -126,8 +139,12 @@ class SettingsController
      */
     public function update(string $requestMethod, array $data): void
     {
-        // Check authentication and permissions
-        $this->authMiddleware->hasPermission('manage_settings');
+        // Check authentication - user needs at least one settings permission
+        $this->authMiddleware->hasAnyPermission([
+            'edit_settings', 'edit_security_settings',
+            'manage_sprint_settings', 'manage_task_settings',
+            'manage_milestone_settings', 'manage_project_settings'
+        ]);
 
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
@@ -137,15 +154,29 @@ class SettingsController
         }
 
         try {
-            // Process each category of settings
-            $categories = ['general', 'projects', 'tasks', 'milestones', 'sprints', 'templates', 'security'];
-            
-            foreach ($categories as $category) {
+            // Process each category of settings with permission checks
+            $categoryPermissions = [
+                'general' => 'edit_settings',
+                'security' => 'edit_security_settings',
+                'projects' => 'manage_project_settings',
+                'tasks' => 'manage_task_settings',
+                'milestones' => 'manage_milestone_settings',
+                'sprints' => 'manage_sprint_settings',
+                'templates' => 'edit_settings'
+            ];
+
+            foreach ($categoryPermissions as $category => $permission) {
                 if (isset($data[$category]) && is_array($data[$category])) {
+                    // Check if user has permission for this category
+                    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+                    if (!in_array($permission, $userPermissions, true)) {
+                        continue; // Skip this category if no permission
+                    }
+
                     foreach ($data[$category] as $key => $value) {
                         // Sanitize the value
                         $sanitizedValue = $this->sanitizeSettingValue($key, $value);
-                        
+
                         // Update or create the setting
                         $this->settingModel->updateSetting($category, $key, $sanitizedValue);
                     }
@@ -197,6 +228,11 @@ class SettingsController
             case 'auto_create_from_sprints':
             case 'auto_start_next_sprint':
             case 'sprint_planning_enabled':
+            case 'velocity_tracking_enabled':
+            case 'burndown_charts_enabled':
+            case 'auto_move_incomplete_tasks':
+            case 'sprint_notifications_enabled':
+            case 'retrospective_enabled':
             case 'project_show_quick_templates':
             case 'project_show_custom_templates':
             case 'task_show_quick_templates':
@@ -226,6 +262,27 @@ class SettingsController
             case 'default_sprint_length':
                 $length = (int)$value;
                 return (string)max(1, min(30, $length)); // Between 1 and 30 days
+
+            case 'estimation_method':
+                return in_array($value, ['hours', 'story_points']) ? $value : 'hours';
+
+            case 'team_capacity_hours':
+                $capacity = (int)$value;
+                return (string)max(1, min(200, $capacity)); // Between 1 and 200 hours
+
+            case 'team_capacity_story_points':
+                $capacity = (int)$value;
+                return (string)max(1, min(100, $capacity)); // Between 1 and 100 story points
+
+            case 'working_days':
+                $validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                $selectedDays = array_filter(
+                    explode(',', strtolower($value)),
+                    function($day) use ($validDays) {
+                        return in_array(trim($day), $validDays);
+                    }
+                );
+                return implode(',', $selectedDays) ?: 'monday,tuesday,wednesday,thursday,friday';
 
             // Security numeric settings
             case 'csrf_token_lifetime':

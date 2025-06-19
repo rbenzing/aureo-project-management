@@ -28,6 +28,11 @@ function hasHeaderPermission($permission)
             ☰
             </button>
             <h1 class="text-lg font-bold ml-2">Slimbooks</h1>
+
+            <!-- Favorites Navigation -->
+            <div id="favorites-nav" class="ml-6 flex items-center space-x-2">
+                <!-- Favorites will be loaded here dynamically -->
+            </div>
         </div>
         <?php if (!empty($_SESSION['active_timer'])): ?>
         <div id="header-timer-indicator" class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg px-3 py-1 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors" onclick="if(typeof showFloatingTimer === 'function') showFloatingTimer();" title="Click to show timer">
@@ -86,7 +91,7 @@ function hasHeaderPermission($permission)
 
                             <!-- Current Sprint - Only show if user can view sprints -->
                             <?php if (hasHeaderPermission('view_sprints')): ?>
-                            <a href="/sprints" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" role="menuitem">
+                            <a href="/sprints/current" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" role="menuitem">
                                 <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
@@ -115,3 +120,15 @@ function hasHeaderPermission($permission)
         </nav>
     </div>
 </header>
+
+<?php
+// Add favorites script and CSRF token if not already added
+if (!isset($GLOBALS['favorites_script_added'])) {
+    $GLOBALS['favorites_script_added'] = true;
+    echo '<script>
+        // Add CSRF token to window for favorites.js
+        window.csrfToken = "' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '";
+    </script>';
+    echo '<script src="/assets/js/favorites.js" defer></script>';
+}
+?>

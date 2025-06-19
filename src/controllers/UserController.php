@@ -215,13 +215,20 @@ class UserController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'UserController::create (validation)',
+                $e->getMessage()
+            );
             $_SESSION['form_data'] = $data;
             header('Location: /users/create');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'UserController::create', 'An error occurred while creating the user.');
+            $_SESSION['error'] = Config::getErrorMessage(
+                $e,
+                'UserController::create',
+                'An error occurred while creating the user.'
+            );
             header('Location: /users/create');
             exit;
         }

@@ -38,19 +38,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 const status = row.getAttribute('data-status').toLowerCase();
                 const dueDate = row.getAttribute('data-due-date');
                 const priority = row.getAttribute('data-priority').toLowerCase();
-                
+
                 const today = new Date().toISOString().split('T')[0];
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 const tomorrowStr = tomorrow.toISOString().split('T')[0];
-                
+
                 // Calculate one week from now
                 const oneWeek = new Date();
                 oneWeek.setDate(oneWeek.getDate() + 7);
                 const oneWeekStr = oneWeek.toISOString().split('T')[0];
-                
+
                 if (filter === 'overdue') {
-                    shouldShow = dueDate && dueDate < today && 
+                    shouldShow = dueDate && dueDate < today &&
                                  status !== 'completed' && status !== 'closed';
                 } else if (filter === 'today') {
                     shouldShow = dueDate && dueDate >= today && dueDate < tomorrowStr;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     shouldShow = priority === 'high';
                 } else if (filter === 'assigned') {
                     // This would need additional data attributes for assigned tasks
-                    const assigned = row.hasAttribute('data-assigned') ? 
+                    const assigned = row.hasAttribute('data-assigned') ?
                                     row.getAttribute('data-assigned') : null;
                     shouldShow = assigned && assigned !== '';
                 } else if (filter === 'unassigned') {

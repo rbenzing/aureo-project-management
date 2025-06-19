@@ -783,6 +783,32 @@ INSERT INTO `settings` (`category`, `setting_key`, `setting_value`, `description
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_favorites`
+--
+
+DROP TABLE IF EXISTS `user_favorites`;
+CREATE TABLE IF NOT EXISTS `user_favorites` (
+  `id` int(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` int(20) UNSIGNED NOT NULL,
+  `favorite_type` enum('project','task','milestone','sprint','page') NOT NULL,
+  `favorite_id` int(20) UNSIGNED DEFAULT NULL COMMENT 'ID of the favorited item (null for page favorites)',
+  `page_url` varchar(255) DEFAULT NULL COMMENT 'URL for page favorites',
+  `page_title` varchar(255) NOT NULL COMMENT 'Display title for the favorite',
+  `page_icon` varchar(50) DEFAULT NULL COMMENT 'Icon class or emoji for the favorite',
+  `sort_order` int(10) UNSIGNED DEFAULT 0 COMMENT 'User-defined sort order',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_favorite` (`user_id`, `favorite_type`, `favorite_id`, `page_url`),
+  KEY `idx_user_favorites_user` (`user_id`),
+  KEY `idx_user_favorites_type` (`favorite_type`),
+  KEY `idx_user_favorites_sort` (`user_id`, `sort_order`),
+  CONSTRAINT `fk_user_favorites_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Add indexes for searching and performance
 --
 

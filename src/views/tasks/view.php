@@ -26,21 +26,7 @@ function formatDate($date) {
     return $settingsService->formatDate($date);
 }
 
-function getStatusClass($statusId) {
-    // Updated to match new consistent styling
-    $statusMap = [
-        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-    ];
-
-    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-    return $status['color'] . ' bg-opacity-20 text-white';
-}
+// Remove local function - now using centralized helper
 
 // Calculate progress
 $totalSubtasks = !empty($subtasks) ? count($subtasks) : 0;
@@ -90,9 +76,20 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
             <div>
                 <div class="flex items-center">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white mr-3"><?= htmlspecialchars($task->title) ?></h1>
-                    <span class="px-3 py-1 text-sm rounded-full <?= getStatusClass($task->status_id) ?>">
-                        <?= htmlspecialchars($task->status_name) ?>
-                    </span>
+                    <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors mr-3"
+                            data-type="task"
+                            data-item-id="<?= $task->id ?>"
+                            data-title="<?= htmlspecialchars($task->title) ?>"
+                            data-icon="✅"
+                            title="Add to favorites">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </button>
+                    <?php
+                    $statusInfo = getTaskStatusInfo($task->status_id);
+                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
+                    ?>
                     <span class="ml-2 px-3 py-1 text-sm rounded-full <?= getPriorityClass($task->priority) ?>">
                         <?= ucfirst(htmlspecialchars($task->priority)) ?> Priority
                     </span>
@@ -214,7 +211,14 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                     'bug' => 'Bug',
                                     'epic' => 'Epic'
                                 ];
-                                echo htmlspecialchars($taskTypeLabels[$task->task_type ?? 'task'] ?? 'Task');
+
+                                // If it's a subtask, show "Subtask" instead of "Task"
+                                $displayType = $task->task_type ?? 'task';
+                                if ($task->is_subtask && $displayType === 'task') {
+                                    echo 'Subtask';
+                                } else {
+                                    echo htmlspecialchars($taskTypeLabels[$displayType] ?? 'Task');
+                                }
                                 ?>
                             </div>
 

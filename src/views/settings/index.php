@@ -629,42 +629,179 @@ $pageTitle = 'Settings';
                             <!-- Sprints Tab -->
                             <div id="sprints" class="tab-content hidden">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4">Sprint Settings</h3>
-                                <div class="space-y-6">
-                                    <!-- Default Sprint Length -->
-                                    <div>
-                                        <?= renderTextInput([
-                                            'name' => 'sprints[default_sprint_length]',
-                                            'type' => 'number',
-                                            'label' => 'Default Sprint Length (days)',
-                                            'value' => $settings['sprints']['default_sprint_length'] ?? '14',
-                                            'min' => '1',
-                                            'max' => '30',
-                                            'help_text' => 'Default length for new sprints in days',
-                                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                            'error' => $errors['sprints.default_sprint_length'] ?? ''
-                                        ]) ?>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                                    Configure sprint behavior, SCRUM workflows, and team capacity planning for optimal project management.
+                                </p>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <!-- Sprint Configuration -->
+                                    <div class="space-y-6">
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">Sprint Configuration</h4>
+
+                                        <!-- Default Sprint Length -->
+                                        <div>
+                                            <?= renderTextInput([
+                                                'name' => 'sprints[default_sprint_length]',
+                                                'type' => 'number',
+                                                'label' => 'Default Sprint Length (days)',
+                                                'value' => $settings['sprints']['default_sprint_length'] ?? '14',
+                                                'min' => '1',
+                                                'max' => '30',
+                                                'help_text' => 'Default length for new sprints (1-4 weeks recommended)',
+                                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+                                                'error' => $errors['sprints.default_sprint_length'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Estimation Method -->
+                                        <div>
+                                            <?= renderSelect([
+                                                'name' => 'sprints[estimation_method]',
+                                                'label' => 'Estimation Method',
+                                                'value' => $settings['sprints']['estimation_method'] ?? 'hours',
+                                                'options' => [
+                                                    'hours' => 'Hours (Time-based)',
+                                                    'story_points' => 'Story Points (Fibonacci)'
+                                                ],
+                                                'help_text' => 'Default estimation method for sprint planning and capacity',
+                                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
+                                                'error' => $errors['sprints.estimation_method'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Working Days -->
+                                        <div>
+                                            <?= renderTextInput([
+                                                'name' => 'sprints[working_days]',
+                                                'label' => 'Working Days',
+                                                'value' => $settings['sprints']['working_days'] ?? 'monday,tuesday,wednesday,thursday,friday',
+                                                'help_text' => 'Comma-separated list of working days (e.g., monday,tuesday,wednesday,thursday,friday)',
+                                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+                                                'error' => $errors['sprints.working_days'] ?? ''
+                                            ]) ?>
+                                        </div>
                                     </div>
 
-                                    <!-- Auto Start Next Sprint -->
-                                    <div>
-                                        <?= renderCheckbox([
-                                            'name' => 'sprints[auto_start_next_sprint]',
-                                            'label' => 'Auto-start next sprint',
-                                            'checked' => ($settings['sprints']['auto_start_next_sprint'] ?? '0') === '1',
-                                            'help_text' => 'Automatically start the next sprint when current sprint ends',
-                                            'error' => $errors['sprints.auto_start_next_sprint'] ?? ''
-                                        ]) ?>
+                                    <!-- Team Capacity -->
+                                    <div class="space-y-6">
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">Team Capacity</h4>
+
+                                        <!-- Team Capacity Hours -->
+                                        <div>
+                                            <?= renderTextInput([
+                                                'name' => 'sprints[team_capacity_hours]',
+                                                'type' => 'number',
+                                                'label' => 'Default Team Capacity (hours)',
+                                                'value' => $settings['sprints']['team_capacity_hours'] ?? '40',
+                                                'min' => '1',
+                                                'max' => '200',
+                                                'help_text' => 'Default team capacity in hours per sprint',
+                                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+                                                'error' => $errors['sprints.team_capacity_hours'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Team Capacity Story Points -->
+                                        <div>
+                                            <?= renderTextInput([
+                                                'name' => 'sprints[team_capacity_story_points]',
+                                                'type' => 'number',
+                                                'label' => 'Default Team Capacity (story points)',
+                                                'value' => $settings['sprints']['team_capacity_story_points'] ?? '20',
+                                                'min' => '1',
+                                                'max' => '100',
+                                                'help_text' => 'Default team capacity in story points per sprint',
+                                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
+                                                'error' => $errors['sprints.team_capacity_story_points'] ?? ''
+                                            ]) ?>
+                                        </div>
                                     </div>
 
-                                    <!-- Sprint Planning Enabled -->
-                                    <div>
-                                        <?= renderCheckbox([
-                                            'name' => 'sprints[sprint_planning_enabled]',
-                                            'label' => 'Enable sprint planning',
-                                            'checked' => ($settings['sprints']['sprint_planning_enabled'] ?? '1') === '1',
-                                            'help_text' => 'Enable sprint planning features and workflows',
-                                            'error' => $errors['sprints.sprint_planning_enabled'] ?? ''
-                                        ]) ?>
+                                    <!-- Sprint Workflow -->
+                                    <div class="space-y-6">
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">Sprint Workflow</h4>
+
+                                        <!-- Sprint Planning Enabled -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[sprint_planning_enabled]',
+                                                'label' => 'Enable sprint planning',
+                                                'checked' => ($settings['sprints']['sprint_planning_enabled'] ?? '1') === '1',
+                                                'help_text' => 'Enable sprint planning features and workflows',
+                                                'error' => $errors['sprints.sprint_planning_enabled'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Auto Start Next Sprint -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[auto_start_next_sprint]',
+                                                'label' => 'Auto-start next sprint',
+                                                'checked' => ($settings['sprints']['auto_start_next_sprint'] ?? '0') === '1',
+                                                'help_text' => 'Automatically start the next sprint when current sprint ends',
+                                                'error' => $errors['sprints.auto_start_next_sprint'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Auto Move Incomplete Tasks -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[auto_move_incomplete_tasks]',
+                                                'label' => 'Auto-move incomplete tasks',
+                                                'checked' => ($settings['sprints']['auto_move_incomplete_tasks'] ?? '1') === '1',
+                                                'help_text' => 'Automatically move incomplete tasks to next sprint',
+                                                'error' => $errors['sprints.auto_move_incomplete_tasks'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Sprint Notifications -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[sprint_notifications_enabled]',
+                                                'label' => 'Sprint notifications',
+                                                'checked' => ($settings['sprints']['sprint_notifications_enabled'] ?? '1') === '1',
+                                                'help_text' => 'Send notifications for sprint events (start, end, delays)',
+                                                'error' => $errors['sprints.sprint_notifications_enabled'] ?? ''
+                                            ]) ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- Analytics & Tracking -->
+                                    <div class="space-y-6">
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">Analytics & Tracking</h4>
+
+                                        <!-- Velocity Tracking -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[velocity_tracking_enabled]',
+                                                'label' => 'Enable velocity tracking',
+                                                'checked' => ($settings['sprints']['velocity_tracking_enabled'] ?? '1') === '1',
+                                                'help_text' => 'Track team velocity across sprints for better planning',
+                                                'error' => $errors['sprints.velocity_tracking_enabled'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Burndown Charts -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[burndown_charts_enabled]',
+                                                'label' => 'Enable burndown charts',
+                                                'checked' => ($settings['sprints']['burndown_charts_enabled'] ?? '1') === '1',
+                                                'help_text' => 'Generate burndown charts for sprint progress visualization',
+                                                'error' => $errors['sprints.burndown_charts_enabled'] ?? ''
+                                            ]) ?>
+                                        </div>
+
+                                        <!-- Retrospective -->
+                                        <div>
+                                            <?= renderCheckbox([
+                                                'name' => 'sprints[retrospective_enabled]',
+                                                'label' => 'Enable retrospectives',
+                                                'checked' => ($settings['sprints']['retrospective_enabled'] ?? '1') === '1',
+                                                'help_text' => 'Enable sprint retrospective features for continuous improvement',
+                                                'error' => $errors['sprints.retrospective_enabled'] ?? ''
+                                            ]) ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

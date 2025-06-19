@@ -202,19 +202,9 @@ use App\Core\Config;
                                         <div>
                                             <?php
                                             // Determine badge color based on status
-                                            $statusClasses = [
-                                                'ready' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-                                                'in_progress' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-                                                'completed' => 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-                                                'delayed' => 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200',
-                                                'on_hold' => 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
-                                                'cancelled' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                                            ];
-                                            $statusClass = $statusClasses[$project->status_name ?? 'ready'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+                                            $statusInfo = getProjectStatusInfo($project->status_id ?? 1);
+                                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
                                             ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
-                                                <?= htmlspecialchars($project->status_name ?? 'Unknown') ?>
-                                            </span>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>

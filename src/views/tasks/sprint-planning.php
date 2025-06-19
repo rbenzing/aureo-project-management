@@ -29,28 +29,57 @@ $breadcrumbs = [
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 
-<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <div class="flex h-full">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <div class="flex min-h-screen">
         <!-- Sidebar -->
         <?php include BASE_PATH . '/../src/views/layouts/sidebar.php'; ?>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex flex-col">
             <!-- Header -->
             <?php include BASE_PATH . '/../src/views/layouts/header.php'; ?>
 
             <!-- Main Content -->
-            <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
+            <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow overflow-y-auto">
                 <?php include BASE_PATH . '/../src/views/layouts/notifications.php'; ?>
-                <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
 
                 <?php if (isset($viewType) && $viewType === 'sprint_planning_selection'): ?>
-                    <!-- Project Selection View -->
+                    <!-- Page Header with Breadcrumb and Action Buttons -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <!-- Breadcrumb Section -->
+                        <div class="flex-1">
+                            <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
+                        </div>
+
+                        <!-- Action Buttons Section -->
+                        <div class="flex-shrink-0 flex space-x-3">
+                            <a href="/projects/create" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                New Project
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Page Header -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sprint Planning</h1>
+                            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Project Selection -->
                     <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sprint Planning</h1>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Select a Project</h2>
                             <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                Select a project to start sprint planning
+                                Choose a project to start sprint planning
                             </p>
                         </div>
 
@@ -59,20 +88,37 @@ $breadcrumbs = [
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <?php foreach ($projects as $project): ?>
                                         <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                                <?= htmlspecialchars($project->name) ?>
-                                            </h3>
+                                            <div class="flex items-start justify-between mb-3">
+                                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                                    <?= htmlspecialchars($project->name) ?>
+                                                </h3>
+                                                <?php
+                                                // Use consistent project status styling and formatting
+                                                $projectStatusMap = [
+                                                    1 => ['label' => 'Ready', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'],
+                                                    2 => ['label' => 'In Progress', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
+                                                    3 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
+                                                    4 => ['label' => 'On Hold', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
+                                                    6 => ['label' => 'Delayed', 'class' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'],
+                                                    7 => ['label' => 'Cancelled', 'class' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
+                                                ];
+                                                $projectStatus = $projectStatusMap[$project->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'];
+                                                ?>
+                                                <span class="px-2 py-1 text-xs rounded-full font-medium <?= $projectStatus['class'] ?>">
+                                                    <?= $projectStatus['label'] ?>
+                                                </span>
+                                            </div>
                                             <?php if (!empty($project->description)): ?>
-                                                <div class="text-gray-600 dark:text-gray-400 mb-4">
+                                                <div class="text-gray-600 dark:text-gray-400 mb-4 text-sm">
                                                     <?= nl2br(htmlspecialchars(substr($project->description, 0, 100))) ?><?= strlen($project->description) > 100 ? '...' : '' ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500 dark:text-gray-400">
-                                                    Status: <?= htmlspecialchars($project->status_name ?? 'Unknown') ?>
-                                                </span>
-                                                <a href="/tasks/sprint-planning?project_id=<?= $project->id ?>" 
-                                                   class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+                                            <div class="flex justify-end">
+                                                <a href="/tasks/sprint-planning?project_id=<?= $project->id ?>"
+                                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                                    </svg>
                                                     Plan Sprint
                                                 </a>
                                             </div>
@@ -86,7 +132,10 @@ $breadcrumbs = [
                                     </svg>
                                     <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Projects Found</h3>
                                     <p class="text-gray-600 dark:text-gray-400 mb-4">Create a project first to start sprint planning.</p>
-                                    <a href="/projects/create" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+                                    <a href="/projects/create" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
                                         Create Project
                                     </a>
                                 </div>
@@ -95,27 +144,49 @@ $breadcrumbs = [
                     </div>
 
                 <?php else: ?>
-                    <!-- Sprint Planning Interface -->
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
-                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Sprint Planning</h1>
-                                    <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                        Project: <?= htmlspecialchars($project->name ?? 'Unknown') ?>
-                                    </p>
-                                </div>
-                                <div class="flex space-x-3">
-                                    <a href="/tasks/backlog?project_id=<?= $project->id ?? 0 ?>" 
-                                       class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
-                                        View Backlog
-                                    </a>
-                                    <a href="/sprints/create?project_id=<?= $project->id ?? 0 ?>" 
-                                       class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                                        Create Sprint
-                                    </a>
-                                </div>
-                            </div>
+                    <!-- Page Header with Breadcrumb and Action Buttons -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <!-- Breadcrumb Section -->
+                        <div class="flex-1">
+                            <?php include BASE_PATH . '/../src/views/layouts/breadcrumb.php'; ?>
+                        </div>
+
+                        <!-- Action Buttons Section -->
+                        <div class="flex-shrink-0 flex space-x-3">
+                            <a href="/tasks/backlog?project_id=<?= $project->id ?? 0 ?>"
+                               class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                View Backlog
+                            </a>
+                            <a href="/sprints/create?project_id=<?= $project->id ?? 0 ?>"
+                               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Create Sprint
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Page Header -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Sprint Planning</h1>
+                            <button class="favorite-star text-gray-400 hover:text-yellow-400 transition-colors"
+                                    data-type="page"
+                                    data-title="<?= htmlspecialchars($project->name ?? 'Project') ?> - Sprint Planning"
+                                    data-url="/tasks/sprint-planning?project_id=<?= $project->id ?? 0 ?>"
+                                    data-icon="📋"
+                                    title="Add to favorites">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            Project: <span class="font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($project->name ?? 'Unknown') ?></span>
                         </div>
                     </div>
 
@@ -208,15 +279,19 @@ $breadcrumbs = [
                                                             <?= date('M j', strtotime($sprint->start_date)) ?> - <?= date('M j, Y', strtotime($sprint->end_date)) ?>
                                                         </p>
                                                         <div class="flex items-center space-x-2 mt-2">
-                                                            <span class="px-2 py-1 text-xs rounded-full 
-                                                                <?php 
-                                                                switch($sprint->status_id) {
-                                                                    case 1: echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break; // Planning
-                                                                    case 2: echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break; // Active
-                                                                    default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; break;
-                                                                }
-                                                                ?>">
-                                                                <?= htmlspecialchars($sprint->status_name ?? 'Unknown') ?>
+                                                            <?php
+                                                            // Use consistent sprint status formatting
+                                                            $sprintStatusMap = [
+                                                                1 => ['label' => 'Planning', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
+                                                                2 => ['label' => 'Active', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
+                                                                3 => ['label' => 'Delayed', 'class' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
+                                                                4 => ['label' => 'Completed', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
+                                                                5 => ['label' => 'Cancelled', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'],
+                                                            ];
+                                                            $sprintStatus = $sprintStatusMap[$sprint->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'];
+                                                            ?>
+                                                            <span class="px-2 py-1 text-xs rounded-full font-medium <?= $sprintStatus['class'] ?>">
+                                                                <?= $sprintStatus['label'] ?>
                                                             </span>
                                                             <span class="text-xs text-gray-500 dark:text-gray-400">
                                                                 <?= $sprint->task_count ?? 0 ?> tasks
@@ -384,7 +459,8 @@ $breadcrumbs = [
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
                 },
                 body: JSON.stringify({
                     task_id: taskId,

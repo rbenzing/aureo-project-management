@@ -115,9 +115,10 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap <?= getSprintStatusClass($sprint->status_id ?? 0) ?>">
-                                <?= getSprintStatusLabel($sprint->status_id ?? 0) ?>
-                            </span>
+                            <?php
+                            $statusInfo = getSprintStatusInfo($sprint->status_id ?? 0);
+                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                            ?>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center">

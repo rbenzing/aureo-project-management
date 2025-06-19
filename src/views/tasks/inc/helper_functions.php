@@ -9,23 +9,9 @@ if (!defined('BASE_PATH')) {
 }
 
 /**
- * Get CSS classes for task status
- * 
- * @param string $status Status name
- * @return string CSS classes
+ * Status functions moved to centralized view_helpers.php
+ * Use getTaskStatusInfo() instead
  */
-function getStatusClasses($status) {
-    $classes = [
-        'Open' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-        'In Progress' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-        'On Hold' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-        'In Review' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
-        'Completed' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-        'Closed' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        'Cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-    ];
-    return $classes[$status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-}
 
 /**
  * Get CSS classes for task priority

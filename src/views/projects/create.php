@@ -254,11 +254,12 @@ $errors = $errors ?? [];
 
                         <!-- Status -->
                         <?php
-                        // Prepare status options
+                        // Prepare status options with proper labels
                         $statusOptions = [];
                         if (isset($statuses) && is_array($statuses)) {
                             foreach ($statuses as $status) {
-                                $statusOptions[$status->id] = htmlspecialchars(ucfirst(str_replace('_', ' ', $status->name)));
+                                $statusInfo = getProjectStatusInfo($status->id);
+                                $statusOptions[$status->id] = $statusInfo['label'];
                             }
                         }
                         ?>

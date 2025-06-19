@@ -142,10 +142,11 @@ class Role extends BaseModel
 
                 foreach ($batches as $batch) {
                     $placeholders = [];
-                    $params = [':role_id' => $roleId];
+                    $params = [];
 
                     foreach ($batch as $index => $permissionId) {
-                        $placeholders[] = "(:role_id, :permission_id_{$index})";
+                        $placeholders[] = "(:role_id_{$index}, :permission_id_{$index})";
+                        $params[":role_id_{$index}"] = $roleId;
                         $params[":permission_id_{$index}"] = (int)$permissionId;
                     }
 
