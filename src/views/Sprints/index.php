@@ -33,7 +33,28 @@ include_once __DIR__ . '/inc/helpers.php';
     <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+        <!-- Breadcrumb with New Sprint Button -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <!-- Breadcrumb Section -->
+            <div class="flex-1">
+                <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+            </div>
+
+            <!-- New Sprint Button (only show when project is selected) -->
+            <?php if (!empty($project) && isset($_SESSION['user']['permissions']) && in_array('create_sprints', $_SESSION['user']['permissions'])): ?>
+            <div class="flex-shrink-0">
+                <a
+                    href="/sprints/create/<?= $project->id ?? 0 ?>"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    New Sprint
+                </a>
+            </div>
+            <?php endif; ?>
+        </div>
 
         <!-- Project Selection or Project-Specific Content -->
         <?php if (empty($project)): ?>
@@ -176,7 +197,7 @@ include_once __DIR__ . '/inc/helpers.php';
                             <?php
                             for ($i = 1; $i <= 5; $i++) {
                                 $statusInfo = getSprintStatusInfo($i);
-                                echo '<option value="' . $i . '">' . htmlspecialchars($statusInfo['label']) . '</option>';
+                                echo '<option value="' . (string)$i . '">' . htmlspecialchars($statusInfo['label']) . '</option>';
                             }
                             ?>
                         </select>

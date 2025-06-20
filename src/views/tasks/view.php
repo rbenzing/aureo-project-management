@@ -458,9 +458,10 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                                             <?= htmlspecialchars($subtask->title) ?>
                                                         </a>
                                                     </p>
-                                                    <span class="ml-2 flex-shrink-0 text-xs px-2 py-0.5 rounded-full <?= getStatusClass($subtask->status_id) ?>">
-                                                        <?= htmlspecialchars($subtask->status_name) ?>
-                                                    </span>
+                                                    <?php
+                                                    $subtaskStatusInfo = getTaskStatusInfo($subtask->status_id);
+                                                    echo renderStatusPill($subtaskStatusInfo['label'], $subtaskStatusInfo['color'], 'sm');
+                                                    ?>
                                                 </div>
                                                 <?php if (hasUserPermission('view_time_tracking') && !empty($subtask->estimated_time)): ?>
                                                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">

@@ -9,7 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 ?>
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 overflow-hidden">
-    <!-- Breadcrumb with Action Buttons -->
+    <!-- Breadcrumb with Create Sprint Button -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-gray-200 dark:border-gray-700 gap-4">
         <!-- Breadcrumb Section -->
         <div class="flex-1">
@@ -22,14 +22,11 @@ if (!defined('BASE_PATH')) {
             ?>
         </div>
 
-        <!-- Project Action Buttons -->
-        <div class="flex-shrink-0 flex space-x-3">
-            <a href="/projects/view/<?= $project->id ?? 0 ?>" class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
-                Project Details
-            </a>
-            <?php if (isset($_SESSION['user']['permissions']) && in_array('create_sprints', $_SESSION['user']['permissions'])): ?>
+        <!-- Create New Sprint Button -->
+        <?php if (isset($_SESSION['user']['permissions']) && in_array('create_sprints', $_SESSION['user']['permissions'])): ?>
+        <div class="flex-shrink-0">
             <a
-                href="/sprints/create?project_id=<?= $project->id ?? 0 ?>"
+                href="/sprints/create/<?= $project->id ?? 0 ?>"
                 class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
             >
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,7 +34,16 @@ if (!defined('BASE_PATH')) {
                 </svg>
                 New Sprint
             </a>
-            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Project Action Buttons Row -->
+    <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex space-x-3">
+            <a href="/projects/view/<?= $project->id ?? 0 ?>" class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
+                Project Details
+            </a>
         </div>
     </div>
     

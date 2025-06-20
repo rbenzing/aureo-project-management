@@ -10,6 +10,9 @@ if (!defined('BASE_PATH')) {
 
 use App\Core\Config;
 
+// Include view helpers for centralized status functions
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Include helper functions
 include_once __DIR__ . '/inc/helpers.php';
 ?>
@@ -35,7 +38,38 @@ include_once __DIR__ . '/inc/helpers.php';
     <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 flex-grow">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+        <!-- Page Header with Breadcrumb and Navigation -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <!-- Breadcrumb Section -->
+            <div class="flex-1">
+                <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+            </div>
+
+            <!-- Navigation Section -->
+            <div class="flex-shrink-0 flex items-center space-x-3">
+                <a href="/sprints/project/<?= $project->id ?? 0 ?>" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+                    All Sprints
+                </a>
+
+                <!-- Sprint Switcher -->
+                <div class="relative min-w-[180px]">
+                    <select id="sprintSwitcher" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Switch Sprint...</option>
+                        <!-- Sprint options will be loaded via JavaScript -->
+                    </select>
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Sprint Header -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -85,27 +119,6 @@ include_once __DIR__ . '/inc/helpers.php';
                     <a href="/sprints/edit/<?= $sprint->id ?? 0 ?>" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
                         Edit Sprint
                     </a>
-                    <a href="/sprints/project/<?= $project->id ?? 0 ?>" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
-                        All Sprints
-                    </a>
-
-                    <!-- Sprint Switcher -->
-                    <div class="relative min-w-[180px]">
-                        <select id="sprintSwitcher" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="">Switch Sprint...</option>
-                            <!-- Sprint options will be loaded via JavaScript -->
-                        </select>
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                            </svg>
-                        </div>
-                    </div>
 
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="more-dropdown-toggle px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center">
@@ -468,12 +481,12 @@ include_once __DIR__ . '/inc/helpers.php';
         </div>
             <?php endif; ?>
 
-        <!-- Sprint Tasks -->
+        <!-- Sprint Tasks with Hierarchy -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Sprint Tasks</h2>
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Sprint Tasks, Epics & Milestones</h2>
 
-                <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active 
+                <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active
                 ?>
                     <a href="/tasks/create?sprint_id=<?= $sprint->id ?? 0 ?>&project_id=<?= $project->id ?? 0 ?>" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700">
                         Add Task
@@ -481,94 +494,7 @@ include_once __DIR__ . '/inc/helpers.php';
                 <?php endif; ?>
             </div>
 
-            <?php if (!empty($tasks)): ?>
-                <!-- Tasks Table -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Task</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Assignee</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Due Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Priority</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php foreach ($tasks as $task): ?>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="/tasks/view/<?= $task->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">
-                                            <?= htmlspecialchars($task->title ?? 'Task') ?>
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?= getSprintTaskStatusClass($task->status_name ?? 'Open') ?>">
-                                            <?= htmlspecialchars($task->status_name ?? 'Open') ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php if (!empty($task->first_name) && !empty($task->last_name)): ?>
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                                                    <span class="text-xs font-medium text-white">
-                                                        <?= htmlspecialchars(substr($task->first_name, 0, 1) . substr($task->last_name, 0, 1)) ?>
-                                                    </span>
-                                                </div>
-                                                <div class="ml-2">
-                                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
-                                                        <?= htmlspecialchars("{$task->first_name} {$task->last_name}") ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="text-gray-500 dark:text-gray-400">Unassigned</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php if (!empty($task->due_date)): ?>
-                                            <?php
-                                            $dueDate = new DateTime($task->due_date);
-                                            $today = new DateTime();
-                                            $isPastDue = $dueDate < $today && $task->status_id != 6; // 6 = Completed
-                                            ?>
-                                            <span class="<?= $isPastDue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-200' ?> whitespace-nowrap">
-                                                <?= date('M j, Y', strtotime($task->due_date)) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">No due date</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="<?= getSprintPriorityClass($task->priority ?? 'none') ?>">
-                                            <?= ucfirst($task->priority ?? 'None') ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="/tasks/view/<?= $task->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
-                                            View
-                                        </a>
-                                        <a href="/tasks/edit/<?= $task->id ?? 0 ?>" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                                            Edit
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div class="p-6 text-center text-gray-500 dark:text-gray-400">
-                    No tasks have been added to this sprint yet.
-                    <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active 
-                    ?>
-                        <a href="/tasks/create?sprint_id=<?= $sprint->id ?? 0 ?>&project_id=<?= $project->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                            Add your first task
-                        </a>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+            <?php include BASE_PATH . '/../src/Views/Sprints/inc/table_tasks_hierarchical.php'; ?>
         </div>
     </main>
 

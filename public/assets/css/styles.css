@@ -1556,11 +1556,6 @@ button,
   margin-right: 0.25rem;
 }
 
-.mx-2 {
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
-}
-
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -1926,6 +1921,10 @@ button,
 
 .w-7 {
   width: 1.75rem;
+}
+
+.w-72 {
+  width: 18rem;
 }
 
 .w-8 {
@@ -2454,6 +2453,11 @@ button,
 .border-green-500 {
   --tw-border-opacity: 1;
   border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));
+}
+
+.border-indigo-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(199 210 254 / var(--tw-border-opacity, 1));
 }
 
 .border-indigo-400 {
@@ -4712,6 +4716,11 @@ button,
   .dark\:hover\:bg-indigo-800:hover {
     --tw-bg-opacity: 1;
     background-color: rgb(55 48 163 / var(--tw-bg-opacity, 1));
+  }
+
+  .dark\:hover\:bg-indigo-900:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(49 46 129 / var(--tw-bg-opacity, 1));
   }
 
   .dark\:hover\:bg-indigo-900\/20:hover {

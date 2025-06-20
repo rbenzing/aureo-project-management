@@ -130,5 +130,6 @@ if (!isset($GLOBALS['favorites_script_added'])) {
         window.csrfToken = "' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '";
     </script>';
     echo '<script src="/assets/js/favorites.js" defer></script>';
+    echo '<script src="/assets/js/favorites-utils.js" defer></script>';
 }
 ?>

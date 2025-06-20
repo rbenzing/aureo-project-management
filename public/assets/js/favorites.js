@@ -7,6 +7,9 @@ class FavoritesManager {
     constructor() {
         this.csrfToken = window.csrfToken || '';
         this.favoritesNav = document.getElementById('favorites-nav');
+        this.cacheKey = 'slimbooks_favorites';
+        this.cacheExpiryKey = 'slimbooks_favorites_expiry';
+        this.cacheExpiryTime = 5 * 60 * 1000; // 5 minutes in milliseconds
         this.init();
     }
 
@@ -18,9 +21,20 @@ class FavoritesManager {
 
     /**
      * Load and display favorites in header navigation
+     * Uses browser storage caching to reduce API calls
      */
-    async loadFavorites() {
+    async loadFavorites(forceRefresh = false) {
         try {
+            // Check if we have cached favorites and they're still valid
+            if (!forceRefresh) {
+                const cachedFavorites = this.getCachedFavorites();
+                if (cachedFavorites) {
+                    this.renderFavoritesNav(cachedFavorites);
+                    return;
+                }
+            }
+
+            // Fetch from API if no cache or force refresh
             const response = await fetch('/api/favorites', {
                 method: 'GET',
                 headers: {
@@ -32,10 +46,73 @@ class FavoritesManager {
             const data = await response.json();
 
             if (data.success && data.favorites) {
+                // Cache the favorites
+                this.cacheFavorites(data.favorites);
                 this.renderFavoritesNav(data.favorites);
             }
         } catch (error) {
             console.error('Failed to load favorites:', error);
+            // Try to use cached favorites as fallback
+            const cachedFavorites = this.getCachedFavorites(true);
+            if (cachedFavorites) {
+                this.renderFavoritesNav(cachedFavorites);
+            }
+        }
+    }
+
+    /**
+     * Cache favorites in browser storage
+     */
+    cacheFavorites(favorites) {
+        try {
+            const now = Date.now();
+            const expiryTime = now + this.cacheExpiryTime;
+
+            localStorage.setItem(this.cacheKey, JSON.stringify(favorites));
+            localStorage.setItem(this.cacheExpiryKey, expiryTime.toString());
+        } catch (error) {
+            console.warn('Failed to cache favorites:', error);
+        }
+    }
+
+    /**
+     * Get cached favorites from browser storage
+     */
+    getCachedFavorites(ignoreExpiry = false) {
+        try {
+            const cachedData = localStorage.getItem(this.cacheKey);
+            const expiryTime = localStorage.getItem(this.cacheExpiryKey);
+
+            if (!cachedData) {
+                return null;
+            }
+
+            // Check if cache has expired
+            if (!ignoreExpiry && expiryTime) {
+                const now = Date.now();
+                if (now > parseInt(expiryTime)) {
+                    this.clearFavoritesCache();
+                    return null;
+                }
+            }
+
+            return JSON.parse(cachedData);
+        } catch (error) {
+            console.warn('Failed to get cached favorites:', error);
+            this.clearFavoritesCache();
+            return null;
+        }
+    }
+
+    /**
+     * Clear favorites cache
+     */
+    clearFavoritesCache() {
+        try {
+            localStorage.removeItem(this.cacheKey);
+            localStorage.removeItem(this.cacheExpiryKey);
+        } catch (error) {
+            console.warn('Failed to clear favorites cache:', error);
         }
     }
 
@@ -148,8 +225,9 @@ class FavoritesManager {
                 this.updateStarAppearance(starButton, true);
             }
 
-            // Reload favorites navigation
-            this.loadFavorites();
+            // Clear cache and reload favorites navigation
+            this.clearFavoritesCache();
+            this.loadFavorites(true);
         } catch (error) {
             console.error('Failed to toggle favorite:', error);
             this.showNotification('Failed to update favorite', 'error');
@@ -267,8 +345,19 @@ class FavoritesManager {
 
     /**
      * Check if an item is favorited
+     * First checks cache, then falls back to API
      */
     async checkIfFavorited(favoriteData) {
+        // Try to check from cached favorites first
+        const cachedFavorites = this.getCachedFavorites();
+        if (cachedFavorites) {
+            const isFavorited = this.checkFavoriteInCache(favoriteData, cachedFavorites);
+            if (isFavorited !== null) {
+                return isFavorited;
+            }
+        }
+
+        // Fall back to API check
         const params = new URLSearchParams({
             type: favoriteData.type
         });
@@ -291,6 +380,65 @@ class FavoritesManager {
 
         const data = await response.json();
         return data.success && data.is_favorited;
+    }
+
+    /**
+     * Check if an item is favorited in cached data
+     */
+    checkFavoriteInCache(favoriteData, cachedFavorites) {
+        try {
+            for (const favorite of cachedFavorites) {
+                // Check by item ID if available
+                if (favoriteData.item_id && favorite.favorite_id) {
+                    if (favoriteData.type === favorite.favorite_type &&
+                        favoriteData.item_id.toString() === favorite.favorite_id.toString()) {
+                        return true;
+                    }
+                }
+
+                // Check by URL if available
+                if (favoriteData.url && favorite.page_url) {
+                    if (favoriteData.url === favorite.page_url) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch (error) {
+            console.warn('Error checking favorite in cache:', error);
+            return null; // Return null to indicate we should fall back to API
+        }
+    }
+
+    /**
+     * Refresh favorites cache
+     * Useful for calling from other parts of the application
+     */
+    refreshFavorites() {
+        this.clearFavoritesCache();
+        this.loadFavorites(true);
+    }
+
+    /**
+     * Get cache status information
+     */
+    getCacheStatus() {
+        const expiryTime = localStorage.getItem(this.cacheExpiryKey);
+        const cachedData = localStorage.getItem(this.cacheKey);
+
+        if (!cachedData || !expiryTime) {
+            return { cached: false, expired: true };
+        }
+
+        const now = Date.now();
+        const expired = now > parseInt(expiryTime);
+
+        return {
+            cached: true,
+            expired: expired,
+            expiresIn: expired ? 0 : parseInt(expiryTime) - now,
+            itemCount: JSON.parse(cachedData).length
+        };
     }
 
     /**
@@ -319,5 +467,8 @@ class FavoritesManager {
 
 // Initialize favorites manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new FavoritesManager();
+    window.favoritesManager = new FavoritesManager();
 });
+
+// Make FavoritesManager class globally available
+window.FavoritesManager = FavoritesManager;

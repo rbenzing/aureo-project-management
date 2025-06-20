@@ -443,7 +443,7 @@ require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
                     <?php endif; ?>
 
                     <?php if (hasUserPermission('create_sprints')): ?>
-                        <a href="/sprints/create" class="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition-colors">
+                        <a href="/sprints" class="flex items-center p-2 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 rounded-lg transition-colors">
                             <svg class="w-5 h-5 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>

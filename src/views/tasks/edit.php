@@ -34,21 +34,7 @@ function formatTimeInput($seconds) {
     return \App\Utils\Time::convertFromSeconds($seconds);
 }
 
-function getStatusClass($statusId) {
-    // Updated to match new consistent styling
-    $statusMap = [
-        1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-        2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-        3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-        4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-        5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-        6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-    ];
-
-    $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-    return $status['color'] . ' bg-opacity-20 text-white';
-}
+// Status functions are now available through centralized view_helpers.php
 
 $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
 ?>

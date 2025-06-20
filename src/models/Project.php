@@ -103,6 +103,9 @@ class Project extends BaseModel
                 $project->sprints = $this->getProjectSprints($id);
                 $project->team_members = $this->getProjectTeamMembers($id);
 
+                // Add hierarchical task data
+                $project->hierarchy = $this->getProjectHierarchy($id);
+
                 // Calculate project health metrics
                 $project->health_metrics = $this->calculateProjectHealth($id);
             }
@@ -244,27 +247,27 @@ class Project extends BaseModel
 
     /**
      * Get project tasks with assignee details
-     * 
+     *
      * @param int $projectId
      * @return array
      */
     public function getProjectTasks(int $projectId): array
     {
         try {
-            $sql = "SELECT 
+            $sql = "SELECT
                 t.*,
                 ts.name AS status_name,
                 u.first_name,
                 u.last_name
-            FROM 
+            FROM
                 tasks t
-            LEFT JOIN 
+            LEFT JOIN
                 statuses_task ts ON t.status_id = ts.id
-            LEFT JOIN 
+            LEFT JOIN
                 users u ON t.assigned_to = u.id
-            WHERE 
-                t.is_subtask = 0 
-                AND t.project_id = :project_id 
+            WHERE
+                t.is_subtask = 0
+                AND t.project_id = :project_id
                 AND t.is_deleted = 0
             ORDER BY
                 t.priority DESC, t.due_date ASC";
@@ -273,6 +276,282 @@ class Project extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get project tasks with assignees: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get hierarchical project data with epics, milestones, and tasks
+     *
+     * @param int $projectId
+     * @return array
+     */
+    public function getProjectHierarchy(int $projectId): array
+    {
+        try {
+            $hierarchy = [];
+
+            // Get all epics for the project
+            $epics = $this->getProjectEpics($projectId);
+
+            foreach ($epics as $epic) {
+                $epicData = [
+                    'type' => 'epic',
+                    'data' => $epic,
+                    'milestones' => [],
+                    'tasks' => []
+                ];
+
+                // Get milestones for this epic
+                $milestones = $this->getEpicMilestones($epic->id);
+
+                foreach ($milestones as $milestone) {
+                    $milestoneData = [
+                        'type' => 'milestone',
+                        'data' => $milestone,
+                        'tasks' => $this->getMilestoneTasks($milestone->id)
+                    ];
+                    $epicData['milestones'][] = $milestoneData;
+                }
+
+                // Get tasks directly assigned to epic (not through milestones)
+                $epicData['tasks'] = $this->getEpicTasks($epic->id);
+
+                $hierarchy[] = $epicData;
+            }
+
+            // Get standalone milestones (not part of any epic)
+            $standaloneMilestones = $this->getStandaloneMilestones($projectId);
+
+            foreach ($standaloneMilestones as $milestone) {
+                $milestoneData = [
+                    'type' => 'milestone',
+                    'data' => $milestone,
+                    'tasks' => $this->getMilestoneTasks($milestone->id)
+                ];
+                $hierarchy[] = $milestoneData;
+            }
+
+            // Get tasks not assigned to any milestone or epic
+            $unassignedTasks = $this->getUnassignedTasks($projectId);
+            if (!empty($unassignedTasks)) {
+                $hierarchy[] = [
+                    'type' => 'unassigned_tasks',
+                    'data' => (object)['title' => 'Unassigned Tasks'],
+                    'tasks' => $unassignedTasks
+                ];
+            }
+
+            return $hierarchy;
+        } catch (\Exception $e) {
+            error_log("Failed to get project hierarchy: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get epics for a project
+     *
+     * @param int $projectId
+     * @return array
+     */
+    private function getProjectEpics(int $projectId): array
+    {
+        try {
+            $sql = "SELECT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            WHERE
+                m.project_id = :project_id
+                AND m.milestone_type = 'epic'
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get project epics: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get milestones for an epic
+     *
+     * @param int $epicId
+     * @return array
+     */
+    private function getEpicMilestones(int $epicId): array
+    {
+        try {
+            $sql = "SELECT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            WHERE
+                m.epic_id = :epic_id
+                AND m.milestone_type = 'milestone'
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get epic milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks for a milestone
+     *
+     * @param int $milestoneId
+     * @return array
+     */
+    private function getMilestoneTasks(int $milestoneId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            INNER JOIN
+                milestone_tasks mt ON t.id = mt.task_id
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                mt.milestone_id = :milestone_id
+                AND t.is_deleted = 0
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get milestone tasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks directly assigned to an epic (not through milestones)
+     *
+     * @param int $epicId
+     * @return array
+     */
+    private function getEpicTasks(int $epicId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            INNER JOIN
+                milestone_tasks mt ON t.id = mt.task_id
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                mt.milestone_id = :epic_id
+                AND t.is_deleted = 0
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get epic tasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get standalone milestones (not part of any epic)
+     *
+     * @param int $projectId
+     * @return array
+     */
+    private function getStandaloneMilestones(int $projectId): array
+    {
+        try {
+            $sql = "SELECT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            WHERE
+                m.project_id = :project_id
+                AND m.milestone_type = 'milestone'
+                AND m.epic_id IS NULL
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get standalone milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks not assigned to any milestone or epic
+     *
+     * @param int $projectId
+     * @return array
+     */
+    private function getUnassignedTasks(int $projectId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                t.project_id = :project_id
+                AND t.is_subtask = 0
+                AND t.is_deleted = 0
+                AND t.id NOT IN (
+                    SELECT mt.task_id
+                    FROM milestone_tasks mt
+                    INNER JOIN milestones m ON mt.milestone_id = m.id
+                    WHERE m.is_deleted = 0
+                )
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get unassigned tasks: " . $e->getMessage());
             return [];
         }
     }
@@ -444,25 +723,27 @@ class Project extends BaseModel
                     FROM projects p
                     LEFT JOIN companies c ON p.company_id = c.id
                     LEFT JOIN statuses_project ps ON p.status_id = ps.id
-                    LEFT JOIN tasks t ON p.id = t.project_id AND t.assigned_to = :user_id AND t.is_deleted = 0
+                    LEFT JOIN tasks t ON p.id = t.project_id AND t.assigned_to = :user_id1 AND t.is_deleted = 0
                     WHERE (
-                        p.owner_id = :user_id
+                        p.owner_id = :user_id2
                         OR EXISTS (
                             SELECT 1 FROM tasks t2
                             WHERE t2.project_id = p.id
-                            AND t2.assigned_to = :user_id
+                            AND t2.assigned_to = :user_id3
                             AND t2.is_deleted = 0
                         )
                     )
                     AND p.is_deleted = 0
                     GROUP BY p.id, p.name, p.description, p.status_id, p.owner_id,
-                             p.company_id, p.start_date, p.due_date, p.created_at,
+                             p.company_id, p.start_date, p.end_date, p.created_at,
                              p.updated_at, p.is_deleted, c.name, ps.name
                     ORDER BY last_activity DESC
                     LIMIT :limit";
 
             $stmt = $this->db->executeQuery($sql, [
-                ':user_id' => $userId,
+                ':user_id1' => $userId,
+                ':user_id2' => $userId,
+                ':user_id3' => $userId,
                 ':limit' => $limit
             ]);
 

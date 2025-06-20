@@ -314,7 +314,7 @@ $breadcrumbs = [
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
                                         <p class="text-gray-600 dark:text-gray-400 mb-2">No active sprints</p>
-                                        <a href="/sprints/create?project_id=<?= $project->id ?? 0 ?>" 
+                                        <a href="/sprints/create/<?= $project->id ?? 0 ?>"
                                            class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm">
                                             Create a sprint
                                         </a>
@@ -339,7 +339,7 @@ $breadcrumbs = [
                                         <p class="text-sm text-gray-600 dark:text-gray-400">Create a new task for this project</p>
                                     </div>
                                 </a>
-                                <a href="/sprints/create?project_id=<?= $project->id ?? 0 ?>" 
+                                <a href="/sprints/create/<?= $project->id ?? 0 ?>"
                                    class="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>

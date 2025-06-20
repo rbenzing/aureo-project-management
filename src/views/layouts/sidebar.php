@@ -322,7 +322,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     ?>
                 </p>
             </div>
-            <a href="/logout" class="ml-2 p-1 rounded-full hover:bg-gray-700 flex-shrink-0" title="Logout">
+            <a href="/logout" onclick="if(typeof clearFavoritesCache === 'function') clearFavoritesCache();" class="ml-2 p-1 rounded-full hover:bg-gray-700 flex-shrink-0" title="Logout">
                 <svg class="w-4 h-4 text-gray-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>

@@ -520,7 +520,15 @@ class TaskController
             // Get available parent tasks from the same project
             $availableParentTasks = [];
             if ($task->project_id) {
-                $projectTasks = $this->taskModel->getByProjectId($task->project_id);
+                $projectTasksOrganized = $this->taskModel->getByProjectId($task->project_id);
+                // Flatten the organized array to get all tasks
+                $projectTasks = [];
+                foreach ($projectTasksOrganized as $statusGroup) {
+                    if (is_array($statusGroup)) {
+                        $projectTasks = array_merge($projectTasks, $statusGroup);
+                    }
+                }
+
                 foreach ($projectTasks as $projectTask) {
                     // Only main tasks can be parents, and task can't be its own parent
                     if (!$projectTask->is_subtask && $projectTask->id !== $task->id) {

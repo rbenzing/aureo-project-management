@@ -177,6 +177,315 @@ class Sprint extends BaseModel
     }
 
     /**
+     * Get hierarchical sprint task data with epics, milestones, and tasks
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    public function getSprintHierarchy(int $sprintId): array
+    {
+        try {
+            $hierarchy = [];
+
+            // Get all epics that have tasks in this sprint
+            $epics = $this->getSprintEpics($sprintId);
+
+            foreach ($epics as $epic) {
+                $epicData = [
+                    'type' => 'epic',
+                    'data' => $epic,
+                    'milestones' => [],
+                    'tasks' => []
+                ];
+
+                // Get milestones for this epic that have tasks in this sprint
+                $milestones = $this->getSprintEpicMilestones($sprintId, $epic->id);
+
+                foreach ($milestones as $milestone) {
+                    $milestoneData = [
+                        'type' => 'milestone',
+                        'data' => $milestone,
+                        'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id)
+                    ];
+                    $epicData['milestones'][] = $milestoneData;
+                }
+
+                // Get tasks directly assigned to epic (not through milestones) in this sprint
+                $epicData['tasks'] = $this->getSprintEpicTasks($sprintId, $epic->id);
+
+                $hierarchy[] = $epicData;
+            }
+
+            // Get standalone milestones (not part of any epic) that have tasks in this sprint
+            $standaloneMilestones = $this->getSprintStandaloneMilestones($sprintId);
+
+            foreach ($standaloneMilestones as $milestone) {
+                $milestoneData = [
+                    'type' => 'milestone',
+                    'data' => $milestone,
+                    'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id)
+                ];
+                $hierarchy[] = $milestoneData;
+            }
+
+            // Get tasks not assigned to any milestone or epic in this sprint
+            $unassignedTasks = $this->getSprintUnassignedTasks($sprintId);
+            if (!empty($unassignedTasks)) {
+                $hierarchy[] = [
+                    'type' => 'unassigned_tasks',
+                    'data' => (object)['title' => 'Unassigned Tasks'],
+                    'tasks' => $unassignedTasks
+                ];
+            }
+
+            return $hierarchy;
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint hierarchy: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get epics that have tasks in this sprint
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    private function getSprintEpics(int $sprintId): array
+    {
+        try {
+            $sql = "SELECT DISTINCT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            INNER JOIN
+                milestone_tasks mt ON m.id = mt.milestone_id
+            INNER JOIN
+                sprint_tasks st ON mt.task_id = st.task_id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND m.milestone_type = 'epic'
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint epics: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get milestones for an epic that have tasks in this sprint
+     *
+     * @param int $sprintId
+     * @param int $epicId
+     * @return array
+     */
+    private function getSprintEpicMilestones(int $sprintId, int $epicId): array
+    {
+        try {
+            $sql = "SELECT DISTINCT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            INNER JOIN
+                milestone_tasks mt ON m.id = mt.milestone_id
+            INNER JOIN
+                sprint_tasks st ON mt.task_id = st.task_id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND m.epic_id = :epic_id
+                AND m.milestone_type = 'milestone'
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':sprint_id' => $sprintId,
+                ':epic_id' => $epicId
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint epic milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks for a milestone in this sprint
+     *
+     * @param int $sprintId
+     * @param int $milestoneId
+     * @return array
+     */
+    private function getSprintMilestoneTasks(int $sprintId, int $milestoneId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            INNER JOIN
+                sprint_tasks st ON t.id = st.task_id
+            INNER JOIN
+                milestone_tasks mt ON t.id = mt.task_id
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND mt.milestone_id = :milestone_id
+                AND t.is_deleted = 0
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':sprint_id' => $sprintId,
+                ':milestone_id' => $milestoneId
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint milestone tasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks directly assigned to an epic (not through milestones) in this sprint
+     *
+     * @param int $sprintId
+     * @param int $epicId
+     * @return array
+     */
+    private function getSprintEpicTasks(int $sprintId, int $epicId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            INNER JOIN
+                sprint_tasks st ON t.id = st.task_id
+            INNER JOIN
+                milestone_tasks mt ON t.id = mt.task_id
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND mt.milestone_id = :epic_id
+                AND t.is_deleted = 0
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [
+                ':sprint_id' => $sprintId,
+                ':epic_id' => $epicId
+            ]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint epic tasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get standalone milestones (not part of any epic) that have tasks in this sprint
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    private function getSprintStandaloneMilestones(int $sprintId): array
+    {
+        try {
+            $sql = "SELECT DISTINCT
+                m.*,
+                s.name AS status_name
+            FROM
+                milestones m
+            LEFT JOIN
+                statuses_milestone s ON m.status_id = s.id
+            INNER JOIN
+                milestone_tasks mt ON m.id = mt.milestone_id
+            INNER JOIN
+                sprint_tasks st ON mt.task_id = st.task_id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND m.milestone_type = 'milestone'
+                AND m.epic_id IS NULL
+                AND m.is_deleted = 0
+            ORDER BY
+                m.due_date ASC, m.title ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint standalone milestones: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get tasks not assigned to any milestone or epic in this sprint
+     *
+     * @param int $sprintId
+     * @return array
+     */
+    private function getSprintUnassignedTasks(int $sprintId): array
+    {
+        try {
+            $sql = "SELECT
+                t.*,
+                ts.name AS status_name,
+                u.first_name,
+                u.last_name
+            FROM
+                tasks t
+            INNER JOIN
+                sprint_tasks st ON t.id = st.task_id
+            LEFT JOIN
+                statuses_task ts ON t.status_id = ts.id
+            LEFT JOIN
+                users u ON t.assigned_to = u.id
+            WHERE
+                st.sprint_id = :sprint_id
+                AND t.is_subtask = 0
+                AND t.is_deleted = 0
+                AND t.id NOT IN (
+                    SELECT mt.task_id
+                    FROM milestone_tasks mt
+                    INNER JOIN milestones m ON mt.milestone_id = m.id
+                    WHERE m.is_deleted = 0
+                )
+            ORDER BY
+                t.priority DESC, t.due_date ASC";
+
+            $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            error_log("Failed to get sprint unassigned tasks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Add tasks to sprint
      * 
      * @param int $sprintId

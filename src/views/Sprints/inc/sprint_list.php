@@ -187,7 +187,7 @@
             <?php else: ?>
                 <tr>
                     <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                        No sprints found for this project. <a href="/sprints/create?project_id=<?= $project->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Create your first sprint</a>.
+                        No sprints found for this project. <a href="/sprints/create/<?= $project->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Create your first sprint</a>.
                     </td>
                 </tr>
             <?php endif; ?>

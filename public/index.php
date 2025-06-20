@@ -194,7 +194,7 @@ try {
     $router->get('sprints/project/:id/page/:page', ['controller' => 'Sprint', 'action' => 'index', 'params' => ['id', 'page']]);
     $router->get('sprints/view/:id', ['controller' => 'Sprint', 'action' => 'view', 'params' => ['id']]);
     $router->get('sprints/board/:id', ['controller' => 'Sprint', 'action' => 'board', 'params' => ['id']]);
-    $router->get('sprints/create', ['controller' => 'Sprint', 'action' => 'createForm']);
+    $router->get('sprints/create/:id', ['controller' => 'Sprint', 'action' => 'createForm', 'params' => ['id']]);
     $router->post('sprints/create', ['controller' => 'Sprint', 'action' => 'create']);
     $router->post('sprints/create-from-planning', ['controller' => 'Sprint', 'action' => 'createFromPlanning']);
     $router->get('sprints/edit/:id', ['controller' => 'Sprint', 'action' => 'editForm', 'params' => ['id']]);

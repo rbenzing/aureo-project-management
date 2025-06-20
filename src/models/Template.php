@@ -226,30 +226,39 @@ class Template extends BaseModel
     public function getSprintTemplates(?int $companyId = null, ?int $projectId = null): array
     {
         try {
-            $sql = "SELECT t.*,
-                        tc.sprint_length,
-                        tc.estimation_method,
-                        tc.default_capacity,
-                        tc.include_weekends,
-                        tc.auto_assign_subtasks,
-                        tc.ceremony_settings
+            // Get basic sprint templates without the problematic join
+            $sql = "SELECT t.*
                     FROM {$this->table} t
-                    LEFT JOIN template_configurations tc ON t.id = tc.template_id
                     WHERE t.is_deleted = 0
                     AND t.template_type = 'sprint'
-                    AND (t.company_id IS NULL OR t.company_id = :company_id)";
+                    AND (t.company_id IS NULL OR t.company_id = :company_id)
+                    ORDER BY t.is_default DESC, t.name ASC";
 
             $params = [':company_id' => $companyId];
+            $stmt = $this->db->executeQuery($sql, $params);
+            $templates = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-            if ($projectId) {
-                $sql .= " AND (tc.project_id IS NULL OR tc.project_id = :project_id)";
-                $params[':project_id'] = $projectId;
+            // Add default configuration values from settings
+            $settingsService = \App\Services\SettingsService::getInstance();
+
+            foreach ($templates as $template) {
+                // Add default sprint configuration from settings
+                $template->sprint_length = $settingsService->getSettingInt('sprints', 'default_length', 2);
+                $template->estimation_method = $settingsService->getSetting('sprints', 'estimation_method', 'story_points');
+                $template->default_capacity = $settingsService->getSettingInt('sprints', 'default_capacity', 40);
+                $template->include_weekends = $settingsService->getSettingBool('sprints', 'include_weekends', false);
+                $template->auto_assign_subtasks = $settingsService->getSettingBool('sprints', 'auto_assign_subtasks', true);
+
+                // Default ceremony settings
+                $template->ceremony_settings = [
+                    'sprint_planning' => ['enabled' => true, 'duration_hours' => 2],
+                    'daily_standup' => ['enabled' => true, 'duration_minutes' => 15],
+                    'sprint_review' => ['enabled' => true, 'duration_hours' => 1],
+                    'sprint_retrospective' => ['enabled' => true, 'duration_hours' => 1]
+                ];
             }
 
-            $sql .= " ORDER BY t.is_default DESC, t.name ASC";
-
-            $stmt = $this->db->executeQuery($sql, $params);
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $templates;
         } catch (\Exception $e) {
             error_log("Failed to get sprint templates: " . $e->getMessage());
             return [];
@@ -285,7 +294,7 @@ class Template extends BaseModel
     }
 
     /**
-     * Create sprint template configuration
+     * Create sprint template configuration using settings
      *
      * @param int $templateId Template ID
      * @param array $configData Configuration data
@@ -294,40 +303,27 @@ class Template extends BaseModel
     public function createSprintTemplateConfiguration(int $templateId, array $configData): bool
     {
         try {
-            $sql = "INSERT INTO template_configurations (
-                        template_id,
-                        project_id,
-                        sprint_length,
-                        estimation_method,
-                        default_capacity,
-                        include_weekends,
-                        auto_assign_subtasks,
-                        ceremony_settings,
-                        created_at
-                    ) VALUES (
-                        :template_id,
-                        :project_id,
-                        :sprint_length,
-                        :estimation_method,
-                        :default_capacity,
-                        :include_weekends,
-                        :auto_assign_subtasks,
-                        :ceremony_settings,
-                        NOW()
-                    )";
+            // Store sprint template configuration in settings instead of separate table
+            $settingModel = new Setting();
 
-            $params = [
-                ':template_id' => $templateId,
-                ':project_id' => $configData['project_id'] ?? null,
-                ':sprint_length' => $configData['sprint_length'] ?? 2,
-                ':estimation_method' => $configData['estimation_method'] ?? 'hours',
-                ':default_capacity' => $configData['default_capacity'] ?? 40,
-                ':include_weekends' => $configData['include_weekends'] ?? false,
-                ':auto_assign_subtasks' => $configData['auto_assign_subtasks'] ?? true,
-                ':ceremony_settings' => json_encode($configData['ceremony_settings'] ?? [])
-            ];
+            // Update global sprint settings with the provided configuration
+            if (isset($configData['sprint_length'])) {
+                $settingModel->updateSetting('sprints', 'default_length', (string)$configData['sprint_length']);
+            }
+            if (isset($configData['estimation_method'])) {
+                $settingModel->updateSetting('sprints', 'estimation_method', $configData['estimation_method']);
+            }
+            if (isset($configData['default_capacity'])) {
+                $settingModel->updateSetting('sprints', 'default_capacity', (string)$configData['default_capacity']);
+            }
+            if (isset($configData['include_weekends'])) {
+                $settingModel->updateSetting('sprints', 'include_weekends', $configData['include_weekends'] ? '1' : '0');
+            }
+            if (isset($configData['auto_assign_subtasks'])) {
+                $settingModel->updateSetting('sprints', 'auto_assign_subtasks', $configData['auto_assign_subtasks'] ? '1' : '0');
+            }
 
-            return $this->db->executeInsertUpdate($sql, $params);
+            return true;
         } catch (\Exception $e) {
             error_log("Failed to create sprint template configuration: " . $e->getMessage());
             return false;
@@ -335,7 +331,7 @@ class Template extends BaseModel
     }
 
     /**
-     * Get sprint template configuration
+     * Get sprint template configuration from settings
      *
      * @param int $templateId Template ID
      * @return object|null Configuration object or null if not found
@@ -343,15 +339,24 @@ class Template extends BaseModel
     public function getSprintTemplateConfiguration(int $templateId): ?object
     {
         try {
-            $sql = "SELECT * FROM template_configurations WHERE template_id = :template_id";
-            $stmt = $this->db->executeQuery($sql, [':template_id' => $templateId]);
-            $result = $stmt->fetch(PDO::FETCH_OBJ);
+            // Get configuration from settings instead of separate table
+            $settingsService = \App\Services\SettingsService::getInstance();
 
-            if ($result && !empty($result->ceremony_settings)) {
-                $result->ceremony_settings = json_decode($result->ceremony_settings, true);
-            }
+            $config = new \stdClass();
+            $config->template_id = $templateId;
+            $config->sprint_length = $settingsService->getSettingInt('sprints', 'default_length', 2);
+            $config->estimation_method = $settingsService->getSetting('sprints', 'estimation_method', 'story_points');
+            $config->default_capacity = $settingsService->getSettingInt('sprints', 'default_capacity', 40);
+            $config->include_weekends = $settingsService->getSettingBool('sprints', 'include_weekends', false);
+            $config->auto_assign_subtasks = $settingsService->getSettingBool('sprints', 'auto_assign_subtasks', true);
+            $config->ceremony_settings = [
+                'sprint_planning' => ['enabled' => true, 'duration_hours' => 2],
+                'daily_standup' => ['enabled' => true, 'duration_minutes' => 15],
+                'sprint_review' => ['enabled' => true, 'duration_hours' => 1],
+                'sprint_retrospective' => ['enabled' => true, 'duration_hours' => 1]
+            ];
 
-            return $result ?: null;
+            return $config;
         } catch (\Exception $e) {
             error_log("Failed to get sprint template configuration: " . $e->getMessage());
             return null;

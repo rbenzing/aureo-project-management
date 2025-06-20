@@ -11,6 +11,9 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 use App\Utils\Time;
 
+// Include view helpers for permission functions and formatting
+require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+
 // Using centralized status helper system
 $statusInfo = getProjectStatusInfo($project->status_id);
 
@@ -56,7 +59,33 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
     <main class="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6">
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
-        <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+        <!-- Page Header with Breadcrumb and Action Buttons -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <!-- Breadcrumb Section -->
+            <div class="flex-1">
+                <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
+            </div>
+
+            <!-- Action Buttons Section -->
+            <div class="flex-shrink-0 flex space-x-3">
+                <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_projects', $_SESSION['user']['permissions'])): ?>
+                    <a href="/projects/edit/<?= $project->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        Edit Project
+                    </a>
+                <?php endif; ?>
+                <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
+                    <a href="/tasks/create?project_id=<?= $project->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add Task
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
 
         <!-- Project Header -->
         <div class="flex justify-between items-start mb-6">
@@ -77,28 +106,10 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
                 </div>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     <?php if (isset($project->company_name)): ?>
-                        <?= htmlspecialchars($project->company_name) ?> • 
+                        <?= htmlspecialchars($project->company_name) ?> •
                     <?php endif; ?>
                     Created <?= date('M j, Y', strtotime($project->created_at)) ?>
                 </p>
-            </div>
-            <div class="flex space-x-3">
-                <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_projects', $_SESSION['user']['permissions'])): ?>
-                    <a href="/projects/edit/<?= $project->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
-                        Edit Project
-                    </a>
-                <?php endif; ?>
-                <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
-                    <a href="/tasks/create?project_id=<?= $project->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        Add Task
-                    </a>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -201,6 +212,49 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Project Sprints -->
+                <?php if (isset($project->sprints) && !empty($project->sprints)): ?>
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Sprints</h3>
+                        <button type="button" class="section-toggle" data-target="project-sprints">
+                            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="project-sprints" class="p-4">
+                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <?php foreach ($project->sprints as $sprint): ?>
+                                <?php
+                                    $sprintStatus = getGlobalSprintStatusClass($sprint->status_id);
+                                ?>
+                                <li class="py-3">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <a href="/sprints/view/<?= $sprint->id ?>" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                                <?= htmlspecialchars($sprint->name) ?>
+                                            </a>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                <?php if (isset($sprint->start_date) && isset($sprint->end_date)): ?>
+                                                    <?= date('M j', strtotime($sprint->start_date)) ?> - <?= date('M j, Y', strtotime($sprint->end_date)) ?>
+                                                <?php else: ?>
+                                                    Dates not set
+                                                <?php endif; ?>
+                                                • <?= $sprint->task_count ?? 0 ?> tasks
+                                            </p>
+                                        </div>
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $sprintStatus ?>">
+                                            <?= isset($sprint->status_name) ? htmlspecialchars($sprint->status_name) : 'Unknown' ?>
+                                        </span>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             
             <!-- Project Content Column - Right side, 3/4 width -->
@@ -243,10 +297,10 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
                     </div>
                 </div>
                 
-                <!-- Project Tasks -->
+                <!-- Project Tasks with Hierarchy -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
                     <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Tasks</h3>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Tasks, Epics & Milestones</h3>
                         <div class="flex items-center space-x-2">
                             <span class="text-xs text-gray-500 dark:text-gray-400"><?= $completedTasks ?>/<?= $totalTasks ?> completed</span>
                             <button type="button" class="section-toggle" data-target="project-tasks">
@@ -257,108 +311,10 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
                         </div>
                     </div>
                     <div id="project-tasks">
-                        <?php include BASE_PATH . '/../src/Views/Projects/inc/table_tasks.php'; ?>
+                        <?php include BASE_PATH . '/../src/Views/Projects/inc/table_tasks_hierarchical.php'; ?>
                     </div>
                 </div>
-                
-                <!-- Project Milestones -->
-                <?php if (isset($project->milestones) && !empty($project->milestones)): ?>
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Milestones</h3>
-                        <button type="button" class="section-toggle" data-target="project-milestones">
-                            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="project-milestones" class="p-4">
-                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php foreach ($project->milestones as $milestone): ?>
-                                <?php
-                                    $milestoneStatus = '';
-                                    switch ($milestone->status_id) {
-                                        case 1: $milestoneStatus = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                        case 2: $milestoneStatus = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                        case 3: $milestoneStatus = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                        default: $milestoneStatus = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-                                    }
-                                ?>
-                                <li class="py-3">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <a href="/milestones/view/<?= $milestone->id ?>" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                                <?= htmlspecialchars($milestone->title) ?>
-                                            </a>
-                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                <?php if (isset($milestone->due_date) && !empty($milestone->due_date)): ?>
-                                                    Due: <?= date('M j, Y', strtotime($milestone->due_date)) ?>
-                                                <?php else: ?>
-                                                    No due date
-                                                <?php endif; ?>
-                                            </p>
-                                        </div>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $milestoneStatus ?>">
-                                            <?= isset($milestone->status_name) ? htmlspecialchars($milestone->status_name) : 'Unknown' ?>
-                                        </span>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <!-- Project Sprints -->
-                <?php if (isset($project->sprints) && !empty($project->sprints)): ?>
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 overflow-hidden">
-                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
-                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Sprints</h3>
-                        <button type="button" class="section-toggle" data-target="project-sprints">
-                            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="project-sprints" class="p-4">
-                        <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php foreach ($project->sprints as $sprint): ?>
-                                <?php
-                                    $sprintStatus = '';
-                                    switch ($sprint->status_id) {
-                                        case 1: $sprintStatus = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                        case 2: $sprintStatus = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                        case 3: $sprintStatus = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                        case 4: $sprintStatus = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'; break;
-                                        case 5: $sprintStatus = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                        default: $sprintStatus = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-                                    }
-                                ?>
-                                <li class="py-3">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <a href="/sprints/view/<?= $sprint->id ?>" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                                <?= htmlspecialchars($sprint->name) ?>
-                                            </a>
-                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                <?php if (isset($sprint->start_date) && isset($sprint->end_date)): ?>
-                                                    <?= date('M j', strtotime($sprint->start_date)) ?> - <?= date('M j, Y', strtotime($sprint->end_date)) ?>
-                                                <?php else: ?>
-                                                    Dates not set
-                                                <?php endif; ?>
-                                                • <?= $sprint->task_count ?? 0 ?> tasks
-                                            </p>
-                                        </div>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $sprintStatus ?>">
-                                            <?= isset($sprint->status_name) ? htmlspecialchars($sprint->status_name) : 'Unknown' ?>
-                                        </span>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                </div>
-                <?php endif; ?>
+
             </div>
         </div>
     </main>

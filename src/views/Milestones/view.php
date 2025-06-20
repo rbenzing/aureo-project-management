@@ -14,18 +14,7 @@ use App\Services\SettingsService;
 // Include view helpers for permission functions and formatting
 require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
 
-// Include sprint helpers for sprint status styling (with safety check)
-$sprintHelpersPath = BASE_PATH . '/../src/views/Sprints/inc/helpers.php';
-if (file_exists($sprintHelpersPath)) {
-    require_once $sprintHelpersPath;
-} else {
-    // Fallback function if sprint helpers are not available
-    if (!function_exists('getSprintStatusClass')) {
-        function getSprintStatusClass($statusId) {
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-        }
-    }
-}
+// Sprint status functions are now available through view_helpers.php
 
 // Helper functions for formatting and styling
 function formatDate($date) {
@@ -266,7 +255,7 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                                             </div>
                                         </div>
                                         <div class="flex flex-col items-end space-y-1">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= getSprintStatusClass($sprint->status_id) ?>">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= getGlobalSprintStatusClass($sprint->status_id) ?>">
                                                 <?= htmlspecialchars($sprint->status_name) ?>
                                             </span>
                                             <?php if ($sprint->total_sprint_tasks > 0): ?>

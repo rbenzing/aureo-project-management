@@ -77,7 +77,7 @@ $canDeleteMilestones = isset($_SESSION['user']['permissions']) && in_array('dele
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap <?= getStatusClasses($milestone->status_id) ?>">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap <?= getMilestoneStatusClass($milestone->status_id) ?>">
                                 <?= htmlspecialchars($milestone->status_name ?? 'Unknown') ?>
                             </span>
                         </td>

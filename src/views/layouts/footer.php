@@ -32,6 +32,100 @@ try {
 
 <script type="text/javascript" src="/assets/js/scripts.js"></script>
 
+<!-- Ensure hamburger menu works on all pages - robust fallback initialization -->
+<script>
+// Robust hamburger menu initialization - ensures it works on ALL pages
+(function() {
+    'use strict';
+
+    let hamburgerInitialized = false;
+
+    function initHamburgerMenu() {
+        if (hamburgerInitialized) return;
+
+        const sidebar = document.getElementById('sidebar');
+        const toggleButton = document.getElementById('sidebar-toggle');
+        const closeButton = document.getElementById('sidebar-close');
+
+        if (!sidebar || !toggleButton) {
+            console.warn('Hamburger menu elements not found');
+            return;
+        }
+
+        // Mark as initialized to prevent duplicate initialization
+        hamburgerInitialized = true;
+
+        // Clear any existing event listeners by replacing the button
+        const newToggleButton = toggleButton.cloneNode(true);
+        toggleButton.parentNode.replaceChild(newToggleButton, toggleButton);
+
+        // Add click handler for toggle button
+        newToggleButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            sidebar.classList.toggle('-translate-x-full');
+            console.log('Hamburger menu toggled');
+        });
+
+        // Handle close button if it exists
+        if (closeButton) {
+            const newCloseButton = closeButton.cloneNode(true);
+            closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+
+            newCloseButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                sidebar.classList.add('-translate-x-full');
+            });
+        }
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!sidebar.contains(event.target) &&
+                !newToggleButton.contains(event.target) &&
+                !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        // Prevent sidebar from closing when clicking inside it
+        sidebar.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        console.log('Hamburger menu initialized successfully');
+    }
+
+    // Try multiple initialization strategies
+    function attemptInitialization() {
+        // Strategy 1: Immediate if DOM is ready
+        if (document.readyState === 'complete') {
+            initHamburgerMenu();
+            return;
+        }
+
+        // Strategy 2: On DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(initHamburgerMenu, 100);
+            });
+        } else {
+            setTimeout(initHamburgerMenu, 100);
+        }
+
+        // Strategy 3: Fallback with longer delay
+        setTimeout(function() {
+            if (!hamburgerInitialized) {
+                initHamburgerMenu();
+            }
+        }, 1000);
+    }
+
+    // Start initialization attempts
+    attemptInitialization();
+})();
+</script>
+
 <!-- Avatar Dropdown - Load last to ensure it works on all pages -->
 <script>
 // Ensure avatar dropdown works on all pages - runs after all other scripts

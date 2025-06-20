@@ -1,45 +1,65 @@
-// Sidebar toggle functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebar');
-    const toggleButton = document.getElementById('sidebar-toggle');
-    const closeButton = document.getElementById('sidebar-close');
+// Sidebar toggle functionality - wrapped in IIFE to avoid conflicts
+(function() {
+    'use strict';
 
-    // Check if all required elements exist
-    if (!sidebar || !toggleButton) {
-        console.warn('Sidebar elements not found');
-        return;
-    }
+    function initSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleButton = document.getElementById('sidebar-toggle');
+        const closeButton = document.getElementById('sidebar-close');
 
-    // Open/close sidebar when clicking the toggle button
-    toggleButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        sidebar.classList.toggle('-translate-x-full');
-    });
+        // Check if all required elements exist
+        if (!sidebar || !toggleButton) {
+            console.warn('Sidebar elements not found');
+            return;
+        }
 
-    // Close sidebar when clicking the close button (if it exists)
-    if (closeButton) {
-        closeButton.addEventListener('click', function(event) {
+        // Remove any existing event listeners by cloning elements
+        const newToggleButton = toggleButton.cloneNode(true);
+        toggleButton.parentNode.replaceChild(newToggleButton, toggleButton);
+
+        // Open/close sidebar when clicking the toggle button
+        newToggleButton.addEventListener('click', function(event) {
             event.preventDefault();
             event.stopPropagation();
-            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Close sidebar when clicking the close button (if it exists)
+        if (closeButton) {
+            const newCloseButton = closeButton.cloneNode(true);
+            closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+
+            newCloseButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                sidebar.classList.add('-translate-x-full');
+            });
+        }
+
+        // Close sidebar when clicking outside (on all screen sizes)
+        document.addEventListener('click', function(event) {
+            if (!sidebar.contains(event.target) &&
+                !newToggleButton.contains(event.target) &&
+                !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        });
+
+        // Prevent sidebar from closing when clicking inside it
+        sidebar.addEventListener('click', function(event) {
+            event.stopPropagation();
         });
     }
 
-    // Close sidebar when clicking outside (on all screen sizes)
-    document.addEventListener('click', function(event) {
-        if (!sidebar.contains(event.target) &&
-            !toggleButton.contains(event.target) &&
-            !sidebar.classList.contains('-translate-x-full')) {
-            sidebar.classList.add('-translate-x-full');
-        }
-    });
-
-    // Prevent sidebar from closing when clicking inside it
-    sidebar.addEventListener('click', function(event) {
-        event.stopPropagation();
-    });
-});
+    // Initialize immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initSidebar, 100);
+        });
+    } else {
+        setTimeout(initSidebar, 100);
+    }
+})();
 
 // Copy to clipboard functionality
 function copyToClipboard(text) {

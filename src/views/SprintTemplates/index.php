@@ -152,7 +152,14 @@ use App\Core\Config;
 
                             <!-- Ceremony Settings -->
                             <?php if (!empty($template->ceremony_settings)): ?>
-                                <?php $ceremonies = json_decode($template->ceremony_settings, true); ?>
+                                <?php
+                                // Handle both array and JSON string formats
+                                if (is_array($template->ceremony_settings)) {
+                                    $ceremonies = $template->ceremony_settings;
+                                } else {
+                                    $ceremonies = json_decode($template->ceremony_settings, true);
+                                }
+                                ?>
                                 <div class="mb-4">
                                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SCRUM Ceremonies</h4>
                                     <div class="flex flex-wrap gap-1">

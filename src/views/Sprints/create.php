@@ -33,21 +33,63 @@ use App\Services\SettingsService;
 
         <?php include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php'; ?>
 
-        <!-- Create Sprint Form -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <div class="mb-6 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Sprint</h1>
-                <a href="/sprints/project/<?= htmlspecialchars($project->id ?? '') ?>" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        <!-- Tips Box -->
+        <div id="tips-box" class="bg-indigo-50 dark:bg-indigo-900 rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-start">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-indigo-800 dark:text-indigo-300">Tips for effective sprints</h3>
+                        <div class="mt-2 text-sm text-indigo-700 dark:text-indigo-200">
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Set clear, achievable sprint goals</li>
+                                <li>Include all necessary SCRUM ceremonies</li>
+                                <li>Assign tasks that fit team capacity</li>
+                                <li>Plan for 2-4 week sprint durations</li>
+                                <li>Review and adjust based on team velocity</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="close-tips" class="text-indigo-400 hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-100">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Back to Sprints
-                </a>
+                </button>
             </div>
+        </div>
 
-            <form action="/sprints/create" method="POST" class="space-y-6">
+        <!-- Page Header -->
+        <div class="pb-6 flex justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Sprint</h1>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Create a new sprint for <?= htmlspecialchars($project->name ?? 'this project') ?> with tasks and goals.
+                </p>
+            </div>
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3">
+                <a href="/sprints/project/<?= htmlspecialchars((string)($project->id ?? '')) ?>" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Cancel
+                </a>
+                <button type="submit" form="createSprintForm"
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Create Sprint
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Main Form -->
+            <div class="w-full lg:w-2/3">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <form id="createSprintForm" action="/sprints/create" method="POST" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                <input type="hidden" name="project_id" value="<?= htmlspecialchars($project->id ?? '') ?>">
+                <input type="hidden" name="project_id" value="<?= htmlspecialchars((string)($project->id ?? '')) ?>">
 
                 <!-- Sprint Template Selection -->
                 <div>
@@ -171,7 +213,7 @@ use App\Services\SettingsService;
                                 <option value="">Select a custom template...</option>
                                 <?php if (!empty($sprintTemplates)): ?>
                                     <?php foreach ($sprintTemplates as $template): ?>
-                                        <option value="<?= htmlspecialchars($template->id) ?>"
+                                        <option value="<?= htmlspecialchars((string)$template->id) ?>"
                                                 data-title="<?= htmlspecialchars($template->name) ?>"
                                                 data-description="<?= htmlspecialchars($template->description) ?>">
                                             <?= htmlspecialchars($template->name) ?>
@@ -189,123 +231,84 @@ use App\Services\SettingsService;
                 </div>
                 <?php endif; ?>
 
-                <!-- Description -->
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                    <textarea 
-                        id="description" 
-                        name="description" 
-                        rows="3" 
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
-                        placeholder="Provide a description for this sprint"
-                    ><?= htmlspecialchars($_SESSION['form_data']['description'] ?? '') ?></textarea>
+                        <!-- Description -->
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                rows="8"
+                                class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                                placeholder="Provide a description for this sprint"
+                            ><?= htmlspecialchars($_SESSION['form_data']['description'] ?? '') ?></textarea>
+                        </div>
+                    </form>
                 </div>
+            </div>
 
-                <!-- Sprint Dates -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-600">*</span></label>
-                        <input 
-                            type="date" 
-                            id="start_date" 
-                            name="start_date" 
-                            value="<?= htmlspecialchars($_SESSION['form_data']['start_date'] ?? date('Y-m-d')) ?>"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white" 
-                            required
-                        >
-                    </div>
-                    <div>
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date <span class="text-red-600">*</span></label>
-                        <input 
-                            type="date" 
-                            id="end_date" 
-                            name="end_date" 
-                            value="<?= htmlspecialchars($_SESSION['form_data']['end_date'] ?? date('Y-m-d', strtotime('+2 weeks'))) ?>"
-                            class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white" 
-                            required
-                        >
-                    </div>
-                </div>
+            <!-- Right Column - Sprint Details -->
+            <div class="w-full lg:w-1/3">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4">Sprint Details</h3>
 
-                <!-- Sprint Status -->
-                <div>
-                    <label for="status_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status <span class="text-red-600">*</span></label>
-                    <select 
-                        id="status_id" 
-                        name="status_id" 
-                        class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
-                        required
-                    >
-                        <?php foreach ($sprint_statuses ?? [] as $status): ?>
-                            <?php $statusInfo = getSprintStatusInfo($status->id); ?>
-                            <option
-                                value="<?= $status->id ?>"
-                                <?= isset($_SESSION['form_data']['status_id']) && $_SESSION['form_data']['status_id'] == $status->id ? 'selected' : '' ?>
-                                <?= (!isset($_SESSION['form_data']['status_id']) && $status->id == 1) ? 'selected' : '' ?>
+                    <!-- These fields are part of the main form -->
+                    <div class="space-y-6">
+
+                        <!-- Sprint Dates -->
+                        <div>
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="start_date"
+                                name="start_date"
+                                value="<?= htmlspecialchars($_SESSION['form_data']['start_date'] ?? date('Y-m-d')) ?>"
+                                class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                                required
+                                form="createSprintForm"
                             >
-                                <?= htmlspecialchars($statusInfo['label']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <!-- Add Tasks Section (if there are tasks in the project) -->
-                <?php if (!empty($project_tasks)): ?>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add Tasks (Optional)</label>
-                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-inner">
-                        <div class="mb-3 flex items-center">
-                            <input type="text" id="task-search" placeholder="Search tasks..." class="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:text-white">
-                            <button type="button" id="select-all-tasks" class="ml-2 px-3 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">Select All</button>
-                            <button type="button" id="deselect-all-tasks" class="ml-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">Deselect All</button>
                         </div>
 
-                        <div class="max-h-64 overflow-y-auto space-y-2 pr-2">
-                            <?php foreach ($project_tasks as $task): ?>
-                                <div class="task-item flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                    <input 
-                                        type="checkbox" 
-                                        id="task-<?= $task->id ?>" 
-                                        name="tasks[]" 
-                                        value="<?= $task->id ?>"
-                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                        <?= isset($_SESSION['form_data']['tasks']) && in_array($task->id, $_SESSION['form_data']['tasks']) ? 'checked' : '' ?>
+                        <div>
+                            <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="end_date"
+                                name="end_date"
+                                value="<?= htmlspecialchars($_SESSION['form_data']['end_date'] ?? date('Y-m-d', strtotime('+2 weeks'))) ?>"
+                                class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                                required
+                                form="createSprintForm"
+                            >
+                        </div>
+
+                        <!-- Sprint Status -->
+                        <div>
+                            <label for="status_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status <span class="text-red-600">*</span></label>
+                            <select
+                                id="status_id"
+                                name="status_id"
+                                class="w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-white"
+                                required
+                                form="createSprintForm"
+                            >
+                                <?php foreach ($sprint_statuses ?? [] as $status): ?>
+                                    <?php $statusInfo = getSprintStatusInfo($status->id); ?>
+                                    <option
+                                        value="<?= (string)$status->id ?>"
+                                        <?= isset($_SESSION['form_data']['status_id']) && $_SESSION['form_data']['status_id'] == $status->id ? 'selected' : '' ?>
+                                        <?= (!isset($_SESSION['form_data']['status_id']) && $status->id == 1) ? 'selected' : '' ?>
                                     >
-                                    <label for="task-<?= $task->id ?>" class="ml-2 flex-1 cursor-pointer">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($task->title) ?></div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                                            <span class="px-1.5 py-0.5 text-xs rounded-full mr-2 <?= getSprintTaskStatusClass($task->status_name ?? 'Open') ?>">
-                                                <?= htmlspecialchars($task->status_name ?? 'Open') ?>
-                                            </span>
-                                            <?php if (!empty($task->due_date)): ?>
-                                                <span>Due: <?= date('M j, Y', strtotime($task->due_date)) ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </label>
-                                </div>
-                            <?php endforeach; ?>
+                                        <?= htmlspecialchars($statusInfo['label']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end space-x-3">
-                    <a 
-                        href="/sprints/project/<?= htmlspecialchars($project->id ?? '') ?>" 
-                        class="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
-                    >
-                        Cancel
-                    </a>
-                    <button 
-                        type="submit" 
-                        class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Create Sprint
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
+
+
     </main>
 
     <!-- Footer -->
@@ -318,6 +321,15 @@ use App\Services\SettingsService;
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Tips box close functionality
+            const closeTipsBtn = document.getElementById('close-tips');
+            const tipsBox = document.getElementById('tips-box');
+
+            if (closeTipsBtn && tipsBox) {
+                closeTipsBtn.addEventListener('click', function() {
+                    tipsBox.style.display = 'none';
+                });
+            }
             // Sprint Type Selection
             const sprintTypeSelect = document.getElementById('sprint_type');
             const milestoneSelection = document.getElementById('milestone-selection');

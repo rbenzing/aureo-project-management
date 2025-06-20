@@ -130,6 +130,9 @@ class SprintController
             $tasks = $this->sprintModel->getSprintTasks($id);
             $project = $this->projectModel->find($sprint->project_id);
 
+            // Add hierarchical task data
+            $sprint->hierarchy = $this->sprintModel->getSprintHierarchy($id);
+
             include __DIR__ . '/../Views/Sprints/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -345,7 +348,8 @@ class SprintController
         try {
             $this->authMiddleware->hasPermission('create_sprints');
 
-            $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
+            // Get project ID from route parameter or query parameter
+            $projectId = filter_var($data['id'] ?? $data['project_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {
                 throw new InvalidArgumentException('Project ID is required');
             }
@@ -417,9 +421,9 @@ class SprintController
             $sprintSettings = $settingsService->getSprintSettings();
 
             // Calculate dates
-            $startDate = new DateTime();
+            $startDate = new \DateTime();
             $endDate = clone $startDate;
-            $endDate->add(new DateInterval('P' . $sprintSettings['default_sprint_length'] . 'D'));
+            $endDate->add(new \DateInterval('P' . $sprintSettings['default_sprint_length'] . 'D'));
 
             // Create sprint
             $sprintData = [
@@ -571,6 +575,9 @@ class SprintController
             $sprintTaskIds = array_map(function ($task) {
                 return $task->id;
             }, $sprintTasks);
+
+            // Get sprint statuses
+            $statuses = $this->sprintModel->getSprintStatuses();
 
             // Get company ID from project
             $companyId = $project->company_id ?? null;
