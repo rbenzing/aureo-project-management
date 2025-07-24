@@ -48,7 +48,7 @@ function hasHeaderPermission($permission)
         <?php endif; ?>
         <nav class="space-x-4 flex flex-row items-center">
             <?php if (isset($_SESSION['user']['profile']['id'])): ?>
-                <a href="#" class="hover:text-indigo-200">📄 Activity</a>
+                <a href="/activity" class="hover:text-indigo-200">📄 Activity</a>
 
                 <!-- User Avatar Dropdown -->
                 <div class="relative dropdown">

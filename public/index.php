@@ -241,6 +241,14 @@ try {
     $router->get('settings', ['controller' => 'Settings', 'action' => 'index']);
     $router->post('settings/update', ['controller' => 'Settings', 'action' => 'update']);
 
+    // Activity Routes
+    $router->get('activity', ['controller' => 'Activity', 'action' => 'index']);
+
+    // Time Tracking Routes
+    $router->get('time-tracking', ['controller' => 'TimeTracking', 'action' => 'index']);
+    $router->post('time-tracking/start', ['controller' => 'TimeTracking', 'action' => 'startTimer']);
+    $router->post('time-tracking/stop', ['controller' => 'TimeTracking', 'action' => 'stopTimer']);
+
     // Get request URI and method
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $segments = explode('/', ltrim($uri, '/'));
