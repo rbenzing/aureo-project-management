@@ -290,13 +290,6 @@ SET @admin_role_id = (SELECT id FROM roles WHERE name = 'admin' LIMIT 1);
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT @admin_role_id, id FROM permissions;
 
---
--- Dumping data for table `users` with minimal initial data
---
-
-INSERT INTO `users` (`role_id`, `first_name`, `last_name`, `email`, `phone`, `password_hash`, `is_active`, `activation_token`, `activation_token_expires_at`, `reset_password_token`, `reset_password_token_expires_at`, `is_deleted`, `created_at`, `updated_at`) VALUES
-(@admin_role_id, 'Russell', 'Benzing', 'rbenzing@gmail.com', NULL, '$argon2id$v=19$m=65536,t=4,p=1$dkcub0FTU2NENTRmdXBSeQ$cAZna9wkkfUbCM5PPRjh3KvEjga+dP56xqnOvfbam0U', 1, NULL, '2025-02-24 20:13:39', NULL, NULL, 0, '2025-02-23 20:13:39', '2025-02-26 01:39:55');
-
 -- --------------------------------------------------------
 
 --
