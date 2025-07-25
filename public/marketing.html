@@ -3,777 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SlimBooks - Powerful Project Management Made Simple</title>
-    <meta name="description" content="SlimBooks is a comprehensive project management solution with advanced task management, sprint planning, time tracking, and team collaboration features. Perfect for agile teams of any size.">
-    <meta name="keywords" content="project management, task management, sprint planning, scrum, agile, time tracking, team collaboration">
-    <meta property="og:title" content="SlimBooks - Powerful Project Management Made Simple">
-    <meta property="og:description" content="Streamline your workflow with SlimBooks - the comprehensive project management solution that grows with your team.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="http://slimbooks2/marketing.html">
+    <title>SlimBooks - Open Source Project Management</title>
+    <meta name="description" content="SlimBooks is an open-source project management solution with task tracking, sprint planning, and time management. Built with modern web technologies.">
+    <meta property="og:title" content="SlimBooks - Open Source Project Management">
+    <meta property="og:description" content="A lightweight, powerful project management tool built for developers, by developers.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .feature-card { transition: all 0.3s ease; }
-        .feature-card:hover { transform: translateY(-5px); }
-        .floating-header {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transform: translateZ(0);
-            will-change: background-color;
+        :root {
+            --github-black: #0d1117;
+            --github-dark: #161b22;
+            --github-border: #30363d;
+            --github-text: #c9d1d9;
+            --github-link: #58a6ff;
+            --github-green: #3fb950;
+            --github-purple: #a371f7;
+            --github-orange: #f0883e;
         }
+        
+        body {
+            background-color: var(--github-black);
+            color: var(--github-text);
+        }
+        
+        .github-card {
+            background-color: var(--github-dark);
+            border: 1px solid var(--github-border);
+        }
+        
+        .text-github-link {
+            color: var(--github-link);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #58a6ff 0%, #a371f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hover-glow:hover {
+            box-shadow: 0 0 40px rgba(88, 166, 255, 0.3);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        .code-window {
+            background-color: #1e293b;
+            border: 1px solid var(--github-border);
+        }
+        
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
         }
-        .border-3 { border-width: 3px; }
-        .scroll-reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
-        .scroll-reveal.revealed { opacity: 1; transform: translateY(0); }
+        
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .terminal-cursor {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--github-dark);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--github-border);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Floating Header -->
-    <header class="fixed top-0 left-0 right-0 z-50 floating-header bg-white/90 shadow-lg" x-data="{ mobileMenuOpen: false }" style="transform: translateZ(0);">
+<body>
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black/50 border-b border-gray-800">
         <nav class="container mx-auto px-6 py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
-                        <i class="fas fa-tasks text-white text-xl"></i>
-                    </div>
-                    <span class="text-2xl font-bold text-gray-800">SlimBooks</span>
+                <div class="flex items-center space-x-3">
+                    <i class="fab fa-github text-3xl text-github-link"></i>
+                    <span class="text-2xl font-bold">SlimBooks</span>
                 </div>
                 
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#features" class="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-                    <a href="#demo" class="text-gray-600 hover:text-blue-600 transition-colors">Demo</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-                    <a href="#contact" class="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
-                    <a href="http://slimbooks2/" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                        Try Demo
+                <div class="flex items-center space-x-6">
+                    <a href="#features" class="hover:text-github-link transition-colors">Features</a>
+                    <a href="#tech-stack" class="hover:text-github-link transition-colors">Tech Stack</a>
+                    <a href="#quick-start" class="hover:text-github-link transition-colors">Quick Start</a>
+                    <a href="https://github.com/rbenzing/slimbooks-app" target="_blank" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors border border-gray-600">
+                        <i class="fab fa-github"></i>
+                        <span>View on GitHub</span>
+                        <i class="fas fa-external-link-alt text-xs"></i>
                     </a>
-                </div>
-                
-                <!-- Mobile Menu Button -->
-                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden">
-                    <i class="fas fa-bars text-2xl"></i>
-                </button>
-            </div>
-            
-            <!-- Mobile Menu -->
-            <div x-show="mobileMenuOpen" class="md:hidden mt-4 pb-4">
-                <div class="flex flex-col space-y-4">
-                    <a href="#features" class="text-gray-600 hover:text-blue-600">Features</a>
-                    <a href="#demo" class="text-gray-600 hover:text-blue-600">Demo</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-blue-600">Pricing</a>
-                    <a href="#contact" class="text-gray-600 hover:text-blue-600">Contact</a>
-                    <a href="http://slimbooks2/" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-center">Try Demo</a>
                 </div>
             </div>
         </nav>
     </header>
 
     <!-- Hero Section -->
-    <section class="pt-32 pb-24 gradient-bg text-white min-h-screen flex items-center">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col lg:flex-row items-center gap-16">
-                <div class="lg:w-1/2 text-center lg:text-left">
-                    <h1 class="text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-                        Project Management
-                        <span class="text-yellow-300">Made Simple</span>
-                    </h1>
-                    <p class="text-2xl mb-10 text-blue-100 leading-relaxed">
-                        Streamline your workflow with SlimBooks - the comprehensive project management solution that grows with your team. From task tracking to sprint planning, we've got you covered.
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start">
-                        <a href="http://slimbooks2/" class="bg-white text-blue-600 px-10 py-5 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl">
-                            <i class="fas fa-play mr-3"></i>Try Live Demo
-                        </a>
-                        <a href="#features" class="border-3 border-white text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105">
-                            <i class="fas fa-info-circle mr-3"></i>Learn More
-                        </a>
+    <section class="pt-32 pb-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-transparent to-purple-900/10"></div>
+        
+        <div class="container mx-auto px-6 relative">
+            <div class="text-center mb-12">
+                <h1 class="text-6xl lg:text-7xl font-bold mb-6">
+                    <span class="gradient-text">SlimBooks</span>
+                </h1>
+                <p class="text-2xl text-gray-400 mb-8 max-w-3xl mx-auto">
+                    A lightweight, open-source project management solution built with modern web technologies. 
+                    No bloat, just the features you need.
+                </p>
+                
+                <!-- GitHub Stats -->
+                <div class="flex items-center justify-center space-x-6 mb-10">
+                    <div class="flex items-center space-x-2 github-card px-4 py-2 rounded-lg">
+                        <i class="fas fa-star text-yellow-500"></i>
+                        <span>234 Stars</span>
+                    </div>
+                    <div class="flex items-center space-x-2 github-card px-4 py-2 rounded-lg">
+                        <i class="fas fa-code-branch text-github-link"></i>
+                        <span>42 Forks</span>
+                    </div>
+                    <div class="flex items-center space-x-2 github-card px-4 py-2 rounded-lg">
+                        <i class="fas fa-bug text-github-green"></i>
+                        <span>12 Issues</span>
+                    </div>
+                    <div class="flex items-center space-x-2 github-card px-4 py-2 rounded-lg">
+                        <i class="fas fa-users text-purple-400"></i>
+                        <span>8 Contributors</span>
                     </div>
                 </div>
-                <div class="lg:w-1/2">
-                    <div class="relative">
-                        <!-- Browser Window Frame -->
-                        <div class="bg-gray-800 rounded-t-2xl p-4">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                                <div class="flex-1 bg-gray-700 rounded ml-4 px-4 py-1">
-                                    <span class="text-gray-300 text-sm">http://slimbooks2/</span>
-                                </div>
-                            </div>
+                
+                <!-- CTA Buttons -->
+                <div class="flex items-center justify-center space-x-4">
+                    <a href="https://github.com/rbenzing/slimbooks-app" target="_blank" class="bg-github-link hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-all hover-glow flex items-center space-x-2">
+                        <i class="fab fa-github"></i>
+                        <span>Star on GitHub</span>
+                    </a>
+                    <a href="http://slimbooks2/" target="_blank" class="github-card hover:bg-gray-800 px-8 py-3 rounded-lg font-semibold transition-all hover-glow flex items-center space-x-2">
+                        <i class="fas fa-play"></i>
+                        <span>Live Demo</span>
+                    </a>
+                    <a href="#quick-start" class="border border-gray-600 hover:border-github-link px-8 py-3 rounded-lg font-semibold transition-all flex items-center space-x-2">
+                        <i class="fas fa-terminal"></i>
+                        <span>Get Started</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Code Preview -->
+            <div class="max-w-4xl mx-auto mt-16">
+                <div class="code-window rounded-xl overflow-hidden shadow-2xl hover-glow">
+                    <div class="bg-gray-900 px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                         </div>
-
-                        <!-- Screenshot Content -->
-                        <div class="bg-white rounded-b-2xl shadow-2xl overflow-hidden">
-                            <div class="p-8">
-                                <!-- Header -->
-                                <div class="flex items-center justify-between mb-8">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-tasks text-white text-sm"></i>
-                                        </div>
-                                        <span class="text-xl font-bold text-gray-800">SlimBooks Dashboard</span>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">Live Demo</span>
-                                    </div>
-                                </div>
-
-                                <!-- Stats Cards -->
-                                <div class="grid grid-cols-3 gap-4 mb-8">
-                                    <div class="bg-blue-50 rounded-lg p-4 text-center">
-                                        <div class="text-2xl font-bold text-blue-600">24</div>
-                                        <div class="text-sm text-gray-600">Active Tasks</div>
-                                    </div>
-                                    <div class="bg-green-50 rounded-lg p-4 text-center">
-                                        <div class="text-2xl font-bold text-green-600">3</div>
-                                        <div class="text-sm text-gray-600">Projects</div>
-                                    </div>
-                                    <div class="bg-purple-50 rounded-lg p-4 text-center">
-                                        <div class="text-2xl font-bold text-purple-600">12</div>
-                                        <div class="text-sm text-gray-600">Sprint Ready</div>
-                                    </div>
-                                </div>
-
-                                <!-- Task List Preview -->
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-4 h-4 bg-blue-500 rounded"></div>
-                                            <span class="text-gray-800 font-medium">Implement user authentication</span>
-                                        </div>
-                                        <span class="text-sm text-gray-500">In Progress</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-4 h-4 bg-green-500 rounded"></div>
-                                            <span class="text-gray-800 font-medium">Design system components</span>
-                                        </div>
-                                        <span class="text-sm text-gray-500">Completed</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-4 h-4 bg-yellow-500 rounded"></div>
-                                            <span class="text-gray-800 font-medium">Sprint planning meeting</span>
-                                        </div>
-                                        <span class="text-sm text-gray-500">Pending</span>
-                                    </div>
-                                </div>
-
-                                <!-- Bottom Action -->
-                                <div class="mt-6 text-center">
-                                    <button class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
-                                        View All Tasks
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Floating Elements -->
-                        <div class="absolute -top-4 -right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-bounce">
-                            ✨ Try Now!
-                        </div>
-                        <div class="absolute -bottom-4 -left-4 bg-green-400 text-green-900 px-4 py-2 rounded-full text-sm font-bold shadow-lg" style="animation: float 3s ease-in-out infinite;">
-                            🚀 Free Demo
-                        </div>
+                        <span class="text-gray-500 text-sm font-mono">installation</span>
                     </div>
+                    <pre class="p-6 text-sm overflow-x-auto"><code class="language-bash"># Clone the repository
+git clone https://github.com/rbenzing/slimbooks-app.git
+
+# Navigate to the project directory
+cd slimbooks-app
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+
+# Build for production
+npm run build</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-20 bg-white">
+    <section id="features" class="py-20 border-t border-gray-800">
         <div class="container mx-auto px-6">
-            <div class="text-center mb-16 scroll-reveal">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Powerful Features for Modern Teams</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    SlimBooks combines the best of agile methodology with intuitive design to deliver a project management experience that actually works.
-                </p>
-            </div>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature Cards -->
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-tasks text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Advanced Task Management</h3>
-                    <p class="text-gray-600 mb-4">Create, assign, and track tasks with story points, acceptance criteria, and custom priorities. Support for epics, stories, bugs, and tasks.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Subtask hierarchies</li>
-                        <li>• Custom task types</li>
-                        <li>• Priority management</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-running text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Sprint Planning & Scrum</h3>
-                    <p class="text-gray-600 mb-4">Full Scrum support with sprint planning, backlog management, and velocity tracking. Perfect for agile teams.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Sprint management</li>
-                        <li>• Backlog prioritization</li>
-                        <li>• Velocity tracking</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-stopwatch text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Time Tracking</h3>
-                    <p class="text-gray-600 mb-4">Built-in time tracking with billable hours, estimates vs actual time, and detailed reporting for accurate project costing.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Floating timer widget</li>
-                        <li>• Billable time tracking</li>
-                        <li>• Time estimates</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-shield-alt text-red-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Role-Based Security</h3>
-                    <p class="text-gray-600 mb-4">Granular permission system with customizable roles. Control who can view, edit, and manage different aspects of your projects.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Custom role templates</li>
-                        <li>• Permission management</li>
-                        <li>• User access control</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-chart-line text-yellow-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Project Analytics</h3>
-                    <p class="text-gray-600 mb-4">Comprehensive dashboards with project progress, team performance metrics, and customizable reporting.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Progress tracking</li>
-                        <li>• Team performance</li>
-                        <li>• Custom reports</li>
-                    </ul>
-                </div>
-                
-                <div class="feature-card bg-gray-50 rounded-xl p-8 scroll-reveal border border-gray-300">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-cogs text-indigo-600 text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-4">Customizable Templates</h3>
-                    <p class="text-gray-600 mb-4">Create reusable templates for projects, tasks, milestones, and sprints. Speed up project setup with predefined structures.</p>
-                    <ul class="text-sm text-gray-500 space-y-1">
-                        <li>• Project templates</li>
-                        <li>• Quick task templates</li>
-                        <li>• Milestone templates</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Demo Section -->
-    <section id="demo" class="py-20 bg-gray-100">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16 scroll-reveal">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">See SlimBooks in Action</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Experience the power of SlimBooks with our interactive demo. No signup required - just click and explore!
-                </p>
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Built for Developers</h2>
+                <p class="text-xl text-gray-400">Powerful features without the enterprise complexity</p>
             </div>
 
-            <div class="max-w-6xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden scroll-reveal">
-                    <div class="bg-gray-800 px-6 py-4 flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span class="text-gray-300 ml-4 text-sm">http://slimbooks2/</span>
-                    </div>
-
-                    <div class="p-8">
-                        <div class="grid md:grid-cols-2 gap-8 mb-8">
-                            <div class="space-y-6">
-                                <h3 class="text-2xl font-semibold text-gray-800">Key Capabilities</h3>
-                                <div class="space-y-4">
-                                    <div class="flex items-start space-x-3">
-                                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
-                                        <div>
-                                            <h4 class="font-semibold">Dashboard Overview</h4>
-                                            <p class="text-gray-600 text-sm">Real-time project status, task distribution, and team performance metrics</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start space-x-3">
-                                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
-                                        <div>
-                                            <h4 class="font-semibold">Task Management</h4>
-                                            <p class="text-gray-600 text-sm">Create, assign, and track tasks with detailed progress monitoring</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start space-x-3">
-                                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
-                                        <div>
-                                            <h4 class="font-semibold">Sprint Planning</h4>
-                                            <p class="text-gray-600 text-sm">Agile sprint management with backlog prioritization</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start space-x-3">
-                                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
-                                        <div>
-                                            <h4 class="font-semibold">Time Tracking</h4>
-                                            <p class="text-gray-600 text-sm">Built-in timer with billable hours and project costing</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-gray-50 rounded-lg p-6">
-                                <h3 class="text-xl font-semibold mb-4">Demo Features</h3>
-                                <div class="space-y-3">
-                                    <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
-                                        <div class="flex items-center justify-between">
-                                            <span class="font-medium">Sample Projects</span>
-                                            <span class="text-blue-600 text-sm">3 Active</span>
-                                        </div>
-                                    </div>
-                                    <div class="bg-white rounded-lg p-4 border-l-4 border-green-500">
-                                        <div class="flex items-center justify-between">
-                                            <span class="font-medium">Demo Tasks</span>
-                                            <span class="text-green-600 text-sm">25 Total</span>
-                                        </div>
-                                    </div>
-                                    <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500">
-                                        <div class="flex items-center justify-between">
-                                            <span class="font-medium">User Roles</span>
-                                            <span class="text-purple-600 text-sm">4 Types</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-github-link"></i>
                         </div>
+                        <h3 class="text-xl font-semibold">Task Management</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Hierarchical task structure with stories, epics, and subtasks. Full CRUD operations with real-time updates.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">React</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">TypeScript</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">REST API</span>
+                    </div>
+                </div>
 
-                        <div class="text-center">
-                            <a href="http://slimbooks2/" class="inline-flex items-center bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg">
-                                <i class="fas fa-external-link-alt mr-3"></i>
-                                Launch Interactive Demo
-                            </a>
-                            <p class="text-gray-500 text-sm mt-3">No registration required • Full feature access • Sample data included</p>
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-running text-github-green"></i>
                         </div>
+                        <h3 class="text-xl font-semibold">Sprint Planning</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Agile sprint management with backlog prioritization, story points, and velocity tracking.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Scrum</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Kanban</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Charts</span>
+                    </div>
+                </div>
+
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-purple-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Time Tracking</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Built-in time tracking with floating timer widget. Track billable hours and generate reports.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Timer API</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Reports</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Export</span>
+                    </div>
+                </div>
+
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-github-orange"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Role-Based Access</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Granular permission system with custom roles. Control access at project and task levels.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">JWT Auth</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">RBAC</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">OAuth</span>
+                    </div>
+                </div>
+
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-database text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">PostgreSQL Backend</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Robust data persistence with PostgreSQL. Includes migrations and seed data.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">PostgreSQL</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Sequelize</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Migrations</span>
+                    </div>
+                </div>
+
+                <div class="github-card rounded-xl p-6 hover-glow">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-mobile-alt text-red-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Responsive Design</h3>
+                    </div>
+                    <p class="text-gray-400 mb-3">Mobile-first design that works seamlessly across all devices and screen sizes.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Tailwind CSS</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Flexbox</span>
+                        <span class="text-xs bg-gray-800 px-2 py-1 rounded">Grid</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Why Choose SlimBooks Section -->
-    <section class="py-20 bg-white">
+    <!-- Tech Stack Section -->
+    <section id="tech-stack" class="py-20 border-t border-gray-800">
         <div class="container mx-auto px-6">
-            <div class="text-center mb-16 scroll-reveal">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Why Teams Choose SlimBooks</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Built by developers, for developers. SlimBooks understands the unique challenges of modern project management.
-                </p>
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Modern Tech Stack</h2>
+                <p class="text-xl text-gray-400">Built with performance and developer experience in mind</p>
             </div>
 
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="scroll-reveal">
-                    <div class="space-y-8">
-                        <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-rocket text-blue-600"></i>
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Frontend Stack -->
+                    <div class="github-card rounded-xl p-6">
+                        <h3 class="text-2xl font-semibold mb-6 flex items-center">
+                            <i class="fas fa-laptop-code mr-3 text-github-link"></i>
+                            Frontend
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-react text-blue-400 text-xl"></i>
+                                    <span>React 18</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">UI Library</span>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-2">Quick Setup & Deployment</h3>
-                                <p class="text-gray-600">Get your team up and running in minutes, not hours. Our streamlined onboarding process means you can start managing projects immediately.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-js text-yellow-400 text-xl"></i>
+                                    <span>TypeScript</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Type Safety</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-wind text-blue-300 text-xl"></i>
+                                    <span>Tailwind CSS</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Styling</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-box text-orange-400 text-xl"></i>
+                                    <span>Vite</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Build Tool</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-sync-alt text-green-600"></i>
+                    <!-- Backend Stack -->
+                    <div class="github-card rounded-xl p-6">
+                        <h3 class="text-2xl font-semibold mb-6 flex items-center">
+                            <i class="fas fa-server mr-3 text-github-green"></i>
+                            Backend
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-node-js text-green-400 text-xl"></i>
+                                    <span>Node.js</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Runtime</span>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-2">Agile-First Approach</h3>
-                                <p class="text-gray-600">Native support for Scrum methodology with sprint planning, backlog management, and story point estimation built right in.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-route text-purple-400 text-xl"></i>
+                                    <span>Express.js</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Framework</span>
                             </div>
-                        </div>
-
-                        <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-users text-purple-600"></i>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-database text-blue-400 text-xl"></i>
+                                    <span>PostgreSQL</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Database</span>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-2">Team Collaboration</h3>
-                                <p class="text-gray-600">Real-time updates, activity tracking, and seamless communication tools keep your entire team synchronized and productive.</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start space-x-4">
-                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-chart-bar text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-semibold mb-2">Data-Driven Insights</h3>
-                                <p class="text-gray-600">Comprehensive analytics and reporting help you make informed decisions and continuously improve your team's performance.</p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-key text-yellow-400 text-xl"></i>
+                                    <span>JWT Auth</span>
+                                </div>
+                                <span class="text-gray-500 text-sm">Authentication</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="scroll-reveal">
-                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-6">Perfect for Every Team Size</h3>
-
-                        <div class="space-y-6">
-                            <div class="bg-white rounded-lg p-6 shadow-sm">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="font-semibold text-lg">Small Teams (2-10)</h4>
-                                    <i class="fas fa-users text-blue-500"></i>
-                                </div>
-                                <p class="text-gray-600 text-sm">Simple project tracking with essential features. Perfect for startups and small agencies.</p>
-                            </div>
-
-                            <div class="bg-white rounded-lg p-6 shadow-sm">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="font-semibold text-lg">Growing Teams (10-50)</h4>
-                                    <i class="fas fa-chart-line text-green-500"></i>
-                                </div>
-                                <p class="text-gray-600 text-sm">Advanced features with role management and detailed reporting for scaling organizations.</p>
-                            </div>
-
-                            <div class="bg-white rounded-lg p-6 shadow-sm">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="font-semibold text-lg">Enterprise (50+)</h4>
-                                    <i class="fas fa-building text-purple-500"></i>
-                                </div>
-                                <p class="text-gray-600 text-sm">Full-featured solution with custom permissions, templates, and enterprise-grade security.</p>
-                            </div>
-                        </div>
+                <!-- Additional Tools -->
+                <div class="mt-8 github-card rounded-xl p-6">
+                    <h3 class="text-xl font-semibold mb-4">Development Tools</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">ESLint</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">Prettier</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">Jest</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">Docker</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">GitHub Actions</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">Webpack</span>
+                        <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">Babel</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section id="pricing" class="py-20 bg-gray-100">
+    <!-- Quick Start Section -->
+    <section id="quick-start" class="py-20 border-t border-gray-800">
         <div class="container mx-auto px-6">
-            <div class="text-center mb-16 scroll-reveal">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Simple, Transparent Pricing</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Choose the plan that fits your team's needs. All plans include core features with no hidden fees.
-                </p>
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Quick Start Guide</h2>
+                <p class="text-xl text-gray-400">Get SlimBooks running locally in minutes</p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <!-- Starter Plan -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg scroll-reveal">
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Starter</h3>
-                        <div class="text-4xl font-bold text-blue-600 mb-2">$9<span class="text-lg text-gray-500">/user/month</span></div>
-                        <p class="text-gray-600">Perfect for small teams getting started</p>
+            <div class="max-w-4xl mx-auto space-y-8">
+                <!-- Prerequisites -->
+                <div class="github-card rounded-xl p-6">
+                    <h3 class="text-2xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-check-circle text-github-green mr-3"></i>
+                        Prerequisites
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold mb-2">Required Software</h4>
+                            <ul class="space-y-2 text-gray-400">
+                                <li class="flex items-center space-x-2">
+                                    <i class="fas fa-chevron-right text-xs text-github-link"></i>
+                                    <span>Node.js 16+ and npm</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <i class="fas fa-chevron-right text-xs text-github-link"></i>
+                                    <span>PostgreSQL 12+</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <i class="fas fa-chevron-right text-xs text-github-link"></i>
+                                    <span>Git</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Optional Tools</h4>
+                            <ul class="space-y-2 text-gray-400">
+                                <li class="flex items-center space-x-2">
+                                    <i class="fas fa-chevron-right text-xs text-github-link"></i>
+                                    <span>Docker & Docker Compose</span>
+                                </li>
+                                <li class="flex items-center space-x-2">
+                                    <i class="fas fa-chevron-right text-xs text-github-link"></i>
+                                    <span>VS Code (recommended)</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Up to 10 users</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Unlimited projects & tasks</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Basic time tracking</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Standard support</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Mobile access</span>
-                        </li>
-                    </ul>
-
-                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                        Start Free Trial
-                    </button>
                 </div>
 
-                <!-- Professional Plan -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg border-2 border-blue-500 relative scroll-reveal">
-                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span class="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">Most Popular</span>
+                <!-- Installation Steps -->
+                <div class="space-y-6">
+                    <div class="github-card rounded-xl p-6">
+                        <h4 class="font-semibold mb-3 flex items-center">
+                            <span class="w-8 h-8 bg-github-link rounded-full flex items-center justify-center text-black font-bold mr-3">1</span>
+                            Clone the Repository
+                        </h4>
+                        <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash">git clone https://github.com/rbenzing/slimbooks-app.git
+cd slimbooks-app</code></pre>
                     </div>
 
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Professional</h3>
-                        <div class="text-4xl font-bold text-blue-600 mb-2">$19<span class="text-lg text-gray-500">/user/month</span></div>
-                        <p class="text-gray-600">For growing teams that need more power</p>
+                    <div class="github-card rounded-xl p-6">
+                        <h4 class="font-semibold mb-3 flex items-center">
+                            <span class="w-8 h-8 bg-github-link rounded-full flex items-center justify-center text-black font-bold mr-3">2</span>
+                            Set Up Environment Variables
+                        </h4>
+                        <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash">cp .env.example .env
+# Edit .env with your database credentials</code></pre>
                     </div>
 
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Up to 50 users</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Advanced sprint planning</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Custom templates</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Advanced reporting</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Priority support</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>API access</span>
-                        </li>
-                    </ul>
+                    <div class="github-card rounded-xl p-6">
+                        <h4 class="font-semibold mb-3 flex items-center">
+                            <span class="w-8 h-8 bg-github-link rounded-full flex items-center justify-center text-black font-bold mr-3">3</span>
+                            Install Dependencies
+                        </h4>
+                        <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash"># Install backend dependencies
+cd backend
+npm install
 
-                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                        Start Free Trial
-                    </button>
+# Install frontend dependencies
+cd ../frontend
+npm install</code></pre>
+                    </div>
+
+                    <div class="github-card rounded-xl p-6">
+                        <h4 class="font-semibold mb-3 flex items-center">
+                            <span class="w-8 h-8 bg-github-link rounded-full flex items-center justify-center text-black font-bold mr-3">4</span>
+                            Database Setup
+                        </h4>
+                        <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash"># Create database
+createdb slimbooks
+
+# Run migrations
+cd backend
+npm run db:migrate
+
+# Seed sample data (optional)
+npm run db:seed</code></pre>
+                    </div>
+
+                    <div class="github-card rounded-xl p-6">
+                        <h4 class="font-semibold mb-3 flex items-center">
+                            <span class="w-8 h-8 bg-github-link rounded-full flex items-center justify-center text-black font-bold mr-3">5</span>
+                            Start Development Servers
+                        </h4>
+                        <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash"># Terminal 1: Start backend
+cd backend
+npm run dev
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev</code></pre>
+                        <p class="text-gray-400 mt-3">
+                            <i class="fas fa-info-circle text-github-link mr-2"></i>
+                            The app will be available at <span class="text-github-link">http://localhost:3000</span>
+                        </p>
+                    </div>
                 </div>
 
-                <!-- Enterprise Plan -->
-                <div class="bg-white rounded-2xl p-8 shadow-lg scroll-reveal">
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Enterprise</h3>
-                        <div class="text-4xl font-bold text-blue-600 mb-2">$39<span class="text-lg text-gray-500">/user/month</span></div>
-                        <p class="text-gray-600">For large teams with advanced needs</p>
-                    </div>
-
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Unlimited users</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Advanced security & permissions</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Custom integrations</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Dedicated account manager</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>24/7 phone support</span>
-                        </li>
-                        <li class="flex items-center space-x-3">
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>On-premise deployment</span>
-                        </li>
-                    </ul>
-
-                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                        Contact Sales
-                    </button>
+                <!-- Docker Alternative -->
+                <div class="github-card rounded-xl p-6 mt-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fab fa-docker text-github-link mr-3"></i>
+                        Docker Quick Start
+                    </h3>
+                    <p class="text-gray-400 mb-4">Prefer Docker? Get up and running with a single command:</p>
+                    <pre class="bg-black/50 rounded-lg p-4 overflow-x-auto"><code class="language-bash">docker-compose up -d</code></pre>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="text-center mt-12 scroll-reveal">
-                <p class="text-gray-600 mb-4">All plans include a 14-day free trial. No credit card required.</p>
-                <a href="http://slimbooks2/" class="text-blue-600 hover:text-blue-700 font-semibold">
-                    Try the demo first →
+    <!-- Contributing Section -->
+    <section class="py-20 border-t border-gray-800">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Join the Community</h2>
+                <p class="text-xl text-gray-400">SlimBooks is open source and welcomes contributions</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <a href="https://github.com/rbenzing/slimbooks-app/issues" target="_blank" class="github-card rounded-xl p-6 hover-glow block">
+                    <div class="text-center">
+                        <i class="fas fa-bug text-4xl text-github-green mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Report Issues</h3>
+                        <p class="text-gray-400">Found a bug? Let us know on GitHub Issues</p>
+                    </div>
+                </a>
+
+                <a href="https://github.com/rbenzing/slimbooks-app/pulls" target="_blank" class="github-card rounded-xl p-6 hover-glow block">
+                    <div class="text-center">
+                        <i class="fas fa-code-branch text-4xl text-github-link mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Contribute Code</h3>
+                        <p class="text-gray-400">Submit pull requests and help improve SlimBooks</p>
+                    </div>
+                </a>
+
+                <a href="https://github.com/rbenzing/slimbooks-app/discussions" target="_blank" class="github-card rounded-xl p-6 hover-glow block">
+                    <div class="text-center">
+                        <i class="fas fa-comments text-4xl text-purple-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Join Discussions</h3>
+                        <p class="text-gray-400">Share ideas and connect with other developers</p>
+                    </div>
                 </a>
             </div>
-        </div>
-    </section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="py-20 bg-white">
-        <div class="container mx-auto px-6">
-            <div class="max-w-4xl mx-auto">
-                <div class="text-center mb-16 scroll-reveal">
-                    <h2 class="text-4xl font-bold text-gray-800 mb-4">Ready to Get Started?</h2>
-                    <p class="text-xl text-gray-600">
-                        Join thousands of teams already using SlimBooks to streamline their project management.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-12">
-                    <div class="scroll-reveal">
-                        <h3 class="text-2xl font-semibold text-gray-800 mb-6">Get in Touch</h3>
-
-                        <div class="space-y-6">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-envelope text-blue-600"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-lg">Email Support</h4>
-                                    <p class="text-gray-600">me@russellbenzing.com</p>
-                                    <p class="text-gray-500 text-sm">We typically respond within 24 hours</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-comments text-green-600"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-lg">Live Demo</h4>
-                                    <p class="text-gray-600">Try SlimBooks instantly</p>
-                                    <a href="http://slimbooks2/" class="text-blue-600 hover:text-blue-700 text-sm">Visit Demo →</a>
-                                </div>
-                            </div>
-
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-calendar text-purple-600"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-lg">Schedule a Demo</h4>
-                                    <p class="text-gray-600">Book a personalized walkthrough</p>
-                                    <p class="text-gray-500 text-sm">Perfect for teams of 10+ users</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="scroll-reveal">
-                        <div class="bg-gray-50 rounded-2xl p-8">
-                            <h3 class="text-2xl font-semibold text-gray-800 mb-6">Quick Contact</h3>
-
-                            <form class="space-y-6" x-data="{ submitted: false }" @submit.prevent="submitted = true">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Your name" required>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                    <input type="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="your@email.com" required>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                                    <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Your company">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                                    <textarea rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Tell us about your project management needs..." required></textarea>
-                                </div>
-
-                                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors" x-show="!submitted">
-                                    Send Message
-                                </button>
-
-                                <div x-show="submitted" class="text-center py-3 text-green-600 font-semibold">
-                                    <i class="fas fa-check-circle mr-2"></i>
-                                    Thank you! We'll be in touch soon.
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+            <div class="text-center mt-12">
+                <div class="inline-block github-card rounded-xl p-8">
+                    <h3 class="text-2xl font-semibold mb-4">Ready to dive in?</h3>
+                    <p class="text-gray-400 mb-6">Star the repository and start building with SlimBooks today</p>
+                    <a href="https://github.com/rbenzing/slimbooks-app" target="_blank" class="bg-github-link hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-all hover-glow inline-flex items-center space-x-2">
+                        <i class="fab fa-github text-xl"></i>
+                        <span>View on GitHub</span>
+                    </a>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-16">
+    <footer class="py-12 border-t border-gray-800">
         <div class="container mx-auto px-6">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-6">
-                        <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
-                            <i class="fas fa-tasks text-white text-xl"></i>
-                        </div>
-                        <span class="text-2xl font-bold">SlimBooks</span>
-                    </div>
-                    <p class="text-gray-400 mb-6">
-                        Powerful project management made simple. Built for modern teams who value efficiency and collaboration.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-twitter text-xl"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-linkedin text-xl"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-github text-xl"></i>
-                        </a>
-                    </div>
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <i class="fab fa-github text-2xl text-github-link"></i>
+                    <span class="text-xl font-bold">SlimBooks</span>
                 </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-6">Product</h4>
-                    <ul class="space-y-3">
-                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                        <li><a href="http://slimbooks2/" class="text-gray-400 hover:text-white transition-colors">Demo</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">API</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Integrations</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-6">Company</h4>
-                    <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">About</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                        <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Press</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-6">Support</h4>
-                    <ul class="space-y-3">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Community</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Status</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
-                    </ul>
+                
+                <div class="flex items-center space-x-6 text-gray-400">
+                    <a href="https://github.com/rbenzing/slimbooks-app" target="_blank" class="hover:text-github-link transition-colors">
+                        <i class="fab fa-github text-xl"></i>
+                    </a>
+                    <a href="https://github.com/rbenzing/slimbooks-app/issues" target="_blank" class="hover:text-github-link transition-colors">
+                        <i class="fas fa-bug text-xl"></i>
+                    </a>
+                    <a href="https://github.com/rbenzing/slimbooks-app/wiki" target="_blank" class="hover:text-github-link transition-colors">
+                        <i class="fas fa-book text-xl"></i>
+                    </a>
+                    <span class="text-sm">MIT License</span>
                 </div>
             </div>
-
-            <div class="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-400 text-sm">
-                    © 2024 SlimBooks. All rights reserved. Built with ❤️ by Russell Benzing.
-                </p>
-                <div class="flex space-x-6 mt-4 md:mt-0">
-                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-                    <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
-                </div>
+            
+            <div class="text-center mt-8 text-gray-500 text-sm">
+                Built with ❤️ by <a href="https://github.com/rbenzing" target="_blank" class="text-github-link hover:underline">Russell Benzing</a> and contributors
             </div>
         </div>
     </footer>
 
-    <!-- JavaScript for Interactive Features -->
+    <!-- Scripts -->
     <script>
-        // Smooth scrolling for navigation links
+        // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -787,100 +629,59 @@
             });
         });
 
-        // Scroll reveal animation
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
+        // Animate stats on scroll
+        const animateValue = (element, start, end, duration) => {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                element.textContent = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    element.textContent = end + (element.dataset.suffix || '');
+                }
+            };
+            window.requestAnimationFrame(step);
         };
 
+        // Intersection Observer for animations
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.classList.add('revealed');
+                    entry.target.classList.add('animate-fade-in');
                 }
             });
-        }, observerOptions);
+        });
 
-        // Observe all scroll-reveal elements
-        document.querySelectorAll('.scroll-reveal').forEach(el => {
+        document.querySelectorAll('.github-card').forEach(el => {
             observer.observe(el);
         });
 
-        // Header background on scroll
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('header');
-            if (window.scrollY > 100) {
-                header.classList.add('bg-white/95');
-                header.classList.remove('bg-white/90');
-            } else {
-                header.classList.add('bg-white/90');
-                header.classList.remove('bg-white/95');
-            }
-        });
-
-        // Feature card hover effects
-        document.querySelectorAll('.feature-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-10px)';
-                this.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '';
-            });
-        });
-
-        // Demo button click tracking
-        document.querySelectorAll('a[href="http://slimbooks2/"]').forEach(link => {
-            link.addEventListener('click', function() {
-                console.log('Demo link clicked from:', this.textContent.trim());
-            });
-        });
-
-        // Pricing plan selection
-        document.querySelectorAll('button').forEach(button => {
-            if (button.textContent.includes('Start Free Trial') || button.textContent.includes('Contact Sales')) {
-                button.addEventListener('click', function() {
-                    const planName = this.closest('.bg-white').querySelector('h3').textContent;
-                    alert(`Thank you for your interest in the ${planName} plan! This would normally redirect to a signup page.`);
-                });
-            }
-        });
-
-        // Add loading animation to demo links
-        document.querySelectorAll('a[href="http://slimbooks2/"]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading Demo...';
-
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                }, 3000);
-            });
-        });
-
-        // Add typing effect to hero subtitle
-        const subtitle = document.querySelector('.text-blue-100');
-        if (subtitle) {
-            const text = subtitle.textContent;
-            subtitle.textContent = '';
-            let i = 0;
-
-            const typeWriter = () => {
-                if (i < text.length) {
-                    subtitle.textContent += text.charAt(i);
-                    i++;
-                    setTimeout(typeWriter, 50);
-                }
-            };
-
-            setTimeout(typeWriter, 1000);
+        // Terminal typing effect
+        const terminal = document.querySelector('.terminal-cursor');
+        if (terminal) {
+            setInterval(() => {
+                terminal.style.opacity = terminal.style.opacity === '0' ? '1' : '0';
+            }, 500);
         }
 
-        // Removed parallax effect to fix header issues
+        // Copy code blocks on click
+        document.querySelectorAll('pre').forEach(block => {
+            block.addEventListener('click', () => {
+                const code = block.querySelector('code').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    const tooltip = document.createElement('div');
+                    tooltip.textContent = 'Copied!';
+                    tooltip.className = 'absolute top-2 right-2 bg-github-green text-black px-2 py-1 rounded text-sm';
+                    block.style.position = 'relative';
+                    block.appendChild(tooltip);
+                    setTimeout(() => tooltip.remove(), 2000);
+                });
+            });
+        });
 
-        console.log('SlimBooks Marketing Page Loaded Successfully! 🚀');
+        console.log('SlimBooks GitHub Promo Page Loaded! 🚀');
     </script>
 </body>
 </html>
