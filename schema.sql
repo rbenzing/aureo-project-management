@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `companies` (
   UNIQUE KEY `email` (`email`),
   KEY `guid` (`guid`),
   KEY `fk_companies_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `csrf_tokens` (
   KEY `session_id` (`session_id`,`user_id`),
   KEY `token` (`token`),
   KEY `fk_csrf_tokens_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS `milestones` (
   KEY `guid` (`guid`),
   KEY `fk_milestones_project` (`project_id`),
   KEY `fk_milestones_epic` (`epic_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=90 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS `projects` (
   KEY `fk_projects_company` (`company_id`),
   KEY `fk_projects_owner` (`owner_id`),
   KEY `idx_projects_dates` (`start_date`,`end_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -491,7 +491,7 @@ CREATE TABLE IF NOT EXISTS `sprints` (
   KEY `guid` (`guid`),
   KEY `fk_sprints_project` (`project_id`),
   KEY `idx_sprints_dates` (`start_date`,`end_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -688,7 +688,7 @@ CREATE TABLE IF NOT EXISTS `tasks` (
   KEY `idx_backlog_priority` (`backlog_priority`),
   KEY `idx_task_type` (`task_type`),
   KEY `idx_ready_for_sprint` (`is_ready_for_sprint`)
-) ENGINE=InnoDB AUTO_INCREMENT=5026 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -708,7 +708,7 @@ CREATE TABLE IF NOT EXISTS `task_comments` (
   PRIMARY KEY (`id`),
   KEY `fk_task_comments_task` (`task_id`),
   KEY `fk_task_comments_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -729,7 +729,7 @@ CREATE TABLE IF NOT EXISTS `task_history` (
   PRIMARY KEY (`id`),
   KEY `fk_task_history_task` (`task_id`),
   KEY `fk_task_history_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -786,7 +786,7 @@ CREATE TABLE IF NOT EXISTS `time_entries` (
   PRIMARY KEY (`id`),
   KEY `fk_time_entries_task` (`task_id`),
   KEY `fk_time_entries_user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -822,7 +822,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `fk_users_role` (`role_id`),
   KEY `fk_users_company` (`company_id`),
   KEY `idx_users_fullname` (`first_name`,`last_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -870,7 +870,7 @@ CREATE TABLE IF NOT EXISTS `user_favorites` (
   KEY `idx_user_favorites_user` (`user_id`),
   KEY `idx_user_favorites_type` (`favorite_type`),
   KEY `idx_user_favorites_sort` (`user_id`,`sort_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
