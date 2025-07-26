@@ -1002,7 +1002,7 @@ class Task extends BaseModel
     {
         try {
             // Use centralized status helper for consistent formatting
-            require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+            require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
             $statusInfo = getTaskStatusInfo($statusId);
             return $statusInfo['label'];
         } catch (\Exception $e) {

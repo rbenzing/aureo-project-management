@@ -34,7 +34,7 @@ class AuthController
     {
         $companyName = Config::get('company_name', 'Aureo');
         
-        include __DIR__ . '/../Views/Auth/login.php';
+        include BASE_PATH . '/../Views/Auth/login.php';
     }
 
     /**
@@ -133,7 +133,7 @@ class AuthController
      */
     public function registerForm(string $requestMethod, array $data): void
     {
-        include __DIR__ . '/../Views/Auth/register.php';
+        include BASE_PATH . '/../Views/Auth/register.php';
     }
 
     /**
@@ -230,7 +230,7 @@ class AuthController
                 exit;
             }
 
-            include __DIR__ . '/../Views/Auth/reset-password.php';
+            include BASE_PATH . '/../Views/Auth/reset-password.php';
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -288,7 +288,7 @@ class AuthController
                 $_SESSION['success'] = 'Account activated successfully.';
             }
 
-            include __DIR__ . '/../Views/Auth/login.php';
+            include BASE_PATH . '/../Views/Auth/login.php';
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -336,7 +336,7 @@ class AuthController
                 $_SESSION['success'] = 'Password reset instructions have been sent to your email.';
             }
 
-            include __DIR__ . '/../Views/Auth/forgot-password.php';
+            include BASE_PATH . '/../Views/Auth/forgot-password.php';
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();

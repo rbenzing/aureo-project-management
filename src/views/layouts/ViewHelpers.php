@@ -1,5 +1,5 @@
 <?php
-//file: Views/Layouts/view_helpers.php
+//file: Views/Layouts/ViewHelpers.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web

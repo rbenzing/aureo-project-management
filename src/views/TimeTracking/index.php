@@ -12,7 +12,7 @@ use App\Core\Config;
 use App\Utils\Time;
 
 // Include helper functions
-include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
+include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Set view title
 $viewTitle = 'Time Tracking';
@@ -110,20 +110,20 @@ $viewTitle = 'Time Tracking';
         </div>
 
         <!-- Time Tracking Filters -->
-        <?php include __DIR__ . '/inc/filters.php'; ?>
+        <?php include BASE_PATH . '/inc/filters.php'; ?>
         
         <!-- Time Entries Table -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <?php include __DIR__ . '/inc/table_header.php'; ?>
-                    <?php include __DIR__ . '/inc/table.php'; ?>
+                    <?php include BASE_PATH . '/inc/table_header.php'; ?>
+                    <?php include BASE_PATH . '/inc/table.php'; ?>
                 </table>
             </div>
         </div>
 
         <!-- Pagination -->
-        <?php include __DIR__ . '/inc/pagination.php'; ?>
+        <?php include BASE_PATH . '/inc/pagination.php'; ?>
     </main>
 
     <!-- Footer -->

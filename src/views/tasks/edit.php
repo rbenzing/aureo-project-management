@@ -13,10 +13,10 @@ use App\Utils\Time;
 use App\Services\SettingsService;
 
 // Include form components
-require_once BASE_PATH . '/../src/views/layouts/form_components.php';
+require_once BASE_PATH . '/../src/views/Layouts/FormComponents.php';
 
 // Include view helpers for permission functions
-require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];

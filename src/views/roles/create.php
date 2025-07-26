@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include form components
-require_once BASE_PATH . '/../src/Views/Layouts/form_components.php';
+require_once BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
 
 // Fetch organized permissions and templates
 $permissionModel = new \App\Models\Permission();

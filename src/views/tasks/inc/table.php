@@ -10,7 +10,7 @@ if (!defined('BASE_PATH')) {
 
 use App\Utils\Time;
 
-include_once __DIR__ . '/helper_functions.php';
+include_once BASE_PATH . '/helper_functions.php';
 
 // Using centralized status helper system
 ?>

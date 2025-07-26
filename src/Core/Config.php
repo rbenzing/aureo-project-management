@@ -123,7 +123,7 @@ class Config
      */
     private static function loadEnvironment(): void
     {
-        $envPath = dirname(__DIR__, 2);
+        $envPath = dirname(BASE_PATH, 2);
         if (!file_exists($envPath . '/.env')) {
             throw new RuntimeException('.env file not found');
         }

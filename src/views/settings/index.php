@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include form components
-require_once BASE_PATH . '/../src/views/layouts/form_components.php';
+require_once BASE_PATH . '/../src/views/Layouts/FormComponents.php';
 
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];

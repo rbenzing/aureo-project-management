@@ -56,7 +56,7 @@ class SprintTemplateController
             // Get projects for filter dropdown
             $projects = $this->projectModel->getAllWithDetails();
 
-            include __DIR__ . '/../Views/SprintTemplates/index.php';
+            include BASE_PATH . '/../Views/SprintTemplates/index.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading sprint templates.';
@@ -78,7 +78,7 @@ class SprintTemplateController
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
             
-            include __DIR__ . '/../Views/SprintTemplates/create.php';
+            include BASE_PATH . '/../Views/SprintTemplates/create.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -185,7 +185,7 @@ class SprintTemplateController
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
 
-            include __DIR__ . '/../Views/SprintTemplates/edit.php';
+            include BASE_PATH . '/../Views/SprintTemplates/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprint-templates');

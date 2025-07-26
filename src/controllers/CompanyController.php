@@ -59,7 +59,7 @@ class CompanyController
             $totalUsers = $this->userModel->count(['is_deleted' => 0]);
             $activeProjects = $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]); // Assuming status_id 2 is "in_progress"
             
-            include __DIR__ . '/../Views/Companies/index.php';
+            include BASE_PATH . '/../Views/Companies/index.php';
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
             $_SESSION['error'] = $securityService->handleError($e, 'CompanyController::index', 'An error occurred while fetching companies.');
@@ -94,7 +94,7 @@ class CompanyController
             $projects = $this->companyModel->getProjects();
             $users = $this->companyModel->getUsers($id);
             
-            include __DIR__ . '/../Views/Companies/view.php';
+            include BASE_PATH . '/../Views/Companies/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');
@@ -117,7 +117,7 @@ class CompanyController
     {
         try {
             $this->authMiddleware->hasPermission('create_companies');
-            include __DIR__ . '/../Views/Companies/create.php';
+            include BASE_PATH . '/../Views/Companies/create.php';
         } catch (\Exception $e) {
             error_log("Exception in CompanyController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -212,7 +212,7 @@ class CompanyController
                 throw new InvalidArgumentException('Company not found');
             }
 
-            include __DIR__ . '/../Views/Companies/edit.php';
+            include BASE_PATH . '/../Views/Companies/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /companies');

@@ -106,7 +106,7 @@ class TaskController
             $currentSortField = $sortField;
             $currentSortDirection = $sortDirection;
 
-            include __DIR__ . '/../views/tasks/index.php';
+            include BASE_PATH . '/../Views/Tasks/index.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /tasks');
@@ -150,7 +150,7 @@ class TaskController
             $viewType = 'backlog';
             $selectedProjectId = $projectId;
 
-            include __DIR__ . '/../views/tasks/backlog.php';
+            include BASE_PATH . '/../Views/Tasks/backlog.php';
         } catch (\Exception $e) {
             error_log("Error in TaskController::backlog: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the product backlog.';
@@ -177,7 +177,7 @@ class TaskController
                 $projects = $this->projectModel->getAllWithDetails(100, 1);
                 $viewType = 'sprint_planning_selection';
 
-                include __DIR__ . '/../views/tasks/sprint-planning.php';
+                include BASE_PATH . '/../Views/Tasks/SprintPlanning.php';
             } else {
                 // Get project details
                 $project = $this->projectModel->findWithDetails($projectId);
@@ -196,7 +196,7 @@ class TaskController
 
                 $viewType = 'sprint_planning';
 
-                include __DIR__ . '/../views/tasks/sprint-planning.php';
+                include BASE_PATH . '/../Views/Tasks/SprintPlanning.php';
             }
         } catch (\Exception $e) {
             error_log("Error in TaskController::sprintPlanning: " . $e->getMessage());
@@ -289,7 +289,7 @@ class TaskController
             $subtasks = $this->taskModel->getSubtasks($id);
             $activeTimer = $_SESSION['active_timer'] ?? null;
 
-            include __DIR__ . '/../views/tasks/view.php';
+            include BASE_PATH . '/../Views/Tasks/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /tasks');
@@ -333,7 +333,7 @@ class TaskController
             $errors = $_SESSION['errors'] ?? [];
             unset($_SESSION['errors']);
 
-            include __DIR__ . '/../views/tasks/create.php';
+            include BASE_PATH . '/../Views/Tasks/create.php';
         } catch (\Exception $e) {
             error_log("Exception in TaskController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -552,7 +552,7 @@ class TaskController
             $projectSettings = $settingsService->getProjectSettings();
             $timeSettings = $settingsService->getTimeIntervalSettings();
 
-            include __DIR__ . '/../views/tasks/edit.php';
+            include BASE_PATH . '/../Views/Tasks/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /tasks');

@@ -19,7 +19,7 @@ class LoggerService
 
     private function __construct()
     {
-        $this->logDirectory = dirname(__DIR__, 2) . '/log';
+        $this->logDirectory = dirname(BASE_PATH, 2) . '/log';
         $this->logFile = $this->logDirectory . '/aureo.log';
         $this->enabled = true;
         

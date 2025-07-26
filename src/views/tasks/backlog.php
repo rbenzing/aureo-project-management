@@ -11,10 +11,10 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include helper functions
-include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
+include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Include task helper functions for consistent styling
-include_once __DIR__ . '/inc/helper_functions.php';
+include_once BASE_PATH . '/inc/helper_functions.php';
 
 // Set up filter options for backlog
 $filterOptions = [
@@ -488,7 +488,7 @@ $breadcrumbs = [
             </main>
 
             <!-- Footer -->
-            <?php include BASE_PATH . '/../src/views/layouts/footer.php'; ?>
+            <?php include BASE_PATH . '/../src/Views/Layouts/footer.php'; ?>
         </div>
     </div>
 

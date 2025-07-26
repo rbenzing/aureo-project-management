@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include helper functions
-include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
+include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Determine the context based on URL and viewType
 $isMyTasksView = isset($userId); // This would be set in the controller when /:user_id is present
@@ -50,8 +50,8 @@ if ($isMyTasksView && !$viewingOwnTasks) {
 }
 
 // Include task-specific helper functions if they exist
-if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
-    include __DIR__ . '/inc/helper_functions.php';
+if (file_exists(BASE_PATH . '/inc/helper_functions.php')) {
+    include BASE_PATH . '/inc/helper_functions.php';
 }
 ?>
 
@@ -73,31 +73,31 @@ if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
         <?php include BASE_PATH . '/../src/Views/Layouts/notifications.php'; ?>
 
         <!-- Page Header with Breadcrumb and New Task Button -->
-        <?php include __DIR__ . '/inc/page_header.php'; ?>
+        <?php include BASE_PATH . '/inc/page_header.php'; ?>
 
         <?php if (isset($project) && !empty($project)): ?>
             <!-- Project Header with Navigation -->
-            <?php include __DIR__ . '/inc/project_header.php'; ?>
+            <?php include BASE_PATH . '/inc/project_header.php'; ?>
         <?php endif; ?>
 
         <!-- Task Stats Summary -->
-        <?php include __DIR__ . '/inc/stats.php'; ?>
+        <?php include BASE_PATH . '/inc/stats.php'; ?>
 
         <!-- Page Header with Filters -->
-        <?php include __DIR__ . '/inc/filters.php'; ?>
+        <?php include BASE_PATH . '/inc/filters.php'; ?>
         
         <!-- Tasks Table -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <?php include __DIR__ . '/inc/table_header.php'; ?>
-                    <?php include __DIR__ . '/inc/table.php'; ?>
+                    <?php include BASE_PATH . '/inc/table_header.php'; ?>
+                    <?php include BASE_PATH . '/inc/table.php'; ?>
                 </table>
             </div>
         </div>
 
         <!-- Pagination -->
-        <?php include __DIR__ . '/inc/pagination.php'; ?>
+        <?php include BASE_PATH . '/inc/pagination.php'; ?>
     </main>
 
     <!-- Footer -->
@@ -105,7 +105,7 @@ if (file_exists(__DIR__ . '/inc/helper_functions.php')) {
 
     <!-- JavaScript for Task Filtering -->
     <script>
-        <?php include __DIR__ . '/inc/task_filtering.js'; ?>
+        <?php include BASE_PATH . '/inc/task_filtering.js'; ?>
         
         // Additional script for active timer if needed
         <?php if (isset($activeTimer)): ?>

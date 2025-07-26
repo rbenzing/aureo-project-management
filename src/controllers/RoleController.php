@@ -48,7 +48,7 @@ class RoleController
             $totalRoles = $results['total'];
             $totalPages = ceil($totalRoles / $limit);
 
-            include __DIR__ . '/../Views/Roles/index.php';
+            include BASE_PATH . '/../Views/Roles/index.php';
         } catch (\Exception $e) {
             error_log("Exception in RoleController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching roles.';
@@ -78,7 +78,7 @@ class RoleController
                 throw new InvalidArgumentException('Role not found');
             }
 
-            include __DIR__ . '/../Views/Roles/view.php';
+            include BASE_PATH . '/../Views/Roles/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /roles');
@@ -104,7 +104,7 @@ class RoleController
             
             $permissions = $this->permissionModel->getOrganizedPermissions();
             
-            include __DIR__ . '/../Views/Roles/create.php';
+            include BASE_PATH . '/../Views/Roles/create.php';
         } catch (\Exception $e) {
             error_log("Exception in RoleController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -209,7 +209,7 @@ class RoleController
 
             $permissions = $this->permissionModel->getOrganizedPermissions();
 
-            include __DIR__ . '/../Views/Roles/edit.php';
+            include BASE_PATH . '/../Views/Roles/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /roles');

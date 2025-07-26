@@ -114,7 +114,7 @@ class ProjectController
 
             $totalPages = ceil($totalProjects / $limit);
 
-            include __DIR__ . '/../Views/Projects/index.php';
+            include BASE_PATH . '/../Views/Projects/index.php';
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching projects.';
@@ -155,7 +155,7 @@ class ProjectController
 
             $tasksByStatus = $this->taskModel->getByProjectId($id);
 
-            include __DIR__ . '/../Views/Projects/view.php';
+            include BASE_PATH . '/../Views/Projects/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /projects');
@@ -188,7 +188,7 @@ class ProjectController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
-            include __DIR__ . '/../Views/Projects/create.php';
+            include BASE_PATH . '/../Views/Projects/create.php';
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -297,7 +297,7 @@ class ProjectController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
-            include __DIR__ . '/../Views/Projects/edit.php';
+            include BASE_PATH . '/../Views/Projects/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /projects');

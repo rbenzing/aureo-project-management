@@ -124,7 +124,7 @@ class SettingsController
             }
 
             // Load the view
-            include BASE_PATH . '/../src/views/settings/index.php';
+            include BASE_PATH . '/../src/Views/Settings/index.php';
 
         } catch (\Exception $e) {
             error_log("Settings index error: " . $e->getMessage());

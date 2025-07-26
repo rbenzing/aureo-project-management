@@ -50,7 +50,7 @@ class UserController
             $totalUsers = $results['total'];
             $totalPages = ceil($totalUsers / $limit);
             
-            include __DIR__ . '/../Views/Users/index.php';
+            include BASE_PATH . '/../Views/Users/index.php';
         } catch (\Exception $e) {
             error_log("Exception in UserController::index: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching users.';
@@ -85,7 +85,7 @@ class UserController
             $user->roles = $userRoleData['roles'];
             $user->permissions = $userRoleData['permissions'];
 
-            include __DIR__ . '/../Views/Users/view.php';
+            include BASE_PATH . '/../Views/Users/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /users');
@@ -131,7 +131,7 @@ class UserController
             // Pass data for breadcrumb
             $data = [];
 
-            include __DIR__ . '/../Views/Users/profile.php';
+            include BASE_PATH . '/../Views/Users/profile.php';
         } catch (\Exception $e) {
             error_log("Exception in UserController::profile: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching your profile.';
@@ -156,7 +156,7 @@ class UserController
             $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
             $roles = $rolesResult['records'];
             
-            include __DIR__ . '/../Views/Users/create.php';
+            include BASE_PATH . '/../Views/Users/create.php';
         } catch (\Exception $e) {
             error_log("Exception in UserController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -260,7 +260,7 @@ class UserController
             $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
             $roles = $rolesResult['records'];
 
-            include __DIR__ . '/../Views/Users/edit.php';
+            include BASE_PATH . '/../Views/Users/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /users');

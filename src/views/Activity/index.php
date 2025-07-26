@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include helper functions
-include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
+include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Set up activity-specific helper functions
 function getActivityIcon(string $eventType): string {
@@ -152,7 +152,7 @@ function formatActivityDescription(object $activity): string {
         </div>
 
         <!-- Activity Filters -->
-        <?php include __DIR__ . '/inc/filters.php'; ?>
+        <?php include BASE_PATH . '/inc/filters.php'; ?>
         
         <!-- Activity Timeline -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
@@ -233,7 +233,7 @@ function formatActivityDescription(object $activity): string {
         </div>
 
         <!-- Pagination -->
-        <?php include __DIR__ . '/inc/pagination.php'; ?>
+        <?php include BASE_PATH . '/inc/pagination.php'; ?>
     </main>
 
     <!-- Footer -->

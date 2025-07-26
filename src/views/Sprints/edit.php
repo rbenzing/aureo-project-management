@@ -11,10 +11,10 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include form components
-require_once BASE_PATH . '/../src/views/layouts/form_components.php';
+require_once BASE_PATH . '/../src/views/Layouts/FormComponents.php';
 
 // Include view helpers for permission functions
-require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];
@@ -331,10 +331,10 @@ unset($_SESSION['form_data']);
 
     <?php
     // Include view helpers for centralized status functions
-    require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+    require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
     // Include sprint helpers for additional functions
-    include_once __DIR__ . '/inc/helpers.php';
+    include_once BASE_PATH . '/inc/helpers.php';
     ?>
 
     <script>

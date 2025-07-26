@@ -71,7 +71,7 @@ class TemplateController
 
             $totalPages = ceil($totalTemplates / $limit);
 
-            include __DIR__ . '/../Views/Templates/index.php';
+            include BASE_PATH . '/../Views/Templates/index.php';
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
             $_SESSION['error'] = $securityService->handleError($e, 'TemplateController::index', 'An error occurred while fetching templates.');
@@ -101,7 +101,7 @@ class TemplateController
                 throw new InvalidArgumentException('Template not found');
             }
 
-            include __DIR__ . '/../Views/Templates/view.php';
+            include BASE_PATH . '/../Views/Templates/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /templates');
@@ -128,7 +128,7 @@ class TemplateController
             
             $companies = $this->companyModel->getAllCompanies();
             
-            include __DIR__ . '/../Views/Templates/create.php';
+            include BASE_PATH . '/../Views/Templates/create.php';
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -233,7 +233,7 @@ class TemplateController
 
             $companies = $this->companyModel->getAllCompanies();
 
-            include __DIR__ . '/../Views/Templates/edit.php';
+            include BASE_PATH . '/../Views/Templates/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /templates');

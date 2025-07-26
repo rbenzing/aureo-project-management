@@ -93,7 +93,7 @@ class SprintController
                 }
             }
 
-            include __DIR__ . '/../Views/Sprints/index.php';
+            include BASE_PATH . '/../Views/Sprints/index.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints');
@@ -133,7 +133,7 @@ class SprintController
             // Add hierarchical task data
             $sprint->hierarchy = $this->sprintModel->getSprintHierarchy($id);
 
-            include __DIR__ . '/../Views/Sprints/view.php';
+            include BASE_PATH . '/../Views/Sprints/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints');
@@ -207,7 +207,7 @@ class SprintController
             // Get today's focus items across all active sprints
             $todaysFocus = !empty($sprintIds) ? $this->getTodaysFocusItems($userId, $sprintIds) : [];
 
-            include __DIR__ . '/../views/Sprints/current.php';
+            include BASE_PATH . '/../views/Sprints/current.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintController::current: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while fetching current sprint information.';
@@ -267,7 +267,7 @@ class SprintController
             // Get sprint statistics
             $sprintStats = $this->calculateSprintStats($tasks);
 
-            include __DIR__ . '/../views/Sprints/board.php';
+            include BASE_PATH . '/../views/Sprints/board.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints');
@@ -328,7 +328,7 @@ class SprintController
                 }
             }
 
-            include __DIR__ . '/../views/Sprints/planning.php';
+            include BASE_PATH . '/../views/Sprints/planning.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintController::planning: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading sprint planning.';
@@ -370,7 +370,7 @@ class SprintController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
-            include __DIR__ . '/../Views/Sprints/create.php';
+            include BASE_PATH . '/../Views/Sprints/create.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints');
@@ -584,7 +584,7 @@ class SprintController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
-            include __DIR__ . '/../Views/Sprints/edit.php';
+            include BASE_PATH . '/../Views/Sprints/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints/view/' . $id);

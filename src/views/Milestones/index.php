@@ -11,7 +11,7 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include view helpers for permission functions and formatting
-require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
 // Include milestone-specific helpers
 require_once BASE_PATH . '/../src/views/Milestones/inc/helpers.php';

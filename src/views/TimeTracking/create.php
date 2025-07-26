@@ -11,8 +11,8 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Include helper functions
-include BASE_PATH . '/../src/Views/Layouts/view_helpers.php';
-include BASE_PATH . '/../src/Views/Layouts/form_components.php';
+include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
+include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
 ?>
 
 <!DOCTYPE html>

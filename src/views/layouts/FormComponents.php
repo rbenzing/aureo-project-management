@@ -1,5 +1,5 @@
 <?php
-//file: Views/Layouts/form_components.php
+//file: Views/Layouts/FormComponents.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web

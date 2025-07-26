@@ -12,7 +12,7 @@ use App\Core\Config;
 use App\Services\SettingsService;
 
 // Include form components
-require_once BASE_PATH . '/../src/Views/Layouts/form_components.php';
+require_once BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
 
 // Load form data from session if available (for validation errors)
 $formData = $_SESSION['form_data'] ?? [];

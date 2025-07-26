@@ -119,7 +119,7 @@ class DashboardController
                 ];
             }
 
-            include __DIR__ . '/../Views/Dashboard/index.php';
+            include BASE_PATH . '/../Views/Dashboard/index.php';
 
         } catch (\Exception $e) {
             // Only redirect to login for actual authentication/authorization errors

@@ -61,7 +61,7 @@ class MilestoneController
             $totalMilestones = $this->milestoneModel->count(['is_deleted' => 0]);
             $totalPages = ceil($totalMilestones / $limit);
 
-            include __DIR__ . '/../Views/Milestones/index.php';
+            include BASE_PATH . '/../Views/Milestones/index.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /milestones');
@@ -124,7 +124,7 @@ class MilestoneController
                 $relatedSprints = []; // Default to empty array if there's an error
             }
 
-            include __DIR__ . '/../Views/Milestones/view.php';
+            include BASE_PATH . '/../Views/Milestones/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /milestones');
@@ -164,7 +164,7 @@ class MilestoneController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
-            include __DIR__ . '/../Views/Milestones/create.php';
+            include BASE_PATH . '/../Views/Milestones/create.php';
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::createForm: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while loading the creation form.';
@@ -275,7 +275,7 @@ class MilestoneController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
-            include __DIR__ . '/../Views/Milestones/edit.php';
+            include BASE_PATH . '/../Views/Milestones/edit.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /milestones');

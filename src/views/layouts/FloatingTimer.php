@@ -1,5 +1,5 @@
 <?php
-//file: Views/Layouts/floating_timer.php
+//file: Views/Layouts/FloatingTimer.php
 declare(strict_types=1);
 
 // Ensure this view is not directly accessible via the web
@@ -9,7 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 // Include view helpers for permission functions
-require_once BASE_PATH . '/../src/views/layouts/view_helpers.php';
+require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
 // Only show if there's an active timer AND user has time tracking permissions
 if (empty($_SESSION['active_timer']) ||

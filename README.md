@@ -42,7 +42,6 @@ Aureo Project Management is a comprehensive project management application desig
 - **TailwindCSS 3.4** - Utility-first CSS framework
 - **PostCSS** - CSS processing with plugins
 - **Responsive Design** - Mobile-first approach
-- **Alpine.js** - Lightweight JavaScript framework (marketing page)
 
 ### Security & Infrastructure
 - **Argon2** - Password hashing
@@ -167,8 +166,7 @@ After running the schema, a default admin user is created:
 aureo-project-management/
 ├── public/                 # Web server document root
 │   ├── assets/            # Compiled CSS and static assets
-│   ├── index.php          # Application entry point
-│   └── marketing.html     # Marketing/landing page
+│   └── index.php          # Application entry point
 ├── src/                   # Application source code
 │   ├── Core/              # Core framework classes
 │   │   ├── Config.php     # Configuration management

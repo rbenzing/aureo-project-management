@@ -28,7 +28,7 @@ try {
 </footer>
 
 <!-- Include Floating Timer -->
-<?php include BASE_PATH . '/../src/Views/Layouts/floating_timer.php'; ?>
+<?php include BASE_PATH . '/../src/Views/Layouts/FloatingTimer.php'; ?>
 
 <script type="text/javascript" src="/assets/js/scripts.js"></script>
 

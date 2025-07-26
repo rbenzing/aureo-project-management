@@ -316,7 +316,7 @@ use App\Services\SettingsService;
 
     <?php
     // Include sprint helpers for status functions
-    include_once __DIR__ . '/inc/helpers.php';
+    include_once BASE_PATH . '/inc/helpers.php';
     ?>
 
     <script>
