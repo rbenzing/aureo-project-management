@@ -8,7 +8,7 @@ use DateTime;
 use Exception;
 
 /**
- * Comprehensive logging service for SlimBooks application
+ * Comprehensive logging service for Aureo application
  */
 class LoggerService
 {
@@ -20,7 +20,7 @@ class LoggerService
     private function __construct()
     {
         $this->logDirectory = dirname(__DIR__, 2) . '/log';
-        $this->logFile = $this->logDirectory . '/slimbooks.log';
+        $this->logFile = $this->logDirectory . '/aureo.log';
         $this->enabled = true;
         
         // Ensure log directory exists

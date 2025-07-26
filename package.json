@@ -1,7 +1,7 @@
 {
-  "name": "slimbooks",
+  "name": "aureo-project-management",
   "version": "1.0.0",
-  "description": "",
+  "description": "Aureo Project Management - Modern project management application",
   "main": "postcss.config.js",
   "directories": {
     "test": "tests"

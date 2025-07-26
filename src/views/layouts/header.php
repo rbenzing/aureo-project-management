@@ -27,7 +27,7 @@ function hasHeaderPermission($permission)
             <button id="sidebar-toggle" class="block bg-indigo-600 text-white p-2 rounded z-10" aria-label="Toggle Sidebar">
             ☰
             </button>
-            <h1 class="text-lg font-bold ml-2">Slimbooks</h1>
+            <h1 class="text-lg font-bold ml-2">Aureo</h1>
 
             <!-- Favorites Navigation -->
             <div id="favorites-nav" class="ml-6 flex items-center space-x-2">

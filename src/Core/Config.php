@@ -21,8 +21,8 @@ class Config
     private const DEFAULTS = [
         'PAGE_LIMIT' => 10,
         'TIMEZONE' => 'UTC',
-        'COMPANY' => 'Slimbooks',
-        'DOMAIN' => 'slimbooks',
+        'COMPANY' => 'Aureo',
+        'DOMAIN' => 'aureo',
         'SCHEME' => 'http',
         'LOCALE' => 'en_US',
         'CURRENCY_FORMAT' => '%i',

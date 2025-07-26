@@ -1,6 +1,6 @@
 {
-    "name": "slimbooks/slimbooks-app",
-    "description": "A task management application with user authentication, roles, and email functionality.",
+    "name": "aureo/aureo-project-management",
+    "description": "Aureo Project Management - A comprehensive project management application with user authentication, roles, and email functionality.",
     "type": "project",
     "license": "MIT",
     "authors": [

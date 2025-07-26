@@ -1,10 +1,10 @@
-# SlimBooks - Project Management Application
+# Aureo Project Management
 
 [![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-blue.svg)](https://tailwindcss.com)
 
-SlimBooks is a comprehensive project management application designed for modern agile teams. Built with PHP and featuring a clean, responsive interface powered by TailwindCSS, it provides everything you need to manage projects, tasks, sprints, and team collaboration effectively.
+Aureo Project Management is a comprehensive project management application designed for modern agile teams. Built with PHP and featuring a clean, responsive interface powered by TailwindCSS, it provides everything you need to manage projects, tasks, sprints, and team collaboration effectively.
 
 ## 🚀 Features
 
@@ -63,8 +63,8 @@ SlimBooks is a comprehensive project management application designed for modern 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/rbenzing/slimbooks-app.git
-cd slimbooks-app
+git clone https://github.com/rbenzing/aureo-project-management.git
+cd aureo-project-management
 ```
 
 ### 2. Install PHP Dependencies
@@ -89,13 +89,13 @@ nano .env
 ### 5. Database Setup
 ```bash
 # Create your MySQL database
-mysql -u root -p -e "CREATE DATABASE slimbooks_db;"
+mysql -u root -p -e "CREATE DATABASE aureo_db;"
 
 # Import the schema
-mysql -u root -p slimbooks_db < schema.sql
+mysql -u root -p aureo_db < schema.sql
 
 # Optional: Import sample data
-mysql -u root -p slimbooks_db < sample-data.sql
+mysql -u root -p aureo_db < sample-data.sql
 ```
 
 ### 6. Build Frontend Assets
@@ -115,7 +115,7 @@ The application includes `.htaccess` files for Apache configuration.
 server {
     listen 80;
     server_name your-domain.com;
-    root /path/to/slimbooks-app/public;
+    root /path/to/aureo-project-management/public;
     index index.php;
 
     location / {
@@ -137,7 +137,7 @@ server {
 ```env
 # Database Configuration
 DB_HOST=localhost
-DB_NAME=slimbooks_db
+DB_NAME=aureo_db
 DB_USER=your_username
 DB_PASS=your_password
 
@@ -158,13 +158,13 @@ MAIL_ENCRYPTION=tls
 
 ### Default Admin User
 After running the schema, a default admin user is created:
-- **Email**: `rbenzing@gmail.com`
+- **Email**: `admin@aureo.us`
 - **Password**: `password` (change immediately after first login)
 
 ## 📁 Project Structure
 
 ```
-slimbooks-app/
+aureo-project-management/
 ├── public/                 # Web server document root
 │   ├── assets/            # Compiled CSS and static assets
 │   ├── index.php          # Application entry point
@@ -325,7 +325,7 @@ WHERE r.name = 'admin' AND p.name = 'custom_feature';
 The application includes comprehensive sample data for testing:
 ```bash
 # Import sample data (includes users, projects, tasks, etc.)
-mysql -u root -p slimbooks_db < sample-data.sql
+mysql -u root -p aureo_db < sample-data.sql
 ```
 
 ### Test Accounts
@@ -409,4 +409,4 @@ For support, email me@russellbenzing.com or create an issue in the GitHub reposi
 
 ---
 
-**SlimBooks** - Making project management simple and effective for teams of all sizes.
+**Aureo Project Management** - Making project management simple and effective for teams of all sizes.

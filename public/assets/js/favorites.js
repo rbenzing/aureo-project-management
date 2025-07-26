@@ -7,8 +7,8 @@ class FavoritesManager {
     constructor() {
         this.csrfToken = window.csrfToken || '';
         this.favoritesNav = document.getElementById('favorites-nav');
-        this.cacheKey = 'slimbooks_favorites';
-        this.cacheExpiryKey = 'slimbooks_favorites_expiry';
+        this.cacheKey = 'aureo_favorites';
+        this.cacheExpiryKey = 'aureo_favorites_expiry';
         this.cacheExpiryTime = 5 * 60 * 1000; // 5 minutes in milliseconds
         this.init();
     }

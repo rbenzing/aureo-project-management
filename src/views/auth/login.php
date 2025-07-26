@@ -17,7 +17,7 @@ use \App\Core\Config;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= Config::get('company_name', 'Slimbooks') ?> - Login</title>
+    <title><?= Config::get('company_name', 'Aureo') ?> - Login</title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 
@@ -35,7 +35,7 @@ use \App\Core\Config;
                         Sign in to your account
                     </h2>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?> Project Management
+                        <?= htmlspecialchars(Config::get('company_name', 'Aureo')) ?> Project Management
                     </p>
                 </div>
 

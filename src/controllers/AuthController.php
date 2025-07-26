@@ -32,7 +32,7 @@ class AuthController
      */
     public function loginForm(string $requestMethod, array $data): void
     {
-        $companyName = Config::get('company_name', 'Slimbooks');
+        $companyName = Config::get('company_name', 'Aureo');
         
         include __DIR__ . '/../Views/Auth/login.php';
     }

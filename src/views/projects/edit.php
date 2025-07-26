@@ -21,7 +21,7 @@ unset($_SESSION['form_data']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Project - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
+    <title>Edit Project - <?= htmlspecialchars(Config::get('company_name', 'Aureo')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 

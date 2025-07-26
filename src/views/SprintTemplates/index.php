@@ -17,7 +17,7 @@ use App\Core\Config;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprint Templates - <?= htmlspecialchars(Config::get('company_name', 'SlimBooks')) ?></title>
+    <title>Sprint Templates - <?= htmlspecialchars(Config::get('company_name', 'Aureo')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
 </head>
 

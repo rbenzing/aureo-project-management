@@ -42,7 +42,7 @@ $viewMode = isset($_GET['view_mode']) ? $_GET['view_mode'] : 'rendered';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($project->name) ?> - <?= htmlspecialchars(Config::get('company_name', 'Slimbooks')) ?></title>
+    <title><?= htmlspecialchars($project->name) ?> - <?= htmlspecialchars(Config::get('company_name', 'Aureo')) ?></title>
     <link href="/assets/css/styles.css" rel="stylesheet">
     <style>
         #rendered-description * {
