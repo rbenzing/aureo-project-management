@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Database;
+
 // Ensure this view is not directly accessible via the web
 if (!defined('BASE_PATH')) {
     header("HTTP/1.0 403 Forbidden");
@@ -12,17 +14,19 @@ if (!defined('BASE_PATH')) {
 
 /**
  * Security Service
- * 
+ *
  * Centralized service for managing security features and validations
  */
 class SecurityService
 {
     private SettingsService $settingsService;
+    private Database $db;
     private static ?SecurityService $instance = null;
 
     public function __construct()
     {
         $this->settingsService = SettingsService::getInstance();
+        $this->db = Database::getInstance();
     }
 
     /**
@@ -206,41 +210,95 @@ class SecurityService
     }
 
     /**
-     * Check rate limiting
+     * Check rate limiting using database persistence
+     *
+     * @param string|null $identifier Unique identifier (defaults to IP address)
+     * @param string $action Action being rate limited (default: 'general')
+     * @param int $windowSeconds Time window in seconds (default: 60)
+     * @return bool True if within rate limit, false if exceeded
      */
-    public function checkRateLimit(string $identifier = null): bool
+    public function checkRateLimit(string $identifier = null, string $action = 'general', int $windowSeconds = 60): bool
     {
         $maxAttempts = $this->settingsService->getSecuritySetting('rate_limit_attempts', 60);
-        
+
         if ($maxAttempts <= 0) {
             return true; // Rate limiting disabled
         }
 
         $identifier = $identifier ?? ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-        
-        // Simple in-memory rate limiting (for basic protection)
-        // In production, you might want to use Redis or database
-        $key = 'rate_limit_' . md5($identifier);
-        $current = $_SESSION[$key] ?? ['count' => 0, 'reset' => time() + 60];
-        
-        // Reset counter if time window passed
-        if (time() > $current['reset']) {
-            $current = ['count' => 0, 'reset' => time() + 60];
-        }
-        
-        $current['count']++;
-        $_SESSION[$key] = $current;
-        
-        if ($current['count'] > $maxAttempts) {
-            $this->logSecurityEvent('rate_limit_exceeded', [
-                'identifier' => $identifier,
-                'attempts' => $current['count'],
-                'limit' => $maxAttempts
+
+        // Clean up expired rate limit entries
+        $this->cleanupExpiredRateLimits();
+
+        try {
+            // Check for existing rate limit record
+            $query = "SELECT attempts, expires_at FROM `rate_limits`
+                     WHERE identifier = :identifier AND action = :action
+                     AND expires_at > NOW()";
+            $stmt = $this->db->executeQuery($query, [
+                ':identifier' => $identifier,
+                ':action' => $action
             ]);
-            return false;
+            $record = $stmt->fetch();
+
+            if ($record) {
+                // Update existing record
+                $newAttempts = $record['attempts'] + 1;
+                $updateQuery = "UPDATE `rate_limits`
+                              SET attempts = :attempts, updated_at = NOW()
+                              WHERE identifier = :identifier AND action = :action";
+                $this->db->executeQuery($updateQuery, [
+                    ':attempts' => $newAttempts,
+                    ':identifier' => $identifier,
+                    ':action' => $action
+                ]);
+
+                if ($newAttempts > $maxAttempts) {
+                    $this->logSecurityEvent('rate_limit_exceeded', [
+                        'identifier' => $identifier,
+                        'action' => $action,
+                        'attempts' => $newAttempts,
+                        'limit' => $maxAttempts
+                    ]);
+                    return false;
+                }
+            } else {
+                // Create new rate limit record
+                $insertQuery = "INSERT INTO `rate_limits`
+                              (identifier, action, attempts, window_start, expires_at)
+                              VALUES (:identifier, :action, 1, NOW(), DATE_ADD(NOW(), INTERVAL :window SECOND))";
+                $this->db->executeQuery($insertQuery, [
+                    ':identifier' => $identifier,
+                    ':action' => $action,
+                    ':window' => $windowSeconds
+                ]);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            // If database fails, log error but don't block the request
+            error_log("Rate limiting database error: " . $e->getMessage());
+            return true;
         }
-        
-        return true;
+    }
+
+    /**
+     * Clean up expired rate limit records
+     * Runs periodically to prevent table bloat
+     */
+    private function cleanupExpiredRateLimits(): void
+    {
+        // Only cleanup 10% of the time to reduce overhead
+        if (rand(1, 10) !== 1) {
+            return;
+        }
+
+        try {
+            $query = "DELETE FROM `rate_limits` WHERE expires_at < NOW()";
+            $this->db->executeQuery($query);
+        } catch (\Exception $e) {
+            error_log("Rate limit cleanup error: " . $e->getMessage());
+        }
     }
 
     /**

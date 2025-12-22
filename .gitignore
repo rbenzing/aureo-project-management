@@ -103,10 +103,10 @@ Desktop.ini
 # ===============================
 # Testing and Debugging
 # ===============================
-/phpunit.xml
-/phpunit.xml.dist
+.phpunit.cache/
 /coverage/
 /report.xml
+.php-cs-fixer.cache
 
 # ===============================
 # Backup Files

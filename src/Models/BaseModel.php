@@ -29,10 +29,9 @@ abstract class BaseModel
 
         if (empty($this->table)) {
             // Convert CamelCase to snake_case and pluralize
-            $className = strtolower((new \ReflectionClass($this))->getShortName());
-            // when y becomes ie ¯\_(ツ)_/¯
-            $className = $className == 'company' ? 'companie' : $className;
-            $this->table = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $className)) . 's';
+            $className = (new \ReflectionClass($this))->getShortName();
+            $snakeCase = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $className));
+            $this->table = $this->pluralize($snakeCase);
         }
     }
 
@@ -404,5 +403,54 @@ abstract class BaseModel
     public function rollBack(): bool
     {
         return $this->db->rollBack();
+    }
+
+    /**
+     * Simple pluralization for table names
+     * Handles common English pluralization rules
+     *
+     * @param string $word Singular word to pluralize
+     * @return string Pluralized word
+     */
+    private function pluralize(string $word): string
+    {
+        // Irregular plurals
+        $irregulars = [
+            'person' => 'people',
+            'man' => 'men',
+            'woman' => 'women',
+            'child' => 'children',
+            'tooth' => 'teeth',
+            'foot' => 'feet',
+            'mouse' => 'mice',
+            'goose' => 'geese'
+        ];
+
+        if (isset($irregulars[$word])) {
+            return $irregulars[$word];
+        }
+
+        // Words ending in s, x, z, ch, sh: add es
+        if (preg_match('/(s|x|z|ch|sh)$/', $word)) {
+            return $word . 'es';
+        }
+
+        // Words ending in consonant + y: change y to ies
+        if (preg_match('/[^aeiou]y$/', $word)) {
+            return substr($word, 0, -1) . 'ies';
+        }
+
+        // Words ending in f or fe: change to ves
+        if (preg_match('/fe?$/', $word)) {
+            return preg_replace('/fe?$/', 'ves', $word);
+        }
+
+        // Words ending in consonant + o: add es
+        if (preg_match('/[^aeiou]o$/', $word)) {
+            return $word . 'es';
+        }
+
+        // Default: just add s
+        return $word . 's';
     }
 }

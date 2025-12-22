@@ -389,6 +389,28 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `rate_limits`
+--
+
+DROP TABLE IF EXISTS `rate_limits`;
+CREATE TABLE IF NOT EXISTS `rate_limits` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL COMMENT 'User ID, IP address, or other identifier',
+  `action` varchar(100) NOT NULL COMMENT 'Action being rate limited (login, api_request, etc.)',
+  `attempts` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `window_start` timestamp NOT NULL DEFAULT current_timestamp(),
+  `expires_at` timestamp NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_rate_limit` (`identifier`,`action`),
+  KEY `idx_rate_limits_expires` (`expires_at`),
+  KEY `idx_rate_limits_identifier` (`identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `settings`
 --
 
@@ -404,7 +426,7 @@ CREATE TABLE IF NOT EXISTS `settings` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_setting` (`category`,`setting_key`),
   KEY `idx_category` (`category`)
-) ENGINE=MyISAM AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `settings`

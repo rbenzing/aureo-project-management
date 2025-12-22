@@ -376,7 +376,7 @@ class Validator
         }
 
         try {
-            $query = "SELECT COUNT(*) as cnt FROM $table WHERE $column = :value";
+            $query = "SELECT COUNT(*) as cnt FROM `$table` WHERE `$column` = :value";
             $params = [':value' => $value];
             $stmt = $this->db->executeQuery($query, $params);
             if (!$stmt->fetchColumn()) {

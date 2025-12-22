@@ -300,4 +300,67 @@ class Config
     {
         return self::$config;
     }
+
+    /**
+     * Get SMTP host configuration
+     * @return string
+     */
+    public static function getSmtpHost(): string
+    {
+        return self::get('SMTP_HOST', 'localhost');
+    }
+
+    /**
+     * Get SMTP username configuration
+     * @return string
+     */
+    public static function getSmtpUsername(): string
+    {
+        return self::get('SMTP_USERNAME', '');
+    }
+
+    /**
+     * Get SMTP password configuration
+     * @return string
+     */
+    public static function getSmtpPassword(): string
+    {
+        return self::get('SMTP_PASSWORD', '');
+    }
+
+    /**
+     * Get SMTP port configuration
+     * @return int
+     */
+    public static function getSmtpPort(): int
+    {
+        return (int) self::get('SMTP_PORT', 587);
+    }
+
+    /**
+     * Get SMTP debug level configuration
+     * @return int
+     */
+    public static function getSmtpDebug(): int
+    {
+        return (int) self::get('SMTP_DEBUG', 0);
+    }
+
+    /**
+     * Get email from address
+     * @return string
+     */
+    public static function getEmailFrom(): string
+    {
+        return self::get('EMAIL_FROM', 'noreply@example.com');
+    }
+
+    /**
+     * Get email from name
+     * @return string
+     */
+    public static function getEmailFromName(): string
+    {
+        return self::get('EMAIL_FROM_NAME', 'Application');
+    }
 }

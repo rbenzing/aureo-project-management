@@ -100,7 +100,13 @@ class Database
      */
     private function validateCredentials(): void
     {
-        $required = ['dbname', 'username']; // todo: when prod add 'password'
+        $required = ['dbname', 'username'];
+
+        // Require password in production environments
+        if (Config::isProduction()) {
+            $required[] = 'password';
+        }
+
         foreach ($required as $field) {
             if (empty($this->credentials[$field])) {
                 throw new RuntimeException("Missing required database credential: {$field}");
@@ -182,10 +188,10 @@ class Database
 
             return $stmt;
         } catch (PDOException $e) {
-            // Log the full error details
+            // Log the full error details with sanitized params
             error_log("Query Execution Error: " . $e->getMessage());
             error_log("SQL: " . $sql);
-            error_log("Params: " . json_encode($params));
+            error_log("Params: " . json_encode($this->sanitizeParams($params)));
 
             // Use security service to determine error message
             try {
@@ -287,6 +293,49 @@ class Database
             'execution_time' => round($executionTime * 1000, 2) . 'ms',
             'time' => date('Y-m-d H:i:s')
         ];
+    }
+
+    /**
+     * Sanitize parameters for logging to prevent sensitive data exposure
+     * Redacts common sensitive field names and values
+     *
+     * @param array $params Parameters to sanitize
+     * @return array Sanitized parameters
+     */
+    private function sanitizeParams(array $params): array
+    {
+        $sensitiveKeys = [
+            'password',
+            'password_hash',
+            'token',
+            'activation_token',
+            'reset_password_token',
+            'csrf_token',
+            'api_key',
+            'secret',
+            'private_key',
+            'credit_card',
+            'ssn'
+        ];
+
+        $sanitized = [];
+        foreach ($params as $key => $value) {
+            // Remove : prefix if present
+            $cleanKey = ltrim($key, ':');
+
+            // Check if key contains sensitive words
+            $isSensitive = false;
+            foreach ($sensitiveKeys as $sensitiveKey) {
+                if (stripos($cleanKey, $sensitiveKey) !== false) {
+                    $isSensitive = true;
+                    break;
+                }
+            }
+
+            $sanitized[$key] = $isSensitive ? '[REDACTED]' : $value;
+        }
+
+        return $sanitized;
     }
 
     /**

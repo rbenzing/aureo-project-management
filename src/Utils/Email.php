@@ -16,7 +16,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 class Email {
-    private $mail;
+    private PHPMailer $mail;
 
     /**
      * Constructor to initialize PHPMailer.
@@ -25,16 +25,17 @@ class Email {
         // Initialize PHPMailer
         $this->mail = new PHPMailer();
 
-        // Configure SMTP settings
+        // Configure SMTP settings using Config class
         $this->mail->isSMTP();
-        $this->mail->Host = $_ENV['SMTP_HOST']; // SMTP server
+        $this->mail->Host = Config::getSmtpHost();
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = $_ENV['SMTP_USERNAME']; // SMTP username
-        $this->mail->Password = $_ENV['SMTP_PASSWORD']; // SMTP password
-        $this->mail->Port = $_ENV['SMTP_PORT']; // SMTP port
+        $this->mail->Username = Config::getSmtpUsername();
+        $this->mail->Password = Config::getSmtpPassword();
+        $this->mail->Port = Config::getSmtpPort();
+        $this->mail->SMTPDebug = Config::getSmtpDebug();
 
         // Set default sender
-        $this->mail->setFrom($_ENV['EMAIL_FROM'], $_ENV['EMAIL_FROM_NAME']);
+        $this->mail->setFrom(Config::getEmailFrom(), Config::getEmailFromName());
     }
 
     /**
@@ -45,7 +46,7 @@ class Email {
      * @param string $body The email body (plain text).
      * @return bool Returns true if the email was sent successfully, false otherwise.
      */
-    public function sendPlainText($to, $subject, $body) {
+    public function sendPlainText(string $to, string $subject, string $body): bool {
         try {
             $this->mail->addAddress($to);
             $this->mail->Subject = $subject;
@@ -68,7 +69,7 @@ class Email {
      * @param string $htmlBody The email body (HTML).
      * @return bool Returns true if the email was sent successfully, false otherwise.
      */
-    public function sendHtml($to, $subject, $htmlBody) {
+    public function sendHtml(string $to, string $subject, string $htmlBody): bool {
         try {
             $this->mail->addAddress($to);
             $this->mail->Subject = $subject;
@@ -90,7 +91,7 @@ class Email {
      * @param string $filePath The path to the file to attach.
      * @return void
      */
-    public function addAttachment($filePath) {
+    public function addAttachment(string $filePath): void {
         $this->mail->addAttachment($filePath);
     }
 
@@ -99,7 +100,7 @@ class Email {
      *
      * @return void
      */
-    public function clear() {
+    public function clear(): void {
         $this->mail->clearAddresses();
         $this->mail->clearAttachments();
     }

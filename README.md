@@ -1,7 +1,7 @@
 # Aureo Project Management
 
-[![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://php.net)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://php.net)
+[![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-blue.svg)](https://tailwindcss.com)
 
 Aureo Project Management is a comprehensive project management application designed for modern agile teams. Built with PHP and featuring a clean, responsive interface powered by TailwindCSS, it provides everything you need to manage projects, tasks, sprints, and team collaboration effectively.
@@ -32,11 +32,13 @@ Aureo Project Management is a comprehensive project management application desig
 ## 🛠️ Technology Stack
 
 ### Backend
-- **PHP 7.4+** - Core application logic
+- **PHP 8.1+** - Core application logic with strict typing
 - **MySQL** - Primary database with comprehensive relational schema
-- **PDO** - Database abstraction layer
+- **PDO** - Database abstraction layer with prepared statements
 - **Custom MVC Architecture** - Clean separation of concerns
 - **Composer** - Dependency management
+- **PHPUnit** - Testing framework
+- **PHP CS Fixer** - Code style enforcement (PSR-12)
 
 ### Frontend
 - **TailwindCSS 3.4** - Utility-first CSS framework
@@ -52,11 +54,11 @@ Aureo Project Management is a comprehensive project management application desig
 
 ## 📋 Requirements
 
-- **PHP 7.4 or higher**
-- **MySQL 5.7 or higher**
+- **PHP 8.1 or higher** (with strict type support)
+- **MySQL 5.7 or higher** (InnoDB engine required)
 - **Composer** - For PHP dependency management
 - **Node.js & NPM** - For frontend asset compilation
-- **Web Server** - Apache/Nginx with PHP support
+- **Web Server** - Apache/Nginx with PHP support and HTTPS (production)
 
 ## 🚀 Installation
 
@@ -259,22 +261,32 @@ The application uses a comprehensive MySQL schema with the following key entitie
 - **templates**: Reusable project and task templates
 
 ### System Tables
-- **settings**: Application configuration
+- **settings**: Application configuration (InnoDB)
 - **sessions**: Session management
 - **csrf_tokens**: CSRF protection tokens
+- **rate_limits**: Database-persisted rate limiting
 
 ## 🔧 Development
 
 ### Local Development Setup
 ```bash
 # Start PHP development server
-composer run start
+composer start
 
 # Watch for CSS changes
 npm run build
 
 # For development with auto-rebuild
 npm run watch
+
+# Run tests
+composer test
+
+# Run code style checks
+composer cs:check
+
+# Auto-fix code style issues
+composer cs:fix
 ```
 
 ### Code Structure
@@ -319,6 +331,29 @@ WHERE r.name = 'admin' AND p.name = 'custom_feature';
 
 ## 🧪 Testing
 
+### Automated Testing
+The project uses PHPUnit for automated testing:
+```bash
+# Run all tests
+composer test
+
+# Run tests with coverage report
+composer test:coverage
+
+# View coverage report
+open coverage/index.html
+```
+
+### Code Quality
+Enforce PSR-12 coding standards with PHP CS Fixer:
+```bash
+# Check code style
+composer cs:check
+
+# Automatically fix code style issues
+composer cs:fix
+```
+
 ### Sample Data
 The application includes comprehensive sample data for testing:
 ```bash
@@ -328,7 +363,7 @@ mysql -u root -p aureo_db < sample-data.sql
 
 ### Test Accounts
 After importing sample data, you can use these test accounts:
-- **Admin**: `admin` / `password`
+- **Admin**: `admin@aureo.us` / `password`
 - **Manager**: Various manager accounts with different permissions
 - **Developer**: Multiple developer accounts for testing team features
 
@@ -378,15 +413,28 @@ After importing sample data, you can use these test accounts:
 5. **Open Pull Request**
 
 ### Development Guidelines
-- Follow PSR-4 autoloading standards
+- Follow **PSR-12** coding standards (enforced by PHP CS Fixer)
+- Follow **PSR-4** autoloading standards
+- Use **strict typing** (`declare(strict_types=1)`) in all PHP files
+- Write **PHPUnit tests** for new features
 - Use meaningful commit messages
 - Add comments for complex logic
-- Test new features thoroughly
+- Run `composer cs:fix` before committing
 - Update documentation as needed
+
+### Security Guidelines
+Before contributing, review [SECURITY.md](SECURITY.md) for security best practices:
+- Never commit `.env` files
+- Use prepared statements for all database queries
+- Validate and sanitize all user input
+- Follow password hashing guidelines (Argon2ID)
+- Implement CSRF protection for state-changing operations
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+**Important:** The AGPL-3.0 license requires that if you modify this software and use it to provide a service over a network, you must make the complete source code of your modified version available to users of that service.
 
 ## 👨‍💻 Author
 
