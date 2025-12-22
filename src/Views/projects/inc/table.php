@@ -8,34 +8,33 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use App\Utils\Time;
 
 // Define status labels and colors
 $statusMap = [
     1 => [
         'label' => 'READY',
-        'color' => 'bg-blue-600'
+        'color' => 'bg-blue-600',
     ],
     2 => [
         'label' => 'IN PROGRESS',
-        'color' => 'bg-yellow-500'
+        'color' => 'bg-yellow-500',
     ],
     3 => [
         'label' => 'COMPLETED',
-        'color' => 'bg-green-500'
+        'color' => 'bg-green-500',
     ],
     4 => [
         'label' => 'ON HOLD',
-        'color' => 'bg-purple-500'
+        'color' => 'bg-purple-500',
     ],
     6 => [
         'label' => 'DELAYED',
-        'color' => 'bg-red-500'
+        'color' => 'bg-red-500',
     ],
     7 => [
         'label' => 'CANCELLED',
-        'color' => 'bg-gray-500'
-    ]
+        'color' => 'bg-gray-500',
+    ],
 ];
 
 // Get filter parameters
@@ -80,7 +79,7 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                 }
             }
         }
-    ?>
+        ?>
         <div class="text-gray-900 dark:text-white">
             <div class="py-2">
                 <div class="flex justify-between items-center w-full hover:bg-indigo-800">
@@ -142,15 +141,15 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
             </div>
 
             <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg" data-project-details>
-                <?php if ($viewByFilter === 'tasks'): 
-                        include BASE_PATH . '/../src/Views/Projects/inc/table_tasks.php';
-                    elseif ($viewByFilter === 'sprints' && isset($project->sprints) && !empty($project->sprints)):
-                        include BASE_PATH . '/../src/Views/Projects/inc/table_sprints.php';
-                    elseif ($viewByFilter === 'milestones' && isset($project->milestones) && !empty($project->milestones)):
-                        include BASE_PATH . '/../src/Views/Projects/inc/table_milestones.php';
-                    else:
-                        include BASE_PATH . '/../src/Views/Projects/inc/table_projects.php';
-                    endif; ?>
+                <?php if ($viewByFilter === 'tasks'):
+                    include BASE_PATH . '/../src/Views/Projects/inc/table_tasks.php';
+                elseif ($viewByFilter === 'sprints' && isset($project->sprints) && !empty($project->sprints)):
+                    include BASE_PATH . '/../src/Views/Projects/inc/table_sprints.php';
+                elseif ($viewByFilter === 'milestones' && isset($project->milestones) && !empty($project->milestones)):
+                    include BASE_PATH . '/../src/Views/Projects/inc/table_milestones.php';
+                else:
+                    include BASE_PATH . '/../src/Views/Projects/inc/table_projects.php';
+                endif; ?>
             </div>
         </div>
     <?php endforeach; ?>

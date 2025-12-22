@@ -1,25 +1,25 @@
 <?php
+
 // file: Models/User.php
 declare(strict_types=1);
 
 namespace App\Models;
 
 use App\Core\Database;
+use App\Services\SecurityService;
+use DateTime;
 use PDO;
 use RuntimeException;
-use InvalidArgumentException;
-use DateTime;
-use App\Services\SecurityService;
 
 /**
  * User Model
- * 
+ *
  * Handles all user-related database operations
  */
 class User extends BaseModel
 {
     protected string $table = 'users';
-    
+
     /**
      * User properties
      */
@@ -39,29 +39,29 @@ class User extends BaseModel
     public ?string $created_at = null;
     public ?string $updated_at = null;
     public bool $is_deleted = false;
-    
+
     /**
      * Define fillable fields
      */
     protected array $fillable = [
         'company_id', 'role_id', 'first_name', 'last_name',
-        'email', 'phone', 'password_hash', 'is_active'
+        'email', 'phone', 'password_hash', 'is_active',
     ];
-    
+
     /**
      * Define hidden fields (sensitive data not to be returned)
      */
     protected array $hidden = [
-        'password_hash', 'activation_token', 'reset_password_token'
+        'password_hash', 'activation_token', 'reset_password_token',
     ];
-    
+
     /**
      * Define searchable fields
      */
     protected array $searchable = [
-        'first_name', 'last_name', 'email'
+        'first_name', 'last_name', 'email',
     ];
-    
+
     /**
      * Define validation rules
      */
@@ -69,12 +69,12 @@ class User extends BaseModel
         'first_name' => ['required', 'string'],
         'last_name' => ['required', 'string'],
         'email' => ['required', 'email', 'unique'],
-        'role_id' => ['required']
+        'role_id' => ['required'],
     ];
 
     /**
      * Find user by email
-     * 
+     *
      * @param string $email
      * @return object|null
      */
@@ -92,7 +92,7 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_OBJ);
-            
+
             return $user ?: null;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to find user by email: " . $e->getMessage());
@@ -101,7 +101,7 @@ class User extends BaseModel
 
     /**
      * Get all users without pagination
-     * 
+     *
      * @return array
      */
     public function getAllUsers(): array
@@ -117,6 +117,7 @@ class User extends BaseModel
                 ORDER BY u.first_name, u.last_name";
 
             $stmt = $this->db->executeQuery($sql);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get all users: " . $e->getMessage());
@@ -125,7 +126,7 @@ class User extends BaseModel
 
     /**
      * Get user roles and permissions
-     * 
+     *
      * @param int $userId
      * @return array
      */
@@ -141,12 +142,12 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
             $roleResult = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             $roles = [];
             if ($roleResult) {
                 $roles[] = $roleResult['role_name'];
             }
-            
+
             // Get permissions for that role
             $sql = "SELECT p.name AS permission_name
                 FROM permissions p
@@ -158,7 +159,7 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
             $permissionResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             $permissions = [];
             foreach ($permissionResults as $permission) {
                 $permissions[] = $permission['permission_name'];
@@ -166,7 +167,7 @@ class User extends BaseModel
 
             return [
                 'roles' => $roles,
-                'permissions' => $permissions
+                'permissions' => $permissions,
             ];
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get roles and permissions: " . $e->getMessage());
@@ -175,7 +176,7 @@ class User extends BaseModel
 
     /**
      * Find user with detailed information
-     * 
+     *
      * @param int $id
      * @return object|null
      */
@@ -194,37 +195,38 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $id]);
             $user = $stmt->fetch(PDO::FETCH_OBJ);
-            
+
             if ($user) {
                 // Add user's projects
                 $user->projects = $this->getUserProjects($id);
-                
+
                 // Add user's permissions
                 $rolesAndPermissions = $this->getRolesAndPermissions($id);
                 $user->permissions = $rolesAndPermissions['permissions'];
-                
+
                 // Add user's companies (from junction table)
                 $user->companies = $this->getUserCompanies($id);
-                
+
                 // Add user's tasks
                 $user->active_tasks = $this->getUserActiveTasks($id);
             }
-            
+
             return $user ?: null;
         } catch (\Exception $e) {
             try {
                 $securityService = SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to find user with details");
+
                 throw new RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new RuntimeException("Failed to find user with details");
             }
         }
     }
-    
+
     /**
      * Get user's projects
-     * 
+     *
      * @param int $userId
      * @return array
      */
@@ -265,14 +267,14 @@ class User extends BaseModel
             // Log the full error details
             error_log("User Projects Query Error: " . $e->getMessage());
             error_log("User ID: " . $userId);
-            
+
             throw new RuntimeException("Failed to get user projects: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get user's companies (from junction table)
-     * 
+     *
      * @param int $userId
      * @return array
      */
@@ -306,10 +308,10 @@ class User extends BaseModel
             throw new RuntimeException("Failed to get user companies: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get user's active tasks
-     * 
+     *
      * @param int $userId
      * @param int $limit
      * @return array
@@ -338,9 +340,9 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':user_id' => $userId,
-                ':limit' => $limit
+                ':limit' => $limit,
             ]);
-            
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get user active tasks: " . $e->getMessage());
@@ -349,7 +351,7 @@ class User extends BaseModel
 
     /**
      * Find user by activation token
-     * 
+     *
      * @param string $token
      * @return object|null
      */
@@ -363,7 +365,7 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':token' => $token]);
             $user = $stmt->fetch(PDO::FETCH_OBJ);
-            
+
             return $user ?: null;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to find user by activation token: " . $e->getMessage());
@@ -372,7 +374,7 @@ class User extends BaseModel
 
     /**
      * Find user by reset password token
-     * 
+     *
      * @param string $token
      * @return object|null
      */
@@ -386,7 +388,7 @@ class User extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':token' => $token]);
             $user = $stmt->fetch(PDO::FETCH_OBJ);
-            
+
             return $user ?: null;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to find user by reset token: " . $e->getMessage());
@@ -395,7 +397,7 @@ class User extends BaseModel
 
     /**
      * Generate password reset token
-     * 
+     *
      * @param int $userId
      * @return string
      * @throws RuntimeException
@@ -419,7 +421,7 @@ class User extends BaseModel
             $this->db->executeInsertUpdate($sql, [
                 ':id' => $userId,
                 ':token' => $token,
-                ':expires_at' => $expiresAt
+                ':expires_at' => $expiresAt,
             ]);
 
             return $token;
@@ -430,7 +432,7 @@ class User extends BaseModel
 
     /**
      * Generate activation token
-     * 
+     *
      * @param int $userId
      * @return string
      * @throws RuntimeException
@@ -454,7 +456,7 @@ class User extends BaseModel
             $this->db->executeInsertUpdate($sql, [
                 ':id' => $userId,
                 ':token' => $token,
-                ':expires_at' => $expiresAt
+                ':expires_at' => $expiresAt,
             ]);
 
             return $token;
@@ -465,7 +467,7 @@ class User extends BaseModel
 
     /**
      * Clear password reset token
-     * 
+     *
      * @param int $userId
      * @return bool
      */
@@ -486,7 +488,7 @@ class User extends BaseModel
 
     /**
      * Clear activation token
-     * 
+     *
      * @param int $userId
      * @return bool
      */
@@ -504,10 +506,10 @@ class User extends BaseModel
             throw new RuntimeException("Failed to clear activation token: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Add company association
-     * 
+     *
      * @param int $userId
      * @param int $companyId
      * @return bool
@@ -518,19 +520,19 @@ class User extends BaseModel
             $sql = "INSERT INTO user_companies (user_id, company_id)
                     VALUES (:user_id, :company_id)
                     ON DUPLICATE KEY UPDATE user_id = :user_id";
-                    
+
             return $this->db->executeInsertUpdate($sql, [
                 ':user_id' => $userId,
-                ':company_id' => $companyId
+                ':company_id' => $companyId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to add company association: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Remove company association
-     * 
+     *
      * @param int $userId
      * @param int $companyId
      * @return bool
@@ -540,19 +542,19 @@ class User extends BaseModel
         try {
             $sql = "DELETE FROM user_companies 
                     WHERE user_id = :user_id AND company_id = :company_id";
-                    
+
             return $this->db->executeInsertUpdate($sql, [
                 ':user_id' => $userId,
-                ':company_id' => $companyId
+                ':company_id' => $companyId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to remove company association: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Add project assignment
-     * 
+     *
      * @param int $userId
      * @param int $projectId
      * @return bool
@@ -563,19 +565,19 @@ class User extends BaseModel
             $sql = "INSERT INTO user_projects (user_id, project_id)
                     VALUES (:user_id, :project_id)
                     ON DUPLICATE KEY UPDATE user_id = :user_id";
-                    
+
             return $this->db->executeInsertUpdate($sql, [
                 ':user_id' => $userId,
-                ':project_id' => $projectId
+                ':project_id' => $projectId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to add project assignment: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Remove project assignment
-     * 
+     *
      * @param int $userId
      * @param int $projectId
      * @return bool
@@ -585,10 +587,10 @@ class User extends BaseModel
         try {
             $sql = "DELETE FROM user_projects 
                     WHERE user_id = :user_id AND project_id = :project_id";
-                    
+
             return $this->db->executeInsertUpdate($sql, [
                 ':user_id' => $userId,
-                ':project_id' => $projectId
+                ':project_id' => $projectId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to remove project assignment: " . $e->getMessage());

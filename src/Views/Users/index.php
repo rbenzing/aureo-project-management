@@ -81,8 +81,8 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                         <option value="">All Roles</option>
                         <?php
                         $rolesResult = (new \App\Models\Role())->getAll(['is_deleted' => 0], 1, 1000);
-                        $roles = $rolesResult['records'];
-                        foreach ($roles as $role): ?>
+$roles = $rolesResult['records'];
+foreach ($roles as $role): ?>
                             <option value="<?= htmlspecialchars((string)$role->id) ?>"><?= htmlspecialchars($role->name) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -93,9 +93,9 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                     <select name="company_id" id="company" class="block w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200">
                         <option value="">All Companies</option>
                         <?php
-                        $companiesResult = (new \App\Models\Company())->getAll(['is_deleted' => 0], 1, 1000);
-                        $companies = $companiesResult['records'];
-                        foreach ($companies as $company): ?>
+$companiesResult = (new \App\Models\Company())->getAll(['is_deleted' => 0], 1, 1000);
+$companies = $companiesResult['records'];
+foreach ($companies as $company): ?>
                             <option value="<?= htmlspecialchars((string)$company->id) ?>"><?= htmlspecialchars($company->name) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -137,17 +137,17 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Users</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            <?php 
-                            $activeCount = 0;
-                            if (!empty($users)) {
-                                foreach ($users as $user) {
-                                    if (isset($user->is_active) && $user->is_active) {
-                                        $activeCount++;
-                                    }
-                                }
-                            }
-                            echo $activeCount;
-                            ?>
+                            <?php
+    $activeCount = 0;
+if (!empty($users)) {
+    foreach ($users as $user) {
+        if (isset($user->is_active) && $user->is_active) {
+            $activeCount++;
+        }
+    }
+}
+echo $activeCount;
+?>
                         </p>
                     </div>
                 </div>
@@ -164,12 +164,12 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Administrators</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            <?php 
-                            $adminCount = 0; 
-                            // Implementation will depend on how you track admins
-                            // This is a placeholder calculation
-                            echo $adminCount;
-                            ?>
+                            <?php
+$adminCount = 0;
+// Implementation will depend on how you track admins
+// This is a placeholder calculation
+echo $adminCount;
+?>
                         </p>
                     </div>
                 </div>
@@ -187,17 +187,17 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Recently Added</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             <?php
-                            $recentCount = 0;
-                            $lastWeek = strtotime('-7 days');
-                            if (!empty($users)) {
-                                foreach ($users as $user) {
-                                    if (isset($user->created_at) && strtotime($user->created_at) > $lastWeek) {
-                                        $recentCount++;
-                                    }
-                                }
-                            }
-                            echo $recentCount;
-                            ?>
+$recentCount = 0;
+$lastWeek = strtotime('-7 days');
+if (!empty($users)) {
+    foreach ($users as $user) {
+        if (isset($user->created_at) && strtotime($user->created_at) > $lastWeek) {
+            $recentCount++;
+        }
+    }
+}
+echo $recentCount;
+?>
                         </p>
                     </div>
                 </div>
@@ -321,35 +321,35 @@ $canDeleteUsers = isset($_SESSION['user']['permissions']) && in_array('delete_us
                             </a>
                         <?php endif; ?>
                         
-                        <?php 
+                        <?php
                         // Calculate pagination range
                         $startPage = max(1, $page - 2);
-                        $endPage = min($totalPages, $page + 2);
-                        
-                        // Show first page if not in range
-                        if ($startPage > 1) {
-                            echo '<a href="/users/page/1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">1</a>';
-                            if ($startPage > 2) {
-                                echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
-                            }
-                        }
-                        
-                        // Show page numbers
-                        for ($i = $startPage; $i <= $endPage; $i++) {
-                            $isCurrentPage = $i === $page;
-                            echo '<a href="/users/page/' . $i . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 ' . 
-                                 ($isCurrentPage ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700') . 
-                                 ' text-sm font-medium">' . $i . '</a>';
-                        }
-                        
-                        // Show last page if not in range
-                        if ($endPage < $totalPages) {
-                            if ($endPage < $totalPages - 1) {
-                                echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
-                            }
-                            echo '<a href="/users/page/' . $totalPages . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">' . $totalPages . '</a>';
-                        }
-                        ?>
+            $endPage = min($totalPages, $page + 2);
+
+            // Show first page if not in range
+            if ($startPage > 1) {
+                echo '<a href="/users/page/1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">1</a>';
+                if ($startPage > 2) {
+                    echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
+                }
+            }
+
+            // Show page numbers
+            for ($i = $startPage; $i <= $endPage; $i++) {
+                $isCurrentPage = $i === $page;
+                echo '<a href="/users/page/' . $i . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 ' .
+                     ($isCurrentPage ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700') .
+                     ' text-sm font-medium">' . $i . '</a>';
+            }
+
+            // Show last page if not in range
+            if ($endPage < $totalPages) {
+                if ($endPage < $totalPages - 1) {
+                    echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
+                }
+                echo '<a href="/users/page/' . $totalPages . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">' . $totalPages . '</a>';
+            }
+            ?>
                         
                         <?php if ($page < $totalPages): ?>
                             <a href="/users/page/<?= $page + 1 ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">

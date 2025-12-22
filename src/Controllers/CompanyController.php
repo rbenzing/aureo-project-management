@@ -1,4 +1,5 @@
 <?php
+
 // file: Controllers/CompanyController.php
 declare(strict_types=1);
 
@@ -9,10 +10,10 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Company;
 use App\Models\Project;
 use App\Models\User;
-use App\Utils\Validator;
-use RuntimeException;
-use InvalidArgumentException;
 use App\Services\SecurityService;
+use App\Utils\Validator;
+use InvalidArgumentException;
+use RuntimeException;
 
 class CompanyController
 {
@@ -39,26 +40,26 @@ class CompanyController
      */
     public function index(string $requestMethod, array $data): void
     {
-        try {            
+        try {
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $limit = 10;
-            
+
             // Build filters based on search query
             $filters = ['is_deleted' => 0];
             if (isset($_GET['search']) && !empty($_GET['search'])) {
                 $filters['search'] = trim($_GET['search']);
             }
-            
+
             // Get paginated companies
             $result = $this->companyModel->getAll($filters, $page, $limit);
             $companies = $result['records'];
             $totalCompanies = $result['total'];
             $totalPages = ceil($totalCompanies / $limit);
-            
+
             // Get summary counts for the dashboard cards
             $totalUsers = $this->userModel->count(['is_deleted' => 0]);
             $activeProjects = $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]); // Assuming status_id 2 is "in_progress"
-            
+
             include BASE_PATH . '/../Views/Companies/index.php';
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
@@ -93,7 +94,7 @@ class CompanyController
             $this->companyModel->id = $id; // Set ID on model instance
             $projects = $this->companyModel->getProjects();
             $users = $this->companyModel->getUsers($id);
-            
+
             include BASE_PATH . '/../Views/Companies/view.php';
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -136,6 +137,7 @@ class CompanyController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -147,7 +149,7 @@ class CompanyController
                 'address' => 'nullable|string|max:500',
                 'phone' => 'nullable|string|max:25|regex:/^[+]?[0-9()-\s]{10,}$/',
                 'email' => 'required|email|unique:companies,email',
-                'website' => 'nullable|url|max:255'
+                'website' => 'nullable|url|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -156,14 +158,14 @@ class CompanyController
 
             $companyData = [
                 'name' => htmlspecialchars($data['name']),
-                'address' => isset($data['address']) ? 
+                'address' => isset($data['address']) ?
                     htmlspecialchars($data['address']) : null,
-                'phone' => isset($data['phone']) ? 
+                'phone' => isset($data['phone']) ?
                     htmlspecialchars($data['phone']) : null,
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
-                'website' => isset($data['website']) ? 
+                'website' => isset($data['website']) ?
                     filter_var($data['website'], FILTER_SANITIZE_URL) : null,
-                'user_id' => $_SESSION['user']['id'] ?? null
+                'user_id' => $_SESSION['user']['id'] ?? null,
             ];
 
             $companyId = $this->companyModel->create($companyData);
@@ -235,6 +237,7 @@ class CompanyController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -251,7 +254,7 @@ class CompanyController
                 'address' => 'nullable|string|max:500',
                 'phone' => 'nullable|string|max:25|regex:/^[+]?[0-9()-\s]{10,}$/',
                 'email' => "required|email|unique:companies,email,{$id}",
-                'website' => 'nullable|url|max:255'
+                'website' => 'nullable|url|max:255',
             ]);
 
             if ($validator->fails()) {
@@ -260,13 +263,13 @@ class CompanyController
 
             $companyData = [
                 'name' => htmlspecialchars($data['name']),
-                'address' => isset($data['address']) ? 
+                'address' => isset($data['address']) ?
                     htmlspecialchars($data['address']) : null,
-                'phone' => isset($data['phone']) ? 
+                'phone' => isset($data['phone']) ?
                     htmlspecialchars($data['phone']) : null,
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
-                'website' => isset($data['website']) ? 
-                    filter_var($data['website'], FILTER_SANITIZE_URL) : null
+                'website' => isset($data['website']) ?
+                    filter_var($data['website'], FILTER_SANITIZE_URL) : null,
             ];
 
             $this->companyModel->update($id, $companyData);

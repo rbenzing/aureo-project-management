@@ -1,20 +1,20 @@
 <?php
+
 // file: Controllers/SprintTemplateController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
 use App\Middleware\AuthMiddleware;
-use App\Models\Template;
-use App\Models\Project;
 use App\Models\Company;
+use App\Models\Project;
+use App\Models\Template;
 use App\Utils\Validator;
 use InvalidArgumentException;
-use RuntimeException;
 
 /**
  * Sprint Template Controller
- * 
+ *
  * Handles sprint template management with configuration options
  */
 class SprintTemplateController
@@ -45,14 +45,14 @@ class SprintTemplateController
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
             $limit = $settingsService->getResultsPerPage();
-            
+
             // Get filter parameters
             $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
             $companyId = $_SESSION['user']['company_id'] ?? null;
 
             // Get sprint templates with configurations
             $templates = $this->templateModel->getSprintTemplates($companyId, $projectId);
-            
+
             // Get projects for filter dropdown
             $projects = $this->projectModel->getAllWithDetails();
 
@@ -74,10 +74,10 @@ class SprintTemplateController
     {
         try {
             $this->authMiddleware->hasPermission('create_templates');
-            
+
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
-            
+
             include BASE_PATH . '/../Views/SprintTemplates/create.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::createForm: " . $e->getMessage());
@@ -96,6 +96,7 @@ class SprintTemplateController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -111,7 +112,7 @@ class SprintTemplateController
                 'estimation_method' => 'required|in:hours,story_points,both',
                 'default_capacity' => 'required|integer|min:1|max:200',
                 'include_weekends' => 'boolean',
-                'auto_assign_subtasks' => 'boolean'
+                'auto_assign_subtasks' => 'boolean',
             ]);
 
             if ($validator->fails()) {
@@ -123,21 +124,21 @@ class SprintTemplateController
                 'name' => htmlspecialchars($data['name']),
                 'description' => $data['description'],
                 'template_type' => 'sprint',
-                'company_id' => !empty($data['company_id']) ? 
+                'company_id' => !empty($data['company_id']) ?
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
-                'is_default' => isset($data['is_default']) ? true : false
+                'is_default' => isset($data['is_default']) ? true : false,
             ];
 
             // Prepare configuration data
             $configData = [
-                'project_id' => !empty($data['project_id']) ? 
+                'project_id' => !empty($data['project_id']) ?
                     filter_var($data['project_id'], FILTER_VALIDATE_INT) : null,
                 'sprint_length' => intval($data['sprint_length']),
                 'estimation_method' => $data['estimation_method'],
                 'default_capacity' => intval($data['default_capacity']),
                 'include_weekends' => isset($data['include_weekends']) ? true : false,
                 'auto_assign_subtasks' => isset($data['auto_assign_subtasks']) ? true : false,
-                'ceremony_settings' => $this->processCeremonySettings($data)
+                'ceremony_settings' => $this->processCeremonySettings($data),
             ];
 
             // Create sprint template with configuration
@@ -181,7 +182,7 @@ class SprintTemplateController
 
             // Get template configuration
             $config = $this->templateModel->getSprintTemplateConfiguration($id);
-            
+
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
 
@@ -212,7 +213,7 @@ class SprintTemplateController
             $settings[$ceremony] = [
                 'enabled' => isset($data["ceremony_{$ceremony}_enabled"]) ? true : false,
                 'duration_hours' => floatval($data["ceremony_{$ceremony}_duration"] ?? 1),
-                'participants' => explode(',', $data["ceremony_{$ceremony}_participants"] ?? 'team')
+                'participants' => explode(',', $data["ceremony_{$ceremony}_participants"] ?? 'team'),
             ];
 
             if ($ceremony === 'daily_standup') {
@@ -253,15 +254,15 @@ class SprintTemplateController
                 'template' => [
                     'name' => $template->name,
                     'description' => $template->description,
-                    'config' => $config
-                ]
+                    'config' => $config,
+                ],
             ]);
         } catch (\Exception $e) {
             header('Content-Type: application/json');
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
         }
     }
@@ -298,7 +299,7 @@ class SprintTemplateController
                 'description' => $template->description,
                 'sprint_length' => $config->sprint_length ?? 2,
                 'estimation_method' => $config->estimation_method ?? 'hours',
-                'capacity' => $config->default_capacity ?? 40
+                'capacity' => $config->default_capacity ?? 40,
             ]);
 
             header("Location: /sprints/create/{$projectId}?{$queryParams}");
@@ -329,14 +330,14 @@ class SprintTemplateController
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
-                'templates' => $templates
+                'templates' => $templates,
             ]);
         } catch (\Exception $e) {
             header('Content-Type: application/json');
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
         }
     }

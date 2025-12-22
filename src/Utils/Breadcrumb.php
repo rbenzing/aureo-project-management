@@ -1,4 +1,5 @@
 <?php
+
 // file: Utils/Breadcrumb.php
 declare(strict_types=1);
 
@@ -8,7 +9,7 @@ class Breadcrumb
 {
     private static array $breadcrumbs = [];
     private static bool $initialized = false;
-    
+
     /**
      * Initialize default breadcrumbs map
      */
@@ -17,177 +18,177 @@ class Breadcrumb
         if (self::$initialized) {
             return;
         }
-        
+
         // Define the base breadcrumb structure for the application
         self::$breadcrumbs = [
             'dashboard' => [
                 'name' => 'Dashboard',
                 'url' => '/dashboard',
-                'icon' => 'home'
+                'icon' => 'home',
             ],
             'projects' => [
                 'name' => 'Projects',
                 'url' => '/projects',
-                'icon' => 'folder'
+                'icon' => 'folder',
             ],
             'projects/create' => [
                 'name' => 'Create New Project',
                 'url' => '/projects/create',
-                'icon' => 'plus'
+                'icon' => 'plus',
             ],
             'projects/view' => [
                 'name' => 'Project Details',
                 'url' => '/projects/view/{id}',
-                'icon' => 'eye'
+                'icon' => 'eye',
             ],
             'projects/edit' => [
                 'name' => 'Edit Project',
                 'url' => '/projects/edit/{id}',
-                'icon' => 'pencil'
+                'icon' => 'pencil',
             ],
             'tasks' => [
                 'name' => 'All Tasks',
                 'url' => '/tasks',
-                'icon' => 'check-square'
+                'icon' => 'check-square',
             ],
             'tasks/backlog' => [
                 'name' => 'Backlog',
                 'url' => '/tasks/backlog',
-                'icon' => 'clipboard-list'
+                'icon' => 'clipboard-list',
             ],
             'tasks/sprint-planning' => [
                 'name' => 'Sprint Planning',
                 'url' => '/tasks/sprint-planning',
-                'icon' => 'target'
+                'icon' => 'target',
             ],
             'tasks/create' => [
                 'name' => 'Create New Task',
                 'url' => '/tasks/create',
-                'icon' => 'plus'
+                'icon' => 'plus',
             ],
             'tasks/view' => [
                 'name' => 'Task Details',
                 'url' => '/tasks/view/{id}',
-                'icon' => 'eye'
+                'icon' => 'eye',
             ],
             'tasks/edit' => [
                 'name' => 'Edit Task',
                 'url' => '/tasks/edit/{id}',
-                'icon' => 'pencil'
+                'icon' => 'pencil',
             ],
             'companies' => [
                 'name' => 'Companies',
                 'url' => '/companies',
-                'icon' => 'briefcase'
+                'icon' => 'briefcase',
             ],
             'companies/create' => [
                 'name' => 'Create New Company',
                 'url' => '/companies/create',
-                'icon' => 'plus'
+                'icon' => 'plus',
             ],
             'companies/view' => [
                 'name' => 'Company Details',
                 'url' => '/companies/view/{id}',
-                'icon' => 'eye'
+                'icon' => 'eye',
             ],
             'companies/edit' => [
                 'name' => 'Edit Company',
                 'url' => '/companies/edit/{id}',
-                'icon' => 'pencil'
+                'icon' => 'pencil',
             ],
             'users' => [
                 'name' => 'Users',
                 'url' => '/users',
-                'icon' => 'users'
+                'icon' => 'users',
             ],
             'users/create' => [
                 'name' => 'Create New User',
                 'url' => '/users/create',
-                'icon' => 'user-plus'
+                'icon' => 'user-plus',
             ],
             'users/view' => [
                 'name' => 'User Details',
                 'url' => '/users/view/{id}',
-                'icon' => 'user'
+                'icon' => 'user',
             ],
             'users/edit' => [
                 'name' => 'Edit User',
                 'url' => '/users/edit/{id}',
-                'icon' => 'pencil'
+                'icon' => 'pencil',
             ],
             'profile' => [
                 'name' => 'My Profile',
                 'url' => '/profile',
-                'icon' => 'user'
+                'icon' => 'user',
             ],
             'roles' => [
                 'name' => 'Roles',
                 'url' => '/roles',
-                'icon' => 'shield'
+                'icon' => 'shield',
             ],
             'milestones' => [
                 'name' => 'Milestones',
                 'url' => '/milestones',
-                'icon' => 'flag'
+                'icon' => 'flag',
             ],
             'sprints' => [
                 'name' => 'Sprints',
                 'url' => '/sprints',
-                'icon' => 'clock'
+                'icon' => 'clock',
             ],
             'sprints/current' => [
                 'name' => 'Current Sprint',
                 'url' => '/sprints/current',
-                'icon' => 'clock'
+                'icon' => 'clock',
             ],
             'sprints/planning' => [
                 'name' => 'Sprint Planning',
                 'url' => '/sprints/planning',
-                'icon' => 'target'
+                'icon' => 'target',
             ],
             'sprints/project' => [
                 'name' => 'Project Sprints',
                 'url' => '/sprints/project/{id}',
-                'icon' => 'clock'
+                'icon' => 'clock',
             ],
             'sprints/view' => [
                 'name' => 'Sprint Details',
                 'url' => '/sprints/view/{id}',
-                'icon' => 'eye'
+                'icon' => 'eye',
             ],
             'sprints/edit' => [
                 'name' => 'Edit Sprint',
                 'url' => '/sprints/edit/{id}',
-                'icon' => 'pencil'
+                'icon' => 'pencil',
             ],
             'sprints/create' => [
                 'name' => 'Create Sprint',
                 'url' => '/sprints/create/{project_id}',
-                'icon' => 'plus'
+                'icon' => 'plus',
             ],
             'sprint-templates' => [
                 'name' => 'Sprint Templates',
                 'url' => '/sprint-templates',
-                'icon' => 'template'
+                'icon' => 'template',
             ],
             'sprint-templates/create' => [
                 'name' => 'Create Sprint Template',
                 'url' => '/sprint-templates/create',
-                'icon' => 'plus'
+                'icon' => 'plus',
             ],
             'sprint-templates/edit' => [
                 'name' => 'Edit Sprint Template',
                 'url' => '/sprint-templates/edit/{id}',
-                'icon' => 'pencil'
-            ]
+                'icon' => 'pencil',
+            ],
         ];
-        
+
         self::$initialized = true;
     }
-    
+
     /**
      * Generate breadcrumb path for a given route
-     * 
+     *
      * @param string $route Current route
      * @param array $params Route parameters
      * @return array Breadcrumb path
@@ -195,39 +196,40 @@ class Breadcrumb
     public static function generate(string $route, array $params = []): array
     {
         self::init();
-        
+
         $path = [];
         $routeParts = explode('/', trim($route, '/'));
-        
+
         // Always start with dashboard
         $path[] = self::$breadcrumbs['dashboard'];
-        
+
         // Check if the exact route exists
         if (isset(self::$breadcrumbs[$route])) {
             $crumb = self::$breadcrumbs[$route];
             $crumb['url'] = self::replaceUrlParams($crumb['url'], $params);
             $path[] = $crumb;
+
             return $path;
         }
-        
+
         // Build breadcrumb path by traversing route parts
         $currentPath = '';
         foreach ($routeParts as $part) {
             $currentPath .= ($currentPath ? '/' : '') . $part;
-            
+
             if (isset(self::$breadcrumbs[$currentPath])) {
                 $crumb = self::$breadcrumbs[$currentPath];
                 $crumb['url'] = self::replaceUrlParams($crumb['url'], $params);
                 $path[] = $crumb;
             }
         }
-        
+
         return $path;
     }
-    
+
     /**
      * Replace URL parameters with actual values
-     * 
+     *
      * @param string $url URL with placeholders
      * @param array $params Route parameters
      * @return string URL with replaced parameters
@@ -239,10 +241,10 @@ class Breadcrumb
             $value = (string)$value;
             $url = str_replace("{{$key}}", $value, $url);
         }
-        
+
         return $url;
     }
-    
+
     /**
      * Render breadcrumbs as HTML
      *
@@ -322,7 +324,7 @@ class Breadcrumb
         $breadcrumbs[] = [
             'name' => 'All Tasks',
             'url' => '/tasks',
-            'icon' => 'check-square'
+            'icon' => 'check-square',
         ];
 
         // Add parent task if this is a subtask
@@ -334,7 +336,7 @@ class Breadcrumb
                     $breadcrumbs[] = [
                         'name' => 'Task #' . $parentTask->id,
                         'url' => '/tasks/view/' . $parentTask->id,
-                        'icon' => ''
+                        'icon' => '',
                     ];
                 }
             } catch (\Exception $e) {
@@ -352,7 +354,7 @@ class Breadcrumb
             'name' => $taskName,
             'url' => '',
             'icon' => '',
-            'copy_url' => $currentUrl
+            'copy_url' => $currentUrl,
         ];
 
         // Render the breadcrumbs
@@ -426,24 +428,24 @@ class Breadcrumb
             $breadcrumbs[] = [
                 'name' => 'Projects',
                 'url' => '/projects',
-                'icon' => 'folder'
+                'icon' => 'folder',
             ];
             $breadcrumbs[] = [
                 'name' => $project->name,
                 'url' => '/projects/view/' . $project->id,
-                'icon' => ''
+                'icon' => '',
             ];
             $breadcrumbs[] = [
                 'name' => 'Sprints',
                 'url' => '/sprints/project/' . $project->id,
-                'icon' => 'clock'
+                'icon' => 'clock',
             ];
         } else {
             // Add general sprints link
             $breadcrumbs[] = [
                 'name' => 'Sprints',
                 'url' => '/sprints',
-                'icon' => 'clock'
+                'icon' => 'clock',
             ];
         }
 
@@ -456,7 +458,7 @@ class Breadcrumb
             'name' => $sprintName,
             'url' => '',
             'icon' => '',
-            'copy_url' => $currentUrl
+            'copy_url' => $currentUrl,
         ];
 
         // Render the breadcrumbs
@@ -510,7 +512,7 @@ class Breadcrumb
 
     /**
      * Get SVG icon for breadcrumb
-     * 
+     *
      * @param string $icon Icon name
      * @return string SVG markup
      */
@@ -531,9 +533,9 @@ class Breadcrumb
             'flag' => '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clip-rule="evenodd"></path></svg>',
             'clock' => '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>',
             'target' => '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>',
-            'template' => '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"></path></svg>'
+            'template' => '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"></path></svg>',
         ];
-        
+
         return $icons[$icon] ?? '';
     }
 

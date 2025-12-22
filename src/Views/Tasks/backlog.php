@@ -25,45 +25,45 @@ $filterOptions = [
     'task' => 'Tasks',
     'epic' => 'Epics',
     'high-priority' => 'High Priority',
-    'unestimated' => 'Unestimated'
+    'unestimated' => 'Unestimated',
 ];
 
 // Define task status labels and colors to match projects style
 $taskStatusMap = [
     1 => [
         'label' => 'OPEN',
-        'color' => 'bg-blue-600'
+        'color' => 'bg-blue-600',
     ],
     2 => [
         'label' => 'IN PROGRESS',
-        'color' => 'bg-yellow-500'
+        'color' => 'bg-yellow-500',
     ],
     3 => [
         'label' => 'ON HOLD',
-        'color' => 'bg-purple-500'
+        'color' => 'bg-purple-500',
     ],
     4 => [
         'label' => 'IN REVIEW',
-        'color' => 'bg-indigo-500'
+        'color' => 'bg-indigo-500',
     ],
     5 => [
         'label' => 'CLOSED',
-        'color' => 'bg-gray-500'
+        'color' => 'bg-gray-500',
     ],
     6 => [
         'label' => 'COMPLETED',
-        'color' => 'bg-green-500'
+        'color' => 'bg-green-500',
     ],
     7 => [
         'label' => 'CANCELLED',
-        'color' => 'bg-red-500'
-    ]
+        'color' => 'bg-red-500',
+    ],
 ];
 
 $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 $breadcrumbs = [
     ['name' => 'Dashboard', 'url' => '/dashboard'],
-    ['name' => 'Backlog', 'url' => '/tasks/backlog']
+    ['name' => 'Backlog', 'url' => '/tasks/backlog'],
 ];
 ?>
 
@@ -141,13 +141,15 @@ $breadcrumbs = [
                             <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
                                 <?php
                                 $readyCount = 0;
-                                if (!empty($tasks)) {
-                                    foreach ($tasks as $task) {
-                                        if ($task->is_ready_for_sprint ?? false) $readyCount++;
-                                    }
-                                }
-                                echo $readyCount;
-                                ?>
+if (!empty($tasks)) {
+    foreach ($tasks as $task) {
+        if ($task->is_ready_for_sprint ?? false) {
+            $readyCount++;
+        }
+    }
+}
+echo $readyCount;
+?>
                             </div>
                         </div>
                     </div>
@@ -162,14 +164,16 @@ $breadcrumbs = [
                             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Unestimated</div>
                             <div class="text-xl font-semibold text-yellow-600 dark:text-yellow-400">
                                 <?php
-                                $unestimatedCount = 0;
-                                if (!empty($tasks)) {
-                                    foreach ($tasks as $task) {
-                                        if (empty($task->story_points)) $unestimatedCount++;
-                                    }
-                                }
-                                echo $unestimatedCount;
-                                ?>
+$unestimatedCount = 0;
+if (!empty($tasks)) {
+    foreach ($tasks as $task) {
+        if (empty($task->story_points)) {
+            $unestimatedCount++;
+        }
+    }
+}
+echo $unestimatedCount;
+?>
                             </div>
                         </div>
                     </div>
@@ -184,14 +188,16 @@ $breadcrumbs = [
                             <div class="text-sm font-medium text-gray-500 dark:text-gray-400">High Priority</div>
                             <div class="text-xl font-semibold text-red-600 dark:text-red-400">
                                 <?php
-                                $highPriorityCount = 0;
-                                if (!empty($tasks)) {
-                                    foreach ($tasks as $task) {
-                                        if ($task->priority === 'high') $highPriorityCount++;
-                                    }
-                                }
-                                echo $highPriorityCount;
-                                ?>
+$highPriorityCount = 0;
+if (!empty($tasks)) {
+    foreach ($tasks as $task) {
+        if ($task->priority === 'high') {
+            $highPriorityCount++;
+        }
+    }
+}
+echo $highPriorityCount;
+?>
                             </div>
                         </div>
                     </div>
@@ -376,26 +382,34 @@ $breadcrumbs = [
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 py-1 text-xs rounded-full
                                                     <?php
-                                                    $displayType = $task->task_type ?? 'task';
-                                                    // If it's a subtask, show different styling
-                                                    if ($task->is_subtask && $displayType === 'task') {
-                                                        echo 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
-                                                    } else {
-                                                        switch($displayType) {
-                                                            case 'story': echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                                            case 'bug': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                                            case 'epic': echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'; break;
-                                                            default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; break;
-                                                        }
-                                                    }
-                                                    ?>">
+                    $displayType = $task->task_type ?? 'task';
+                                        // If it's a subtask, show different styling
+                                        if ($task->is_subtask && $displayType === 'task') {
+                                            echo 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+                                        } else {
+                                            switch ($displayType) {
+                                                case 'story': echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                                                    break;
+                                                case 'bug': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+                                                    break;
+                                                case 'epic': echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+
+                                                    break;
+                                                default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+
+                                                    break;
+                                            }
+                                        }
+                                        ?>">
                                                     <?php
-                                                    if ($task->is_subtask && $displayType === 'task') {
-                                                        echo 'Subtask';
-                                                    } else {
-                                                        echo ucfirst($displayType);
-                                                    }
-                                                    ?>
+                                        if ($task->is_subtask && $displayType === 'task') {
+                                            echo 'Subtask';
+                                        } else {
+                                            echo ucfirst($displayType);
+                                        }
+                                        ?>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">
@@ -411,8 +425,8 @@ $breadcrumbs = [
                                                 <?php
                                                 // Get status info using the same style as projects
                                                 $statusId = $task->status_id ?? 1;
-                                                $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-                                                ?>
+                                        $statusInfo = $taskStatusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                                        ?>
                                                 <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $statusInfo['color'] ?>">
                                                     <?= $statusInfo['label'] ?>
                                                 </span>

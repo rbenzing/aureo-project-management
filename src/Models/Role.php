@@ -1,4 +1,5 @@
 <?php
+
 // file: Models/Role.php
 declare(strict_types=1);
 
@@ -7,11 +8,10 @@ namespace App\Models;
 use App\Core\Database;
 use PDO;
 use RuntimeException;
-use InvalidArgumentException;
 
 /**
  * Role Model
- * 
+ *
  * Handles all role-related database operations
  */
 class Role extends BaseModel
@@ -34,7 +34,7 @@ class Role extends BaseModel
      */
     protected array $fillable = [
         'name',
-        'description'
+        'description',
     ];
 
     /**
@@ -42,7 +42,7 @@ class Role extends BaseModel
      */
     protected array $searchable = [
         'name',
-        'description'
+        'description',
     ];
 
     /**
@@ -50,12 +50,12 @@ class Role extends BaseModel
      */
     protected array $validationRules = [
         'name' => ['required', 'string', 'unique'],
-        'description' => ['string']
+        'description' => ['string'],
     ];
 
     /**
      * Find role with permissions
-     * 
+     *
      * @param int $id
      * @return object|null
      */
@@ -76,7 +76,7 @@ class Role extends BaseModel
 
     /**
      * Get permissions for a role
-     * 
+     *
      * @param int $roleId
      * @return array
      */
@@ -90,6 +90,7 @@ class Role extends BaseModel
                     AND p.is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get role permissions: " . $e->getMessage());
@@ -98,7 +99,7 @@ class Role extends BaseModel
 
     /**
      * Get users for a role
-     * 
+     *
      * @param int $roleId
      * @return array
      */
@@ -113,6 +114,7 @@ class Role extends BaseModel
                     AND u.is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get role users: " . $e->getMessage());
@@ -121,7 +123,7 @@ class Role extends BaseModel
 
     /**
      * Assign permissions to role
-     * 
+     *
      * @param int $roleId
      * @param array $permissionIds
      * @return bool
@@ -165,7 +167,7 @@ class Role extends BaseModel
 
     /**
      * Add single permission to role
-     * 
+     *
      * @param int $roleId
      * @param int $permissionId
      * @return bool
@@ -179,7 +181,7 @@ class Role extends BaseModel
 
             return $this->db->executeInsertUpdate($sql, [
                 ':role_id' => $roleId,
-                ':permission_id' => $permissionId
+                ':permission_id' => $permissionId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to assign permission: " . $e->getMessage());
@@ -188,7 +190,7 @@ class Role extends BaseModel
 
     /**
      * Remove single permission from role
-     * 
+     *
      * @param int $roleId
      * @param int $permissionId
      * @return bool
@@ -202,7 +204,7 @@ class Role extends BaseModel
 
             return $this->db->executeInsertUpdate($sql, [
                 ':role_id' => $roleId,
-                ':permission_id' => $permissionId
+                ':permission_id' => $permissionId,
             ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to remove permission: " . $e->getMessage());
@@ -211,7 +213,7 @@ class Role extends BaseModel
 
     /**
      * Get all roles with permission counts
-     * 
+     *
      * @return array
      */
     public function getAllWithPermissionCounts(): array
@@ -233,6 +235,7 @@ class Role extends BaseModel
                     ORDER BY r.name ASC";
 
             $stmt = $this->db->executeQuery($sql);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get roles with permission counts: " . $e->getMessage());
@@ -241,7 +244,7 @@ class Role extends BaseModel
 
     /**
      * Check if a role has a specific permission
-     * 
+     *
      * @param int $roleId
      * @param int $permissionId
      * @return bool
@@ -254,7 +257,7 @@ class Role extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':role_id' => $roleId,
-                ':permission_id' => $permissionId
+                ':permission_id' => $permissionId,
             ]);
 
             return (bool)$stmt->fetchColumn();
@@ -265,7 +268,7 @@ class Role extends BaseModel
 
     /**
      * Check if a role has a specific permission by name
-     * 
+     *
      * @param int $roleId
      * @param string $permissionName
      * @return bool
@@ -281,7 +284,7 @@ class Role extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':role_id' => $roleId,
-                ':permission_name' => $permissionName
+                ':permission_name' => $permissionName,
             ]);
 
             return (bool)$stmt->fetchColumn();
@@ -292,7 +295,7 @@ class Role extends BaseModel
 
     /**
      * Get all roles with additional details and pagination
-     * 
+     *
      * @param int $page Current page number
      * @param int $limit Items per page
      * @return array
@@ -312,7 +315,7 @@ class Role extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':limit' => $limit,
-                ':offset' => $offset
+                ':offset' => $offset,
             ]);
             $roles = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -323,7 +326,7 @@ class Role extends BaseModel
 
             return [
                 'records' => $roles,
-                'total' => $total
+                'total' => $total,
             ];
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get roles with details: " . $e->getMessage());

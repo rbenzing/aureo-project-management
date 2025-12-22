@@ -1,18 +1,18 @@
 <?php
+
 // file: Controllers/MilestoneController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\Template;
-use App\Utils\Validator;
-use RuntimeException;
-use InvalidArgumentException;
 use App\Services\SecurityService;
+use App\Utils\Validator;
+use InvalidArgumentException;
+use RuntimeException;
 
 class MilestoneController
 {
@@ -183,6 +183,7 @@ class MilestoneController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -197,7 +198,7 @@ class MilestoneController
                 'due_date' => 'nullable|date|after:start_date',
                 'status_id' => 'required|integer|exists:statuses_milestone,id',
                 'project_id' => 'required|integer|exists:projects,id',
-                'epic_id' => 'nullable|integer|exists:milestones,id'
+                'epic_id' => 'nullable|integer|exists:milestones,id',
             ]);
 
             // If this is an epic itself, check for circular references
@@ -219,7 +220,7 @@ class MilestoneController
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
                 'epic_id' => isset($data['epic_id']) ?
-                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
+                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null,
             ];
 
             $milestoneId = $this->milestoneModel->create($milestoneData);
@@ -298,6 +299,7 @@ class MilestoneController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -317,7 +319,7 @@ class MilestoneController
                 'due_date' => 'nullable|date|after:start_date',
                 'status_id' => 'required|integer|exists:statuses_milestone,id',
                 'project_id' => 'required|integer|exists:projects,id',
-                'epic_id' => 'nullable|integer|exists:milestones,id'
+                'epic_id' => 'nullable|integer|exists:milestones,id',
             ]);
 
             // If this is an epic itself, check for circular references
@@ -340,7 +342,7 @@ class MilestoneController
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
                 'epic_id' => isset($data['epic_id']) ?
-                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null
+                    filter_var($data['epic_id'], FILTER_VALIDATE_INT) : null,
             ];
 
             // Update completion date if status is completed
@@ -436,6 +438,7 @@ class MilestoneController
             if (!$projectId) {
                 http_response_code(400);
                 echo json_encode(['error' => 'Invalid project ID']);
+
                 return;
             }
 

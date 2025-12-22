@@ -52,7 +52,9 @@ if (!defined('BASE_PATH')) {
                 <?php foreach ($milestones as $milestone): ?>
                     <?php
                     // Skip if no dates
-                    if (empty($milestone->start_date) && empty($milestone->due_date)) continue;
+                    if (empty($milestone->start_date) && empty($milestone->due_date)) {
+                        continue;
+                    }
 
                     // For positioning in timeline
                     $startTimestamp = !empty($milestone->start_date) ? strtotime($milestone->start_date) : null;
@@ -69,7 +71,9 @@ if (!defined('BASE_PATH')) {
                     }
 
                     // Skip if still no dates
-                    if (!$startTimestamp || !$endTimestamp) continue;
+                    if (!$startTimestamp || !$endTimestamp) {
+                        continue;
+                    }
 
                     // Determine color based on status
                     $bgColor = match($milestone->status_id) {

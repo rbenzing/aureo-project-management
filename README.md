@@ -88,11 +88,22 @@ nano .env
 ```
 
 ### 5. Database Setup
+
+#### Using Migrations (Recommended)
 ```bash
 # Create your MySQL database
 mysql -u root -p -e "CREATE DATABASE aureo_db;"
 
-# Import the schema
+# Run migrations to create tables
+composer migrate
+
+# Check migration status
+composer migrate:status
+```
+
+#### Alternative: Direct SQL Import (Legacy)
+```bash
+# Import the schema directly (not recommended for production)
 mysql -u root -p aureo_db < schema.sql
 
 # Optional: Import sample data
@@ -288,6 +299,76 @@ composer cs:check
 # Auto-fix code style issues
 composer cs:fix
 ```
+
+### Database Migrations
+
+The application uses **Phinx** for database migrations, providing version control for your database schema.
+
+#### Migration Commands
+```bash
+# Run all pending migrations
+composer migrate
+
+# Rollback the last migration
+composer migrate:rollback
+
+# Check migration status
+composer migrate:status
+
+# Create a new migration
+composer migrate:create MyNewMigration
+```
+
+#### Creating a Migration
+```bash
+# Create a new migration file
+composer migrate:create AddColumnToUsers
+
+# Edit the generated file in db/migrations/
+# Example: db/migrations/20231215123456_add_column_to_users.php
+```
+
+Example migration structure:
+```php
+<?php
+
+declare(strict_types=1);
+
+use Phinx\Migration\AbstractMigration;
+
+final class AddColumnToUsers extends AbstractMigration
+{
+    public function up(): void
+    {
+        $this->execute("
+            ALTER TABLE `users`
+            ADD COLUMN `phone_verified` TINYINT(1) UNSIGNED DEFAULT 0
+        ");
+    }
+
+    public function down(): void
+    {
+        $this->execute("
+            ALTER TABLE `users`
+            DROP COLUMN `phone_verified`
+        ");
+    }
+}
+```
+
+#### Migration Best Practices
+- Always test migrations on a development database first
+- Write both `up()` and `down()` methods for reversibility
+- Use transactions for data migrations when possible
+- Never modify existing migrations that have been deployed
+- Keep migrations focused on a single change
+- Use meaningful migration names
+
+#### Important Notes
+- All primary and foreign keys use **BIGINT UNSIGNED** for scalability
+- The initial migration includes all core tables with seed data
+- Migrations are tracked in the `phinxlog` table
+- Configuration is in [phinx.php](phinx.php)
 
 ### Code Structure
 

@@ -17,9 +17,13 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 // Sprint status functions are now available through view_helpers.php
 
 // Helper functions for formatting and styling
-function formatDate($date) {
-    if (!$date) return 'Not set';
+function formatDate($date)
+{
+    if (!$date) {
+        return 'Not set';
+    }
     $settingsService = SettingsService::getInstance();
+
     return $settingsService->formatDate($date);
 }
 
@@ -73,8 +77,8 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                             </button>
                             <?php
                             $statusInfo = getMilestoneStatusInfo($milestone->status_id);
-                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                            ?>
+echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+?>
                         </div>
                         <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                             <span class="flex items-center">
@@ -120,23 +124,23 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
         <?php
         // Check if we have related milestones to show in additional column
         $hasRelatedMilestones = ($milestone->milestone_type === 'epic' && !empty($relatedMilestones));
-        $hasRelatedSprints = !empty($relatedSprints ?? []);
+$hasRelatedSprints = !empty($relatedSprints ?? []);
 
-        // Use CSS Grid with specific column widths: 30% for details, remaining space for tasks/milestones
-        if ($hasRelatedMilestones) {
-            // 30% details + 40% tasks + 30% related milestones
-            $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr 30%; gap: 1.5rem;"';
-            $detailsClass = '';
-            $tasksClass = '';
-            $milestonesClass = '';
-        } else {
-            // 30% details + 70% tasks
-            $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr; gap: 1.5rem;"';
-            $detailsClass = '';
-            $tasksClass = '';
-            $milestonesClass = '';
-        }
-        ?>
+// Use CSS Grid with specific column widths: 30% for details, remaining space for tasks/milestones
+if ($hasRelatedMilestones) {
+    // 30% details + 40% tasks + 30% related milestones
+    $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr 30%; gap: 1.5rem;"';
+    $detailsClass = '';
+    $tasksClass = '';
+    $milestonesClass = '';
+} else {
+    // 30% details + 70% tasks
+    $gridStyle = 'style="display: grid; grid-template-columns: 30% 1fr; gap: 1.5rem;"';
+    $detailsClass = '';
+    $tasksClass = '';
+    $milestonesClass = '';
+}
+?>
         <div class="grid grid-cols-1 md:grid" <?= $gridStyle ?>>
             <!-- Milestone Details Column (30% width) -->
             <div class="<?= $detailsClass ?>">
@@ -181,9 +185,9 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Status:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?php
-                                $statusInfo = getMilestoneStatusInfo($milestone->status_id);
-                                echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                                ?>
+                        $statusInfo = getMilestoneStatusInfo($milestone->status_id);
+echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+?>
                             </div>
 
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Project:</div>
@@ -320,14 +324,14 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <?php
-                                                    $statusInfo = getTaskStatusInfo($task->status_id ?? 1);
-                                                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                                                    ?>
+                    $statusInfo = getTaskStatusInfo($task->status_id ?? 1);
+                                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                            ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                                     <?= $task->first_name && $task->last_name
-                                                        ? htmlspecialchars("{$task->first_name} {$task->last_name}")
-                                                        : 'Unassigned' ?>
+                                                ? htmlspecialchars("{$task->first_name} {$task->last_name}")
+                                                : 'Unassigned' ?>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                                     <?= $task->due_date ? formatDate($task->due_date) : 'Not set' ?>
@@ -375,8 +379,8 @@ $pageTitle = htmlspecialchars($milestone->title) . ' - Milestone Details';
                                         </span>
                                         <?php
                                         $statusInfo = getMilestoneStatusInfo($related->status_id);
-                                        echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                                        ?>
+                                echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                ?>
                                     </div>
                                 </li>
                             <?php endforeach; ?>

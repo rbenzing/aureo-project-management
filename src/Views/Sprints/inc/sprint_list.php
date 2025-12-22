@@ -64,24 +64,24 @@
                     $totalTasks = isset($sprint->task_count) ? $sprint->task_count : 0;
                     $completedTasks = isset($sprint->completed_tasks) ? $sprint->completed_tasks : 0;
                     $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
-                    
+
                     // Calculate days from start to end
                     $sprintDays = 0;
                     $daysLeft = 0;
-                    
+
                     if (isset($sprint->start_date) && isset($sprint->end_date)) {
                         $startDate = new DateTime($sprint->start_date);
                         $endDate = new DateTime($sprint->end_date);
                         $interval = $startDate->diff($endDate);
                         $sprintDays = $interval->days + 1; // +1 to include both start and end dates
-                        
+
                         // Check if sprint is ongoing
                         $now = new DateTime();
                         if (isset($sprint->status_id) && $sprint->status_id == 2 && $now >= $startDate && $now <= $endDate) {
                             $daysLeft = $now->diff($endDate)->days;
                         }
                     }
-                ?>
+                    ?>
                     <tr class="sprint-row hover:bg-gray-50 dark:hover:bg-gray-700" 
                         data-status="<?= $sprint->status_id ?? 0 ?>"
                         data-name="<?= htmlspecialchars($sprint->name ?? '') ?>">
@@ -116,9 +116,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <?php
-                            $statusInfo = getSprintStatusInfo($sprint->status_id ?? 0);
-                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                            ?>
+                                $statusInfo = getSprintStatusInfo($sprint->status_id ?? 0);
+                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                    ?>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center">
@@ -134,7 +134,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <?php if (isset($sprint->status_id) && $sprint->status_id == 4): // Completed ?>
+                            <?php if (isset($sprint->status_id) && $sprint->status_id == 4): // Completed?>
                                 <div class="text-sm font-medium text-gray-900 dark:text-gray-200">
                                     <?= isset($sprint->velocity_percentage) ? round($sprint->velocity_percentage) . '%' : 'N/A' ?>
                                 </div>

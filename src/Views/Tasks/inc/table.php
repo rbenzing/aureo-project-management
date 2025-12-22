@@ -19,21 +19,21 @@ include_once BASE_PATH . '/helper_functions.php';
     <?php
     // Handle both flat array and organized by status array
     $flatTasks = [];
-    if (!empty($tasks)) {
-        // Check if tasks are organized by status (project context) or flat array (other contexts)
-        if (is_array($tasks) && (isset($tasks['open']) || isset($tasks['in_progress']) || isset($tasks['completed']))) {
-            // Tasks are organized by status - flatten them
-            foreach ($tasks as $statusGroup) {
-                if (is_array($statusGroup)) {
-                    $flatTasks = array_merge($flatTasks, $statusGroup);
-                }
+if (!empty($tasks)) {
+    // Check if tasks are organized by status (project context) or flat array (other contexts)
+    if (is_array($tasks) && (isset($tasks['open']) || isset($tasks['in_progress']) || isset($tasks['completed']))) {
+        // Tasks are organized by status - flatten them
+        foreach ($tasks as $statusGroup) {
+            if (is_array($statusGroup)) {
+                $flatTasks = array_merge($flatTasks, $statusGroup);
             }
-        } else {
-            // Tasks are already a flat array
-            $flatTasks = $tasks;
         }
+    } else {
+        // Tasks are already a flat array
+        $flatTasks = $tasks;
     }
-    ?>
+}
+?>
     <?php if (!empty($flatTasks)): ?>
         <?php foreach ($flatTasks as $task): ?>
             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors task-row"
@@ -72,7 +72,7 @@ include_once BASE_PATH . '/helper_functions.php';
                         </span>
                     </div>
                 </td>
-                <?php if (!$isMyTasksView): // Only show assignee column in backlog view ?>
+                <?php if (!$isMyTasksView): // Only show assignee column in backlog view?>
                 <td class="px-6 py-4">
                     <?php if (!empty($task->first_name)): ?>
                         <div class="flex items-center">
@@ -105,10 +105,10 @@ include_once BASE_PATH . '/helper_functions.php';
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <?php
-                    $statusId = $task->status_id ?? 1;
-                    $statusInfo = getTaskStatusInfo($statusId);
-                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                    ?>
+                $statusId = $task->status_id ?? 1;
+            $statusInfo = getTaskStatusInfo($statusId);
+            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+            ?>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <?php if (!empty($task->due_date)): ?>
@@ -168,18 +168,18 @@ include_once BASE_PATH . '/helper_functions.php';
                 <td class="px-6 py-4 text-right">
                     <div class="flex justify-end space-x-3">
                         <?php
-                        // Only show timer button if user has time tracking permissions and can access the task
-                        $canTimeTrack = (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')) &&
-                                      ($viewingOwnTasks ||
-                                       ($task->assigned_to == $currentUserId) ||
-                                       hasUserPermission('manage_tasks'));
+                // Only show timer button if user has time tracking permissions and can access the task
+                $canTimeTrack = (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')) &&
+                              ($viewingOwnTasks ||
+                               ($task->assigned_to == $currentUserId) ||
+                               hasUserPermission('manage_tasks'));
 
-                        // Check if this specific task has an active timer
-                        $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+            // Check if this specific task has an active timer
+            $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
 
-                        if ($canTimeTrack && $task->status_name !== 'Completed' && $task->status_name !== 'Closed'):
-                            if ($isTimerActiveForThisTask):
-                        ?>
+            if ($canTimeTrack && $task->status_name !== 'Completed' && $task->status_name !== 'Closed'):
+                if ($isTimerActiveForThisTask):
+                    ?>
                             <!-- Stop Timer Button -->
                             <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -194,7 +194,7 @@ include_once BASE_PATH . '/helper_functions.php';
                                     </svg>
                                 </button>
                             </form>
-                        <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                        <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all?>
                             <!-- Start Timer Button -->
                             <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">

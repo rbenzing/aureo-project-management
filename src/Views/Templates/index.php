@@ -99,7 +99,7 @@ $currentType = $_GET['type'] ?? '';
                                             'sprint' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
                                             default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                                         };
-                                        ?>">
+                            ?>">
                                         <?= htmlspecialchars(Template::TEMPLATE_TYPES[$template->template_type] ?? $template->template_type) ?>
                                     </span>
                                 </td>
@@ -193,17 +193,17 @@ $currentType = $_GET['type'] ?? '';
                                 <?php
                                 // Calculate range of page numbers to show
                                 $range = 2;
-                                $startPage = max(1, $page - $range);
-                                $endPage = min($totalPages, $page + $range);
+                $startPage = max(1, $page - $range);
+                $endPage = min($totalPages, $page + $range);
 
-                                // Add page number links
-                                for ($i = $startPage; $i <= $endPage; $i++):
-                                ?>
+                // Add page number links
+                for ($i = $startPage; $i <= $endPage; $i++):
+                    ?>
                                     <a href="/templates/page/<?= $i ?>"
                                        aria-current="<?= $i === $page ? 'page' : '' ?>"
                                        class="<?= $i === $page
-                                             ? 'z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 dark:border-indigo-600 text-indigo-600 dark:text-indigo-200'
-                                             : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' ?>
+                                 ? 'z-10 bg-indigo-50 dark:bg-indigo-900 border-indigo-500 dark:border-indigo-600 text-indigo-600 dark:text-indigo-200'
+                                 : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' ?>
                                               relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                         <?= $i ?>
                                     </a>

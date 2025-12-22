@@ -1,4 +1,5 @@
 <?php
+
 // file: Core/Database.php
 declare(strict_types=1);
 
@@ -13,7 +14,6 @@ if (!defined('BASE_PATH')) {
 use PDO;
 use PDOException;
 use RuntimeException;
-use InvalidArgumentException;
 
 class Database
 {
@@ -25,19 +25,29 @@ class Database
     private static bool $logQueries = false;
 
     /**
-     * Private constructor to prevent direct instantiation
+     * Constructor - Now public to support dependency injection
+     * Can be called directly or via getInstance() for singleton pattern
+     *
+     * @param array|null $credentials Optional database credentials
      * @throws RuntimeException
      */
-    private function __construct()
+    public function __construct(?array $credentials = null)
     {
-        $this->loadConfiguration();
+        if ($credentials !== null) {
+            $this->credentials = $credentials;
+            $this->validateCredentials();
+        } else {
+            $this->loadConfiguration();
+        }
         $this->setDefaultOptions();
     }
 
     /**
      * Prevent cloning of the instance
      */
-    private function __clone() {}
+    private function __clone()
+    {
+    }
 
     /**
      * Prevent unserializing of the instance
@@ -48,15 +58,26 @@ class Database
     }
 
     /**
-     * Get Database instance
+     * Get Database singleton instance (for backward compatibility)
      * @return self
+     * @deprecated Use dependency injection instead
      */
     public static function getInstance(): self
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
+    }
+
+    /**
+     * Factory method for creating Database instances (DI-friendly)
+     * @return self
+     */
+    public static function create(): self
+    {
+        return new self();
     }
 
     /**
@@ -71,7 +92,7 @@ class Database
                 'dbname' => $_ENV['DB_NAME'] ?? null,
                 'username' => $_ENV['DB_USERNAME'] ?? null,
                 'password' => $_ENV['DB_PASSWORD'] ?? null,
-                'charset' => $_ENV['DB_CHARSET'] ?? 'utf8mb4'
+                'charset' => $_ENV['DB_CHARSET'] ?? 'utf8mb4',
             ];
 
             $this->validateCredentials();
@@ -86,11 +107,11 @@ class Database
     private function setDefaultOptions(): void
     {
         $this->options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-            PDO::ATTR_PERSISTENT         => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_PERSISTENT => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
         ];
     }
 
@@ -124,6 +145,7 @@ class Database
         if ($this->pdo === null) {
             $this->connect();
         }
+
         return $this->pdo;
     }
 
@@ -164,9 +186,9 @@ class Database
     {
         try {
             $startTime = microtime(true);
-            
+
             $stmt = $this->getConnection()->prepare($sql);
-            
+
             // Ensure numeric indexing for parameters
             $sanitizedParams = [];
             foreach ($params as $key => $value) {
@@ -197,6 +219,7 @@ class Database
             try {
                 $securityService = \App\Services\SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), 'Database query failed');
+
                 throw new RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new RuntimeException('Database query failed');
@@ -215,7 +238,7 @@ class Database
     {
         try {
             $startTime = microtime(true);
-            
+
             $stmt = $this->getConnection()->prepare($sql);
             $success = $stmt->execute($params);
 
@@ -291,7 +314,7 @@ class Database
             'query' => $sql,
             'params' => $params,
             'execution_time' => round($executionTime * 1000, 2) . 'ms',
-            'time' => date('Y-m-d H:i:s')
+            'time' => date('Y-m-d H:i:s'),
         ];
     }
 
@@ -315,7 +338,7 @@ class Database
             'secret',
             'private_key',
             'credit_card',
-            'ssn'
+            'ssn',
         ];
 
         $sanitized = [];
@@ -328,6 +351,7 @@ class Database
             foreach ($sensitiveKeys as $sensitiveKey) {
                 if (stripos($cleanKey, $sensitiveKey) !== false) {
                     $isSensitive = true;
+
                     break;
                 }
             }

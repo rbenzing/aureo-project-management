@@ -1,19 +1,19 @@
 <?php
+
 // file: Controllers/TimeTrackingController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Core\Database;
 use App\Middleware\AuthMiddleware;
-use App\Models\Task;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use App\Utils\Time;
-use RuntimeException;
 use InvalidArgumentException;
 use PDO;
+use RuntimeException;
 
 class TimeTrackingController
 {
@@ -27,7 +27,7 @@ class TimeTrackingController
     {
         $this->authMiddleware = new AuthMiddleware();
         $this->authMiddleware->hasPermission('view_time_tracking');
-        
+
         $this->taskModel = new Task();
         $this->projectModel = new Project();
         $this->userModel = new User();
@@ -58,7 +58,7 @@ class TimeTrackingController
             // Get time entries with filters
             $timeEntries = $this->getTimeEntries($filters, $limit, $offset);
             $totalEntries = $this->getTotalTimeEntries($filters);
-            
+
             // Get time tracking statistics
             $timeData = $this->getTimeData($filters);
 
@@ -78,7 +78,7 @@ class TimeTrackingController
                 'total_pages' => $totalPages,
                 'total' => $totalEntries,
                 'start' => $offset + 1,
-                'end' => min($offset + $limit, $totalEntries)
+                'end' => min($offset + $limit, $totalEntries),
             ];
 
             // Render the view
@@ -159,20 +159,21 @@ class TimeTrackingController
             // Add LIMIT and OFFSET to params
             $params[':limit'] = $limit;
             $params[':offset'] = $offset;
-            
+
             // Use the Database class executeQuery method
             $stmt = $this->db->executeQuery($query, $params);
-            
+
             // Bind integer parameters for LIMIT and OFFSET
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            
+
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
-            
+
         } catch (\Exception $e) {
             error_log("Time entries query error: " . $e->getMessage());
+
             throw new RuntimeException("Failed to fetch time entries: " . $e->getMessage());
         }
     }
@@ -214,10 +215,12 @@ class TimeTrackingController
             }
 
             $result = $this->db->executeQuery($query, $params);
+
             return (int)$result->fetchColumn();
-            
+
         } catch (\Exception $e) {
             error_log("Time entries count query error: " . $e->getMessage());
+
             return 0;
         }
     }
@@ -230,20 +233,21 @@ class TimeTrackingController
         try {
             $stats = [
                 'today' => $this->getTimeByRange('today'),
-                'this_week' => $this->getTimeByRange('this_week'), 
+                'this_week' => $this->getTimeByRange('this_week'),
                 'this_month' => $this->getTimeByRange('this_month'),
-                'billable' => $this->getBillableTime()
+                'billable' => $this->getBillableTime(),
             ];
 
             return $stats;
-            
+
         } catch (\Exception $e) {
             error_log("Time data query error: " . $e->getMessage());
+
             return [
                 'today' => 0,
                 'this_week' => 0,
                 'this_month' => 0,
-                'billable' => 0
+                'billable' => 0,
             ];
         }
     }
@@ -264,6 +268,7 @@ class TimeTrackingController
             WHERE " . $dateCondition['condition'];
 
         $result = $this->db->executeQuery($query, $dateCondition['params']);
+
         return (int)$result->fetchColumn();
     }
 
@@ -280,6 +285,7 @@ class TimeTrackingController
             AND YEAR(start_time) = YEAR(NOW())";
 
         $result = $this->db->executeQuery($query, []);
+
         return (int)$result->fetchColumn();
     }
 
@@ -291,27 +297,27 @@ class TimeTrackingController
         return match($range) {
             'today' => [
                 'condition' => 'DATE(start_time) = CURDATE()',
-                'params' => []
+                'params' => [],
             ],
             'yesterday' => [
                 'condition' => 'DATE(start_time) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)',
-                'params' => []
+                'params' => [],
             ],
             'this_week' => [
                 'condition' => 'start_time >= DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY) AND start_time < DATE_ADD(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY)',
-                'params' => []
+                'params' => [],
             ],
             'last_week' => [
                 'condition' => 'start_time >= DATE_SUB(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY) AND start_time < DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY)',
-                'params' => []
+                'params' => [],
             ],
             'this_month' => [
                 'condition' => 'MONTH(start_time) = MONTH(NOW()) AND YEAR(start_time) = YEAR(NOW())',
-                'params' => []
+                'params' => [],
             ],
             'last_month' => [
                 'condition' => 'start_time >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), "%Y-%m-01") AND start_time < DATE_FORMAT(NOW(), "%Y-%m-01")',
-                'params' => []
+                'params' => [],
             ],
             default => null
         };
@@ -354,7 +360,7 @@ class TimeTrackingController
             // Store timer start in session
             $_SESSION['active_timer'] = [
                 'task_id' => $taskId,
-                'start_time' => time()
+                'start_time' => time(),
             ];
 
             // Add timer start history entry
@@ -413,7 +419,7 @@ class TimeTrackingController
 
             // Update task time
             $taskUpdate = [
-                'time_spent' => ($task->time_spent ?? 0) + $duration
+                'time_spent' => ($task->time_spent ?? 0) + $duration,
             ];
 
             // If task is billable, update billable time too

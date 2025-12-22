@@ -10,6 +10,7 @@ if (!defined('BASE_PATH')) {
 
 use App\Core\Config;
 use App\Services\SettingsService;
+
 ?>
 
 <!DOCTYPE html>
@@ -132,7 +133,7 @@ use App\Services\SettingsService;
                         <option value="">None (Top-level milestone)</option>
                         <?php if (!empty($epics)): ?>
                             <?php foreach ($epics as $epic): ?>
-                                <?php if ($epic->id != $milestone->id): // Prevent self-reference ?>
+                                <?php if ($epic->id != $milestone->id): // Prevent self-reference?>
                                     <option 
                                         value="<?= htmlspecialchars((string)$epic->id) ?>"
                                         <?= ($epic->id == $milestone->epic_id) ? 'selected' : '' ?>
@@ -189,21 +190,21 @@ use App\Services\SettingsService;
                 <!-- Templates Row -->
                 <?php
                 $settingsService = SettingsService::getInstance();
-                $templateSettings = $settingsService->getTemplateSettings();
-                $milestoneTemplateSettings = $templateSettings['milestone'] ?? [];
-                $showQuickTemplates = $milestoneTemplateSettings['show_quick_templates'] ?? true;
-                $showCustomTemplates = $milestoneTemplateSettings['show_custom_templates'] ?? true;
+$templateSettings = $settingsService->getTemplateSettings();
+$milestoneTemplateSettings = $templateSettings['milestone'] ?? [];
+$showQuickTemplates = $milestoneTemplateSettings['show_quick_templates'] ?? true;
+$showCustomTemplates = $milestoneTemplateSettings['show_custom_templates'] ?? true;
 
-                // Filter templates to only show milestone templates
-                $milestoneTemplates = [];
-                if (!empty($templates)) {
-                    foreach ($templates as $template) {
-                        if ($template->template_type === 'milestone') {
-                            $milestoneTemplates[] = $template;
-                        }
-                    }
-                }
-                ?>
+// Filter templates to only show milestone templates
+$milestoneTemplates = [];
+if (!empty($templates)) {
+    foreach ($templates as $template) {
+        if ($template->template_type === 'milestone') {
+            $milestoneTemplates[] = $template;
+        }
+    }
+}
+?>
                 <?php if ($showQuickTemplates || $showCustomTemplates): ?>
                 <div class="grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
                     <?php if ($showQuickTemplates): ?>
@@ -219,9 +220,9 @@ use App\Services\SettingsService;
                             <select id="quick_template_edit" name="quick_template_edit" class="pl-10 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm">
                                 <option value="">Select a quick template...</option>
                                 <?php
-                                $quickTemplates = Config::get('QUICK_MILESTONE_TEMPLATES', []);
-                                foreach ($quickTemplates as $name => $content):
-                                ?>
+                $quickTemplates = Config::get('QUICK_MILESTONE_TEMPLATES', []);
+                        foreach ($quickTemplates as $name => $content):
+                            ?>
                                     <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
                                             data-title="<?= htmlspecialchars($name) ?>"
                                             data-description="<?= htmlspecialchars($content) ?>">

@@ -141,13 +141,14 @@ $activeTab = $_GET['view'] ?? 'table';
             </div>
             <div class="flex items-center space-x-4">
                 <?php
-                    switch($activeTab) {
+                    switch ($activeTab) {
                         case 'table':
                             include BASE_PATH . '/../src/Views/Projects/inc/table_header.php';
+
                             break;
                         default:
                     }
-                ?>
+?>
             </div>
         </div>
 
@@ -164,20 +165,24 @@ $activeTab = $_GET['view'] ?? 'table';
         switch ($activeTab) {
             case 'table':
                 include BASE_PATH . '/../src/Views/Projects/inc/table.php';
+
                 break;
             case 'charts':
                 include BASE_PATH . '/../src/Views/Projects/inc/charts.php';
+
                 break;
             case 'pivot':
                 include BASE_PATH . '/../src/Views/Projects/inc/pivot.php';
+
                 break;
             case 'gantt':
                 include BASE_PATH . '/../src/Views/Projects/inc/gantt.php';
+
                 break;
             default:
                 include BASE_PATH . '/../src/Views/Projects/inc/table.php';
         }
-        ?>
+?>
     </main>
 
     <!-- Footer -->

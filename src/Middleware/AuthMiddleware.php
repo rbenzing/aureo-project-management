@@ -1,4 +1,5 @@
 <?php
+
 // file: Middleware/AuthMiddleware.php
 declare(strict_types=1);
 
@@ -12,7 +13,7 @@ class AuthMiddleware
     private const PATHS = [
         'login' => '/login',
         'dashboard' => '/dashboard',
-        'unauthorized' => '/dashboard'
+        'unauthorized' => '/dashboard',
     ];
 
     private User $userModel;
@@ -33,6 +34,7 @@ class AuthMiddleware
             // Check for session existence
             if (!isset($_SESSION['user'])) {
                 $this->handleUnauthenticated('You must be logged in to access this page.');
+
                 return false;
             }
 
@@ -44,6 +46,7 @@ class AuthMiddleware
             // Validate session timeout
             if ($this->isSessionExpired()) {
                 $this->handleSessionTimeout();
+
                 return false;
             }
 
@@ -63,6 +66,7 @@ class AuthMiddleware
         } catch (\Exception $e) {
             error_log("Authentication error: " . $e->getMessage());
             $this->handleUnauthenticated('An error occurred during authentication.');
+
             return false;
         }
     }
@@ -80,6 +84,7 @@ class AuthMiddleware
 
         if (!$this->checkPermission($permission)) {
             $this->handleUnauthorized();
+
             return false;
         }
 
@@ -103,12 +108,14 @@ class AuthMiddleware
         foreach ($permissions as $permission) {
             if (in_array($permission, $userPermissions, true)) {
                 $hasPermission = true;
+
                 break;
             }
         }
 
         if (!$hasPermission) {
             $this->handleUnauthorized();
+
             return false;
         }
 
@@ -127,10 +134,11 @@ class AuthMiddleware
         }
 
         $userPermissions = $_SESSION['user']['permissions'] ?? [];
-        
+
         foreach ($permissions as $permission) {
             if (!in_array($permission, $userPermissions, true)) {
                 $this->handleUnauthorized();
+
                 return false;
             }
         }
@@ -147,12 +155,14 @@ class AuthMiddleware
         $userId = $_SESSION['user']['profile']['id'] ?? null;
         if (!$userId) {
             $this->handleUnauthenticated('Invalid session data.');
+
             return false;
         }
 
         $user = $this->userModel->find($userId);
         if (!$user || !$user->is_active) {
             $this->handleInactiveAccount();
+
             return false;
         }
 
@@ -241,6 +251,7 @@ class AuthMiddleware
     private function checkPermission(string $permission): bool
     {
         $userPermissions = $_SESSION['user']['permissions'] ?? [];
+
         return in_array($permission, $userPermissions, true);
     }
 

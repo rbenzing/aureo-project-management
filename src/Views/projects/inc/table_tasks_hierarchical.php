@@ -8,8 +8,8 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use App\Utils\Time;
 use App\Utils\Sort;
+use App\Utils\Time;
 
 // Include helper functions for consistent styling
 include_once BASE_PATH . '/../src/Views/Tasks/inc/helper_functions.php';
@@ -26,22 +26,23 @@ $taskStatusMap = [
     4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
     5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
     6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
 ];
 
 // Function to render a task row
-function renderTaskRow($task, $taskStatusMap, $indentLevel = 0) {
+function renderTaskRow($task, $taskStatusMap, $indentLevel = 0)
+{
     $priorityLevel = isset($task->priority) ? $task->priority : 'none';
     $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
     $indentClass = $indentLevel > 0 ? 'pl-' . ($indentLevel * 6) : '';
-    
+
     echo '<tr>';
     echo '<td class="px-6 py-4 whitespace-nowrap ' . $indentClass . '">';
     echo '<a href="/tasks/view/' . $task->id . '" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">';
     echo htmlspecialchars($task->title);
     echo '</a>';
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     if (isset($task->assigned_to) && !empty($task->assigned_to)) {
         echo '<div class="text-sm text-gray-700 dark:text-gray-300">';
@@ -60,20 +61,20 @@ function renderTaskRow($task, $taskStatusMap, $indentLevel = 0) {
         echo '<span class="text-sm text-gray-500 dark:text-gray-400">Unassigned</span>';
     }
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' . getPriorityClasses($priorityLevel) . '">';
     echo getPriorityIcon($priorityLevel);
     echo ucfirst(htmlspecialchars($priorityLevel));
     echo '</span>';
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     echo '<span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap ' . $taskStatus['color'] . '">';
     echo $taskStatus['label'];
     echo '</span>';
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">';
     if (isset($task->due_date) && !empty($task->due_date)) {
         $dueDate = strtotime($task->due_date);
@@ -86,20 +87,21 @@ function renderTaskRow($task, $taskStatusMap, $indentLevel = 0) {
         echo '<span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">—</span>';
     }
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">';
     echo Time::formatSeconds($task->time_spent ?? 0);
     echo '</td>';
-    
+
     echo '</tr>';
 }
 
 // Function to render milestone/epic header
-function renderMilestoneHeader($item, $type) {
+function renderMilestoneHeader($item, $type)
+{
     $bgColor = $type === 'epic' ? 'bg-purple-50 dark:bg-purple-900' : 'bg-blue-50 dark:bg-blue-900';
     $textColor = $type === 'epic' ? 'text-purple-800 dark:text-purple-200' : 'text-blue-800 dark:text-blue-200';
     $icon = $type === 'epic' ? '🎯' : '🏁';
-    
+
     echo '<tr class="' . $bgColor . '">';
     echo '<td colspan="6" class="px-6 py-3 ' . $textColor . ' font-semibold">';
     echo '<div class="flex items-center">';

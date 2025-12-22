@@ -62,7 +62,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'empty_option' => 'Select a task...',
                             'required' => true,
                             'error' => $errors['task_id'] ?? '',
-                            'help_text' => 'Choose the task you worked on.'
+                            'help_text' => 'Choose the task you worked on.',
                         ]) ?>
                     </div>
 
@@ -74,7 +74,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'Start Date',
                             'value' => $formData['start_date'] ?? date('Y-m-d'),
                             'required' => true,
-                            'error' => $errors['start_date'] ?? ''
+                            'error' => $errors['start_date'] ?? '',
                         ]) ?>
                     </div>
 
@@ -85,7 +85,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'Start Time',
                             'value' => $formData['start_time'] ?? '',
                             'required' => true,
-                            'error' => $errors['start_time'] ?? ''
+                            'error' => $errors['start_time'] ?? '',
                         ]) ?>
                     </div>
 
@@ -97,7 +97,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'End Date',
                             'value' => $formData['end_date'] ?? date('Y-m-d'),
                             'required' => true,
-                            'error' => $errors['end_date'] ?? ''
+                            'error' => $errors['end_date'] ?? '',
                         ]) ?>
                     </div>
 
@@ -108,7 +108,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'End Time',
                             'value' => $formData['end_time'] ?? '',
                             'required' => true,
-                            'error' => $errors['end_time'] ?? ''
+                            'error' => $errors['end_time'] ?? '',
                         ]) ?>
                     </div>
 
@@ -141,7 +141,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                                     'value' => $formData['manual_hours'] ?? '',
                                     'placeholder' => '0',
                                     'class' => 'text-center',
-                                    'help_text' => 'Leave blank to use start/end times'
+                                    'help_text' => 'Leave blank to use start/end times',
                                 ]) ?>
 
                                 <?= renderTextInput([
@@ -151,7 +151,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                                     'value' => $formData['manual_minutes'] ?? '',
                                     'placeholder' => '0',
                                     'class' => 'text-center',
-                                    'help_text' => 'Leave blank to use start/end times'
+                                    'help_text' => 'Leave blank to use start/end times',
                                 ]) ?>
                             </div>
                         </div>
@@ -165,7 +165,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'value' => $formData['notes'] ?? '',
                             'placeholder' => 'Add any notes about this time entry...',
                             'rows' => 3,
-                            'error' => $errors['notes'] ?? ''
+                            'error' => $errors['notes'] ?? '',
                         ]) ?>
                     </div>
 
@@ -175,7 +175,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'name' => 'is_billable',
                             'label' => 'This time is billable',
                             'checked' => !empty($formData['is_billable']),
-                            'help_text' => 'Check this if the time should be billed to the client.'
+                            'help_text' => 'Check this if the time should be billed to the client.',
                         ]) ?>
                     </div>
                 </div>
@@ -189,9 +189,9 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'type' => 'button',
                             'text' => 'Use Current Time',
                             'class' => 'bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md',
-                            'onclick' => 'setCurrentTime()'
-                        ]
-                    ]
+                            'onclick' => 'setCurrentTime()',
+                        ],
+                    ],
                 ]) ?>
             </form>
         </div>

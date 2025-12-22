@@ -1,4 +1,5 @@
 <?php
+
 //file: Services/SettingsService.php
 declare(strict_types=1);
 
@@ -14,7 +15,7 @@ use App\Models\Setting;
 
 /**
  * Settings Service
- * 
+ *
  * Centralized service for managing application settings with caching
  */
 class SettingsService
@@ -23,19 +24,27 @@ class SettingsService
     private static ?array $cache = null;
     private static ?SettingsService $instance = null;
 
-    public function __construct()
+    /**
+     * Constructor - Now supports dependency injection
+     *
+     * @param Setting|null $settingModel Optional Setting model instance
+     */
+    public function __construct(?Setting $settingModel = null)
     {
-        $this->settingModel = new Setting();
+        $this->settingModel = $settingModel ?? new Setting();
     }
 
     /**
-     * Get singleton instance
+     * Get singleton instance (for backward compatibility)
+     * @return self
+     * @deprecated Use dependency injection instead
      */
     public static function getInstance(): SettingsService
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 
@@ -46,11 +55,11 @@ class SettingsService
     {
         if (self::$cache === null) {
             self::$cache = $this->settingModel->getAllGrouped();
-            
+
             // Apply defaults if settings don't exist
             $this->applyDefaults();
         }
-        
+
         return self::$cache;
     }
 
@@ -60,6 +69,7 @@ class SettingsService
     public function getSetting(string $category, string $key, string $default = ''): string
     {
         $settings = $this->getAllSettings();
+
         return $settings[$category][$key] ?? $default;
     }
 
@@ -69,6 +79,7 @@ class SettingsService
     public function getSettingBool(string $category, string $key, bool $default = false): bool
     {
         $value = $this->getSetting($category, $key, $default ? '1' : '0');
+
         return $value === '1' || $value === 'true';
     }
 
@@ -78,6 +89,7 @@ class SettingsService
     public function getSettingInt(string $category, string $key, int $default = 0): int
     {
         $value = $this->getSetting($category, $key, (string)$default);
+
         return (int)$value;
     }
 
@@ -93,7 +105,7 @@ class SettingsService
             'autosave_interval' => $this->getSettingInt('general', 'autosave_interval', 0),
             'session_timeout' => $this->getSettingInt('general', 'session_timeout', 3600),
             'time_unit' => $this->getSetting('general', 'time_unit', 'minutes'),
-            'time_precision' => $this->getSettingInt('general', 'time_precision', 15)
+            'time_precision' => $this->getSettingInt('general', 'time_precision', 15),
         ];
     }
 
@@ -103,9 +115,10 @@ class SettingsService
     public function getTimeIntervalSettings(): array
     {
         $generalSettings = $this->getGeneralSettings();
+
         return [
             'time_unit' => $generalSettings['time_unit'],
-            'time_precision' => $generalSettings['time_precision']
+            'time_precision' => $generalSettings['time_precision'],
         ];
     }
 
@@ -117,7 +130,7 @@ class SettingsService
         return [
             'default_task_type' => $this->getSetting('projects', 'default_task_type', 'task'),
             'auto_assign_creator' => $this->getSettingBool('projects', 'auto_assign_creator', true),
-            'require_project_for_tasks' => $this->getSettingBool('projects', 'require_project_for_tasks', false)
+            'require_project_for_tasks' => $this->getSettingBool('projects', 'require_project_for_tasks', false),
         ];
     }
 
@@ -129,7 +142,7 @@ class SettingsService
         return [
             'default_priority' => $this->getSetting('tasks', 'default_priority', 'medium'),
             'auto_estimate_enabled' => $this->getSettingBool('tasks', 'auto_estimate_enabled', false),
-            'story_points_enabled' => $this->getSettingBool('tasks', 'story_points_enabled', true)
+            'story_points_enabled' => $this->getSettingBool('tasks', 'story_points_enabled', true),
         ];
     }
 
@@ -140,7 +153,7 @@ class SettingsService
     {
         return [
             'auto_create_from_sprints' => $this->getSettingBool('milestones', 'auto_create_from_sprints', false),
-            'milestone_notification_days' => $this->getSettingInt('milestones', 'milestone_notification_days', 7)
+            'milestone_notification_days' => $this->getSettingInt('milestones', 'milestone_notification_days', 7),
         ];
     }
 
@@ -161,7 +174,7 @@ class SettingsService
             'auto_move_incomplete_tasks' => $this->getSettingBool('sprints', 'auto_move_incomplete_tasks', true),
             'sprint_notifications_enabled' => $this->getSettingBool('sprints', 'sprint_notifications_enabled', true),
             'working_days' => $this->getSetting('sprints', 'working_days', 'monday,tuesday,wednesday,thursday,friday'),
-            'retrospective_enabled' => $this->getSettingBool('sprints', 'retrospective_enabled', true)
+            'retrospective_enabled' => $this->getSettingBool('sprints', 'retrospective_enabled', true),
         ];
     }
 
@@ -173,20 +186,20 @@ class SettingsService
         return [
             'project' => [
                 'show_quick_templates' => $this->getSettingBool('templates', 'project_show_quick_templates', true),
-                'show_custom_templates' => $this->getSettingBool('templates', 'project_show_custom_templates', true)
+                'show_custom_templates' => $this->getSettingBool('templates', 'project_show_custom_templates', true),
             ],
             'task' => [
                 'show_quick_templates' => $this->getSettingBool('templates', 'task_show_quick_templates', true),
-                'show_custom_templates' => $this->getSettingBool('templates', 'task_show_custom_templates', true)
+                'show_custom_templates' => $this->getSettingBool('templates', 'task_show_custom_templates', true),
             ],
             'milestone' => [
                 'show_quick_templates' => $this->getSettingBool('templates', 'milestone_show_quick_templates', true),
-                'show_custom_templates' => $this->getSettingBool('templates', 'milestone_show_custom_templates', true)
+                'show_custom_templates' => $this->getSettingBool('templates', 'milestone_show_custom_templates', true),
             ],
             'sprint' => [
                 'show_quick_templates' => $this->getSettingBool('templates', 'sprint_show_quick_templates', true),
-                'show_custom_templates' => $this->getSettingBool('templates', 'sprint_show_custom_templates', true)
-            ]
+                'show_custom_templates' => $this->getSettingBool('templates', 'sprint_show_custom_templates', true),
+            ],
         ];
     }
 
@@ -212,7 +225,7 @@ class SettingsService
             'additional_headers' => $this->getSettingBool('security', 'additional_headers', true),
             'hide_error_details' => $this->getSettingBool('security', 'hide_error_details', true),
             'log_security_events' => $this->getSettingBool('security', 'log_security_events', true),
-            'rate_limit_attempts' => $this->getSettingInt('security', 'rate_limit_attempts', 60)
+            'rate_limit_attempts' => $this->getSettingInt('security', 'rate_limit_attempts', 60),
         ];
     }
 
@@ -222,6 +235,7 @@ class SettingsService
     public function getSecuritySetting(string $key, $default = null)
     {
         $settings = $this->getSecuritySettings();
+
         return $settings[$key] ?? $default;
     }
 
@@ -245,7 +259,7 @@ class SettingsService
 
         return array_filter(
             array_map('trim', explode("\n", $domains)),
-            function($domain) {
+            function ($domain) {
                 return !empty($domain) && filter_var('http://' . $domain, FILTER_VALIDATE_URL);
             }
         );
@@ -294,21 +308,21 @@ class SettingsService
                 'autosave_interval' => '0',
                 'session_timeout' => '3600',
                 'time_unit' => 'minutes',
-                'time_precision' => '15'
+                'time_precision' => '15',
             ],
             'projects' => [
                 'default_task_type' => 'task',
                 'auto_assign_creator' => '1',
-                'require_project_for_tasks' => '0'
+                'require_project_for_tasks' => '0',
             ],
             'tasks' => [
                 'default_priority' => 'medium',
                 'auto_estimate_enabled' => '0',
-                'story_points_enabled' => '1'
+                'story_points_enabled' => '1',
             ],
             'milestones' => [
                 'auto_create_from_sprints' => '0',
-                'milestone_notification_days' => '7'
+                'milestone_notification_days' => '7',
             ],
             'sprints' => [
                 'default_sprint_length' => '14',
@@ -322,7 +336,7 @@ class SettingsService
                 'auto_move_incomplete_tasks' => '1',
                 'sprint_notifications_enabled' => '1',
                 'working_days' => 'monday,tuesday,wednesday,thursday,friday',
-                'retrospective_enabled' => '1'
+                'retrospective_enabled' => '1',
             ],
             'security' => [
                 'session_samesite' => 'Lax',
@@ -341,7 +355,7 @@ class SettingsService
                 'additional_headers' => '1',
                 'hide_error_details' => '1',
                 'log_security_events' => '1',
-                'rate_limit_attempts' => '60'
+                'rate_limit_attempts' => '60',
             ],
             'templates' => [
                 'project_show_quick_templates' => '1',
@@ -351,8 +365,8 @@ class SettingsService
                 'milestone_show_quick_templates' => '1',
                 'milestone_show_custom_templates' => '1',
                 'sprint_show_quick_templates' => '1',
-                'sprint_show_custom_templates' => '1'
-            ]
+                'sprint_show_custom_templates' => '1',
+            ],
         ];
 
         // Merge with existing settings
@@ -375,19 +389,22 @@ class SettingsService
     {
         $timeSettings = $this->getTimeIntervalSettings();
         $unit = $targetUnit ?? $timeSettings['time_unit'];
-        
+
         switch ($unit) {
             case 'seconds':
                 return ['value' => $seconds, 'unit' => 'seconds', 'formatted' => $seconds . 's'];
             case 'hours':
                 $hours = round($seconds / 3600, 2);
+
                 return ['value' => $hours, 'unit' => 'hours', 'formatted' => $hours . 'h'];
             case 'days':
                 $days = round($seconds / 86400, 2);
+
                 return ['value' => $days, 'unit' => 'days', 'formatted' => $days . 'd'];
             case 'minutes':
             default:
                 $minutes = round($seconds / 60, 2);
+
                 return ['value' => $minutes, 'unit' => 'minutes', 'formatted' => $minutes . 'm'];
         }
     }
@@ -400,7 +417,7 @@ class SettingsService
         $timeSettings = $this->getTimeIntervalSettings();
         $unit = $timeSettings['time_unit'];
         $precision = $timeSettings['time_precision'];
-        
+
         switch ($unit) {
             case 'seconds':
                 return (string)$precision;
@@ -493,6 +510,7 @@ class SettingsService
                 if ($date->getTimezone()->getName() === 'UTC') {
                     $date->setTimezone(new \DateTimeZone($timezone));
                 }
+
                 return $date->format($format);
             }
 
@@ -500,6 +518,7 @@ class SettingsService
                 $dateObj = new \DateTime($date);
                 // Convert to configured timezone
                 $dateObj->setTimezone(new \DateTimeZone($timezone));
+
                 return $dateObj->format($format);
             }
 
@@ -507,6 +526,7 @@ class SettingsService
         } catch (\Exception $e) {
             // Fallback to original date if timezone conversion fails
             error_log("Date formatting error: " . $e->getMessage());
+
             return (string)$date;
         }
     }
@@ -521,9 +541,11 @@ class SettingsService
 
         try {
             $now = new \DateTime('now', new \DateTimeZone($timezone));
+
             return $now->format($format);
         } catch (\Exception $e) {
             error_log("Current date/time error: " . $e->getMessage());
+
             return date($format);
         }
     }

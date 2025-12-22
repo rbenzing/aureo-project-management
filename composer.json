@@ -11,7 +11,9 @@
     ],
     "require": {
         "php": "^8.1",
+        "php-di/php-di": "^7.0",
         "phpmailer/phpmailer": "^6.0",
+        "robmorgan/phinx": "^0.16",
         "vlucas/phpdotenv": "^5.0"
     },
     "require-dev": {
@@ -31,7 +33,11 @@
         "test": "phpunit --testdox",
         "test:coverage": "phpunit --coverage-html coverage",
         "cs:check": "php-cs-fixer fix --dry-run --diff",
-        "cs:fix": "php-cs-fixer fix"
+        "cs:fix": "php-cs-fixer fix",
+        "migrate": "phinx migrate",
+        "migrate:rollback": "phinx rollback",
+        "migrate:status": "phinx status",
+        "migrate:create": "phinx create"
     },
     "config": {
         "optimize-autoloader": true,

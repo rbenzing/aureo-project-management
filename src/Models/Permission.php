@@ -1,4 +1,5 @@
 <?php
+
 // file: Models/Permission.php
 declare(strict_types=1);
 
@@ -9,13 +10,13 @@ use RuntimeException;
 
 /**
  * Permission Model
- * 
+ *
  * Handles all permission-related database operations
  */
 class Permission extends BaseModel
 {
     protected string $table = 'permissions';
-    
+
     /**
      * Permission properties
      */
@@ -24,32 +25,32 @@ class Permission extends BaseModel
     public ?string $description = null;
     public ?string $created_at = null;
     public ?string $updated_at = null;
-    
+
     /**
      * Define fillable fields
      */
     protected array $fillable = [
-        'name', 'description'
+        'name', 'description',
     ];
-    
+
     /**
      * Define searchable fields
      */
     protected array $searchable = [
-        'name', 'description'
+        'name', 'description',
     ];
-    
+
     /**
      * Define validation rules
      */
     protected array $validationRules = [
         'name' => ['required', 'string', 'unique'],
-        'description' => ['string']
+        'description' => ['string'],
     ];
 
     /**
      * Get permissions by role ID
-     * 
+     *
      * @param int $roleId
      * @return array
      * @throws RuntimeException
@@ -64,6 +65,7 @@ class Permission extends BaseModel
                     AND p.is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':role_id' => $roleId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get permissions for role: " . $e->getMessage());
@@ -72,7 +74,7 @@ class Permission extends BaseModel
 
     /**
      * Associate permissions with a role
-     * 
+     *
      * @param int $roleId
      * @param array $permissionIds
      * @return bool
@@ -94,16 +96,18 @@ class Permission extends BaseModel
                             VALUES (:role_id, :permission_id)";
                     $this->db->executeInsertUpdate($sql, [
                         ':role_id' => $roleId,
-                        ':permission_id' => $permissionId
+                        ':permission_id' => $permissionId,
                     ]);
                 }
             }
 
             $this->db->commit();
+
             return true;
 
         } catch (\Exception $e) {
             $this->db->rollBack();
+
             throw new RuntimeException("Failed to assign permissions: " . $e->getMessage());
         }
     }
@@ -154,58 +158,58 @@ class Permission extends BaseModel
                 'dashboard' => [
                     'label' => 'Dashboard',
                     'icon' => 'chart-bar',
-                    'description' => 'Access to dashboard and analytics'
+                    'description' => 'Access to dashboard and analytics',
                 ],
                 'projects' => [
                     'label' => 'Projects',
                     'icon' => 'folder',
-                    'description' => 'Project management and oversight'
+                    'description' => 'Project management and oversight',
                 ],
                 'tasks' => [
                     'label' => 'Tasks',
                     'icon' => 'clipboard-list',
-                    'description' => 'Task creation and management'
+                    'description' => 'Task creation and management',
                 ],
                 'milestones' => [
                     'label' => 'Milestones',
                     'icon' => 'flag',
-                    'description' => 'Milestone and epic management'
+                    'description' => 'Milestone and epic management',
                 ],
                 'sprints' => [
                     'label' => 'Sprints',
                     'icon' => 'lightning-bolt',
-                    'description' => 'Sprint planning and execution'
+                    'description' => 'Sprint planning and execution',
                 ],
                 'time_tracking' => [
                     'label' => 'Time Tracking',
                     'icon' => 'clock',
-                    'description' => 'Time tracking and reporting'
+                    'description' => 'Time tracking and reporting',
                 ],
                 'users' => [
                     'label' => 'Users',
                     'icon' => 'users',
-                    'description' => 'User account management'
+                    'description' => 'User account management',
                 ],
                 'roles' => [
                     'label' => 'Roles',
                     'icon' => 'shield-check',
-                    'description' => 'Role and permission management'
+                    'description' => 'Role and permission management',
                 ],
                 'companies' => [
                     'label' => 'Companies',
                     'icon' => 'office-building',
-                    'description' => 'Company and organization management'
+                    'description' => 'Company and organization management',
                 ],
                 'templates' => [
                     'label' => 'Templates',
                     'icon' => 'template',
-                    'description' => 'Template creation and management'
+                    'description' => 'Template creation and management',
                 ],
                 'settings' => [
                     'label' => 'Settings',
                     'icon' => 'cog',
-                    'description' => 'System configuration and settings'
-                ]
+                    'description' => 'System configuration and settings',
+                ],
             ];
 
             // Define action levels and their hierarchy
@@ -214,7 +218,7 @@ class Permission extends BaseModel
                 'create' => ['level' => 2, 'label' => 'Create', 'color' => 'green'],
                 'edit' => ['level' => 3, 'label' => 'Edit', 'color' => 'yellow'],
                 'delete' => ['level' => 4, 'label' => 'Delete', 'color' => 'red'],
-                'manage' => ['level' => 5, 'label' => 'Manage All', 'color' => 'purple']
+                'manage' => ['level' => 5, 'label' => 'Manage All', 'color' => 'purple'],
             ];
 
             foreach ($permissions as $permission) {
@@ -227,9 +231,9 @@ class Permission extends BaseModel
                         'config' => $entityConfig[$entity] ?? [
                             'label' => ucwords(str_replace('_', ' ', $entity)),
                             'icon' => 'collection',
-                            'description' => 'Management of ' . str_replace('_', ' ', $entity)
+                            'description' => 'Management of ' . str_replace('_', ' ', $entity),
                         ],
-                        'permissions' => []
+                        'permissions' => [],
                     ];
                 }
 
@@ -239,8 +243,8 @@ class Permission extends BaseModel
                     'description' => $permission->description,
                     'action' => $action,
                     'action_config' => $actionLevels[$action] ?? [
-                        'level' => 0, 'label' => ucfirst($action), 'color' => 'gray'
-                    ]
+                        'level' => 0, 'label' => ucfirst($action), 'color' => 'gray',
+                    ],
                 ];
             }
 
@@ -249,7 +253,7 @@ class Permission extends BaseModel
             foreach (array_keys($entityConfig) as $entity) {
                 if (isset($organized[$entity])) {
                     // Sort permissions by action level
-                    usort($organized[$entity]['permissions'], function($a, $b) {
+                    usort($organized[$entity]['permissions'], function ($a, $b) {
                         return $a['action_config']['level'] <=> $b['action_config']['level'];
                     });
                     $sortedOrganized[$entity] = $organized[$entity];
@@ -268,10 +272,10 @@ class Permission extends BaseModel
             throw new RuntimeException("Failed to organize permissions: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Check if permission exists by name
-     * 
+     *
      * @param string $name
      * @return bool
      */
@@ -280,15 +284,16 @@ class Permission extends BaseModel
         try {
             $sql = "SELECT COUNT(*) FROM permissions WHERE name = :name AND is_deleted = 0";
             $stmt = $this->db->executeQuery($sql, [':name' => $name]);
+
             return (bool)$stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to check if permission exists: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Get permission by name
-     * 
+     *
      * @param string $name
      * @return object|null
      */
@@ -298,15 +303,16 @@ class Permission extends BaseModel
             $sql = "SELECT * FROM permissions WHERE name = :name AND is_deleted = 0";
             $stmt = $this->db->executeQuery($sql, [':name' => $name]);
             $result = $stmt->fetch(PDO::FETCH_OBJ);
+
             return $result ?: null;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get permission by name: " . $e->getMessage());
         }
     }
-    
+
     /**
      * Create a new permission if it doesn't exist
-     * 
+     *
      * @param string $name
      * @param string|null $description
      * @return int Permission ID
@@ -319,13 +325,13 @@ class Permission extends BaseModel
             if ($permission) {
                 return $permission->id;
             }
-            
+
             // Create new permission
             $permissionData = [
                 'name' => $name,
-                'description' => $description
+                'description' => $description,
             ];
-            
+
             return $this->create($permissionData);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to create permission: " . $e->getMessage());
@@ -349,20 +355,23 @@ class Permission extends BaseModel
                 $existing = $this->getByName($permission['name']);
                 if ($existing) {
                     $createdIds[] = $existing->id;
+
                     continue;
                 }
 
                 // Create new permission
                 $createdIds[] = $this->create([
                     'name' => $permission['name'],
-                    'description' => $permission['description'] ?? null
+                    'description' => $permission['description'] ?? null,
                 ]);
             }
 
             $this->db->commit();
+
             return $createdIds;
         } catch (\Exception $e) {
             $this->db->rollBack();
+
             throw new RuntimeException("Failed to bulk create permissions: " . $e->getMessage());
         }
     }
@@ -389,8 +398,8 @@ class Permission extends BaseModel
                     'view_roles', 'create_roles', 'edit_roles', 'delete_roles', 'manage_roles',
                     'view_companies', 'create_companies', 'edit_companies', 'delete_companies', 'manage_companies',
                     'view_templates', 'create_templates', 'edit_templates', 'delete_templates', 'manage_templates',
-                    'view_settings', 'manage_settings'
-                ]
+                    'view_settings', 'manage_settings',
+                ],
             ],
             'manager' => [
                 'name' => 'Project Manager',
@@ -404,8 +413,8 @@ class Permission extends BaseModel
                     'view_time_tracking', 'create_time_tracking', 'edit_time_tracking', 'manage_time_tracking',
                     'view_users', 'edit_users',
                     'view_companies', 'view_roles',
-                    'view_templates', 'create_templates', 'edit_templates'
-                ]
+                    'view_templates', 'create_templates', 'edit_templates',
+                ],
             ],
             'developer' => [
                 'name' => 'Developer',
@@ -417,15 +426,15 @@ class Permission extends BaseModel
                     'view_milestones', 'view_sprints',
                     'view_time_tracking', 'create_time_tracking', 'edit_time_tracking',
                     'view_users', 'view_companies',
-                    'view_templates'
-                ]
+                    'view_templates',
+                ],
             ],
             'client' => [
                 'name' => 'Client',
                 'description' => 'Limited access for external clients and stakeholders',
                 'permissions' => [
-                    'view_dashboard', 'view_projects', 'view_tasks', 'view_milestones', 'view_sprints'
-                ]
+                    'view_dashboard', 'view_projects', 'view_tasks', 'view_milestones', 'view_sprints',
+                ],
             ],
             'viewer' => [
                 'name' => 'Viewer',
@@ -434,9 +443,9 @@ class Permission extends BaseModel
                     'view_dashboard',
                     'view_projects', 'view_tasks', 'view_milestones', 'view_sprints',
                     'view_time_tracking', 'view_users', 'view_companies', 'view_roles',
-                    'view_templates'
-                ]
-            ]
+                    'view_templates',
+                ],
+            ],
         ];
     }
 

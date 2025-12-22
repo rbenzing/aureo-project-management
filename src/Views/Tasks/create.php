@@ -128,27 +128,27 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             'value' => $formData['title'] ?? ($duplicateTask ? $duplicateTask->title . ' (Copy)' : ''),
                             'required' => true,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h7a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />',
-                            'error' => $errors['title'] ?? ''
+                            'error' => $errors['title'] ?? '',
                         ]) ?>
 
                         <!-- Templates Row -->
                         <?php
                         $settingsService = SettingsService::getInstance();
-                        $templateSettings = $settingsService->getTemplateSettings();
-                        $taskTemplateSettings = $templateSettings['task'] ?? [];
-                        $showQuickTemplates = $taskTemplateSettings['show_quick_templates'] ?? true;
-                        $showCustomTemplates = $taskTemplateSettings['show_custom_templates'] ?? true;
+$templateSettings = $settingsService->getTemplateSettings();
+$taskTemplateSettings = $templateSettings['task'] ?? [];
+$showQuickTemplates = $taskTemplateSettings['show_quick_templates'] ?? true;
+$showCustomTemplates = $taskTemplateSettings['show_custom_templates'] ?? true;
 
-                        // Filter templates to only show task templates
-                        $taskTemplates = [];
-                        if (!empty($templates)) {
-                            foreach ($templates as $template) {
-                                if ($template->template_type === 'task') {
-                                    $taskTemplates[] = $template;
-                                }
-                            }
-                        }
-                        ?>
+// Filter templates to only show task templates
+$taskTemplates = [];
+if (!empty($templates)) {
+    foreach ($templates as $template) {
+        if ($template->template_type === 'task') {
+            $taskTemplates[] = $template;
+        }
+    }
+}
+?>
                         <?php if ($showQuickTemplates || $showCustomTemplates): ?>
                         <div class="mb-4 grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
                             <?php if ($showQuickTemplates): ?>
@@ -164,9 +164,9 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                     <select id="quick_template" name="quick_template" class="w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm border-gray-300 dark:border-gray-600">
                                         <option value="">Select a quick template...</option>
                                         <?php
-                                        $quickTemplates = Config::get('QUICK_TASK_TEMPLATES', []);
-                                        foreach ($quickTemplates as $name => $content):
-                                        ?>
+                $quickTemplates = Config::get('QUICK_TASK_TEMPLATES', []);
+                                foreach ($quickTemplates as $name => $content):
+                                    ?>
                                             <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
                                                     data-title="<?= htmlspecialchars($name) ?>"
                                                     data-priority="medium"
@@ -219,7 +219,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             'value' => $formData['description'] ?? ($duplicateTask ? $duplicateTask->description : ''),
                             'rows' => 8,
                             'help_text' => 'Add any additional details or context for this task.',
-                            'error' => $errors['description'] ?? ''
+                            'error' => $errors['description'] ?? '',
                         ]) ?>
 
                         <!-- Acceptance Criteria -->
@@ -230,7 +230,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             'rows' => 6,
                             'placeholder' => 'Define the criteria that must be met for this task to be considered complete...',
                             'help_text' => 'Clear criteria that define when this task is complete.',
-                            'error' => $errors['acceptance_criteria'] ?? ''
+                            'error' => $errors['acceptance_criteria'] ?? '',
                         ]) ?>
                 </div>
             </div>
@@ -276,7 +276,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 'value' => $selectedAssignee,
                                 'options' => $assigneeOptions,
                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
-                                'error' => $errors['assigned_to'] ?? ''
+                                'error' => $errors['assigned_to'] ?? '',
                             ]) ?>
                         </div>
                         <?php else: ?>
@@ -285,21 +285,22 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             <div class="mt-1 flex items-center">
                                 <?php
                                 $assignedUser = null;
-                                foreach ($users as $user) {
-                                    $userId = is_object($user) ? ($user->id ?? null) : ($user['id'] ?? null);
-                                    if ($userId == $assignToUserId) {
-                                        $assignedUser = $user;
-                                        break;
-                                    }
+                            foreach ($users as $user) {
+                                $userId = is_object($user) ? ($user->id ?? null) : ($user['id'] ?? null);
+                                if ($userId == $assignToUserId) {
+                                    $assignedUser = $user;
+
+                                    break;
                                 }
-                                ?>
+                            }
+                            ?>
                                 <?php if ($assignedUser): ?>
                                 <?php
-                                $firstName = is_object($assignedUser) ? ($assignedUser->first_name ?? '') : ($assignedUser['first_name'] ?? '');
-                                $lastName = is_object($assignedUser) ? ($assignedUser->last_name ?? '') : ($assignedUser['last_name'] ?? '');
-                                $initials = substr($firstName, 0, 1) . substr($lastName, 0, 1);
-                                $fullName = trim($firstName . ' ' . $lastName);
-                                ?>
+                            $firstName = is_object($assignedUser) ? ($assignedUser->first_name ?? '') : ($assignedUser['first_name'] ?? '');
+                                    $lastName = is_object($assignedUser) ? ($assignedUser->last_name ?? '') : ($assignedUser['last_name'] ?? '');
+                                    $initials = substr($firstName, 0, 1) . substr($lastName, 0, 1);
+                                    $fullName = trim($firstName . ' ' . $lastName);
+                                    ?>
                                 <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md px-3 py-2">
                                     <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
                                         <span class="text-xs font-medium text-white">
@@ -326,76 +327,76 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                             <?php
                             // Prepare status options with proper labels
                             $statusOptions = [];
-                            $selectedStatusId = $formData['status_id'] ?? ($duplicateTask && $duplicateTask->status_id == 1 ? $duplicateTask->status_id : '');
-                            foreach ($statuses as $status) {
-                                $statusInfo = getTaskStatusInfo($status->id);
-                                $statusOptions[$status->id] = $statusInfo['label'];
-                            }
-                            ?>
+$selectedStatusId = $formData['status_id'] ?? ($duplicateTask && $duplicateTask->status_id == 1 ? $duplicateTask->status_id : '');
+foreach ($statuses as $status) {
+    $statusInfo = getTaskStatusInfo($status->id);
+    $statusOptions[$status->id] = $statusInfo['label'];
+}
+?>
                             <?= renderSelect([
-                                'name' => 'status_id',
-                                'label' => 'Status',
-                                'value' => $selectedStatusId,
-                                'options' => $statusOptions,
-                                'required' => true,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['status_id'] ?? ''
-                            ]) ?>
+    'name' => 'status_id',
+    'label' => 'Status',
+    'value' => $selectedStatusId,
+    'options' => $statusOptions,
+    'required' => true,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['status_id'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Due Date -->
                         <div>
                             <?= renderTextInput([
-                                'name' => 'due_date',
-                                'type' => 'date',
-                                'label' => 'Due Date',
-                                'value' => $formData['due_date'] ?? ($duplicateTask ? $duplicateTask->due_date : ''),
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                'error' => $errors['due_date'] ?? ''
-                            ]) ?>
+    'name' => 'due_date',
+    'type' => 'date',
+    'label' => 'Due Date',
+    'value' => $formData['due_date'] ?? ($duplicateTask ? $duplicateTask->due_date : ''),
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['due_date'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Task Type -->
                         <div>
                             <?php
-                            // Determine the task type value - if duplicating a subtask, show 'subtask' instead of 'task'
-                            $taskTypeValue = $formData['task_type'] ?? ($duplicateTask ? $duplicateTask->task_type : ($projectSettings['default_task_type'] ?? 'task'));
-                            if ($duplicateTask && $duplicateTask->is_subtask && $taskTypeValue === 'task') {
-                                $taskTypeValue = 'subtask';
-                            }
-                            ?>
+// Determine the task type value - if duplicating a subtask, show 'subtask' instead of 'task'
+$taskTypeValue = $formData['task_type'] ?? ($duplicateTask ? $duplicateTask->task_type : ($projectSettings['default_task_type'] ?? 'task'));
+if ($duplicateTask && $duplicateTask->is_subtask && $taskTypeValue === 'task') {
+    $taskTypeValue = 'subtask';
+}
+?>
                             <?= renderSelect([
-                                'name' => 'task_type',
-                                'label' => 'Task Type',
-                                'value' => $taskTypeValue,
-                                'options' => [
-                                    'task' => 'Task',
-                                    'subtask' => 'Subtask',
-                                    'story' => 'User Story',
-                                    'bug' => 'Bug',
-                                    'epic' => 'Epic'
-                                ],
-                                'required' => true,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
-                                'error' => $errors['task_type'] ?? ''
-                            ]) ?>
+    'name' => 'task_type',
+    'label' => 'Task Type',
+    'value' => $taskTypeValue,
+    'options' => [
+        'task' => 'Task',
+        'subtask' => 'Subtask',
+        'story' => 'User Story',
+        'bug' => 'Bug',
+        'epic' => 'Epic',
+    ],
+    'required' => true,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+    'error' => $errors['task_type'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Priority -->
                         <div>
                             <?= renderSelect([
-                                'name' => 'priority',
-                                'label' => 'Priority',
-                                'value' => $formData['priority'] ?? ($duplicateTask ? $duplicateTask->priority : ($taskSettings['default_priority'] ?? 'none')),
-                                'options' => [
-                                    'none' => 'None',
-                                    'low' => 'Low',
-                                    'medium' => 'Medium',
-                                    'high' => 'High'
-                                ],
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
-                                'error' => $errors['priority'] ?? ''
-                            ]) ?>
+    'name' => 'priority',
+    'label' => 'Priority',
+    'value' => $formData['priority'] ?? ($duplicateTask ? $duplicateTask->priority : ($taskSettings['default_priority'] ?? 'none')),
+    'options' => [
+        'none' => 'None',
+        'low' => 'Low',
+        'medium' => 'Medium',
+        'high' => 'High',
+    ],
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
+    'error' => $errors['priority'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Backlog Priority (Hidden - controlled by drag & drop) -->
@@ -406,74 +407,74 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                         <!-- Project Selection -->
                         <div>
                             <?php
-                            $projectRequired = $projectSettings['require_project_for_tasks'] ?? false;
-                            $projectLabel = $projectRequired ? 'Project <span class="text-red-500">*</span>' : 'Project';
-                            ?>
+$projectRequired = $projectSettings['require_project_for_tasks'] ?? false;
+$projectLabel = $projectRequired ? 'Project <span class="text-red-500">*</span>' : 'Project';
+?>
                             <?= renderSelect([
-                                'name' => 'project_id',
-                                'label' => $projectLabel,
-                                'value' => $preSelectedProject ?? '',
-                                'options' => array_column($projects['records'], 'name', 'id'),
-                                'empty_option' => 'Select a project',
-                                'required' => $projectRequired,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
-                                'error' => $errors['project_id'] ?? ''
-                            ]) ?>
+    'name' => 'project_id',
+    'label' => $projectLabel,
+    'value' => $preSelectedProject ?? '',
+    'options' => array_column($projects['records'], 'name', 'id'),
+    'empty_option' => 'Select a project',
+    'required' => $projectRequired,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
+    'error' => $errors['project_id'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Parent Task (for subtasks) -->
                         <div>
                             <?= renderSelect([
-                                'name' => 'parent_task_id',
-                                'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
-                                'value' => $formData['parent_task_id'] ?? '',
-                                'options' => [], // Will be populated via JavaScript
-                                'empty_option' => 'None (Main task)',
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
-                                'help_text' => 'Select a parent task to make this a subtask',
-                                'error' => $errors['parent_task_id'] ?? ''
-                            ]) ?>
+    'name' => 'parent_task_id',
+    'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
+    'value' => $formData['parent_task_id'] ?? '',
+    'options' => [], // Will be populated via JavaScript
+    'empty_option' => 'None (Main task)',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+    'help_text' => 'Select a parent task to make this a subtask',
+    'error' => $errors['parent_task_id'] ?? '',
+]) ?>
                             <input type="hidden" name="is_subtask" id="is_subtask" value="0">
                         </div>
 
                         <!-- Start Date -->
                         <div>
                             <?= renderTextInput([
-                                'name' => 'start_date',
-                                'type' => 'date',
-                                'label' => 'Start Date',
-                                'value' => $formData['start_date'] ?? ($duplicateTask ? $duplicateTask->start_date : ''),
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                'error' => $errors['start_date'] ?? ''
-                            ]) ?>
+    'name' => 'start_date',
+    'type' => 'date',
+    'label' => 'Start Date',
+    'value' => $formData['start_date'] ?? ($duplicateTask ? $duplicateTask->start_date : ''),
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['start_date'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Story Points -->
                         <div>
                             <?= renderSelect([
-                                'name' => 'story_points',
-                                'label' => 'Story Points',
-                                'value' => $formData['story_points'] ?? ($duplicateTask ? $duplicateTask->story_points : ''),
-                                'options' => [
-                                    '' => 'None',
-                                    '1' => '1',
-                                    '2' => '2',
-                                    '3' => '3',
-                                    '5' => '5',
-                                    '8' => '8',
-                                    '13' => '13'
-                                ],
-                                'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
-                                'error' => $errors['story_points'] ?? ''
-                            ]) ?>
+    'name' => 'story_points',
+    'label' => 'Story Points',
+    'value' => $formData['story_points'] ?? ($duplicateTask ? $duplicateTask->story_points : ''),
+    'options' => [
+        '' => 'None',
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '5' => '5',
+        '8' => '8',
+        '13' => '13',
+    ],
+    'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
+    'error' => $errors['story_points'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Estimated Time -->
                         <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
                         <div>
                             <?php
-                            $timeUnit = $timeSettings['time_unit'] ?? 'minutes';
+$timeUnit = $timeSettings['time_unit'] ?? 'minutes';
                             $timeStep = $timeSettings['time_precision'] ?? 15;
                             $timeLabel = ucfirst($timeUnit);
 
@@ -485,55 +486,55 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 // Convert from seconds to display unit
                                 $estimatedTimeValue = \App\Utils\Time::convertFromSeconds($duplicateTask->estimated_time, $timeUnit);
                             }
-                            ?>
+?>
                             <?= renderTextInput([
-                                'name' => 'estimated_time',
-                                'type' => 'number',
-                                'label' => "Estimated Time ({$timeLabel})",
-                                'value' => $estimatedTimeValue,
-                                'min' => '0',
-                                'step' => (string)$timeStep,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['estimated_time'] ?? ''
-                            ]) ?>
+    'name' => 'estimated_time',
+    'type' => 'number',
+    'label' => "Estimated Time ({$timeLabel})",
+    'value' => $estimatedTimeValue,
+    'min' => '0',
+    'step' => (string)$timeStep,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['estimated_time'] ?? '',
+]) ?>
                         </div>
                         <?php endif; ?>
 
                         <!-- Sprint Planning -->
                         <div>
                             <?= renderCheckbox([
-                                'name' => 'is_ready_for_sprint',
-                                'label' => 'Ready for Sprint Planning',
-                                'checked' => (isset($formData['is_ready_for_sprint']) && $formData['is_ready_for_sprint']) || ($duplicateTask && $duplicateTask->is_ready_for_sprint),
-                                'help_text' => 'Mark this task as ready to be included in sprint planning',
-                                'error' => $errors['is_ready_for_sprint'] ?? ''
-                            ]) ?>
+    'name' => 'is_ready_for_sprint',
+    'label' => 'Ready for Sprint Planning',
+    'checked' => (isset($formData['is_ready_for_sprint']) && $formData['is_ready_for_sprint']) || ($duplicateTask && $duplicateTask->is_ready_for_sprint),
+    'help_text' => 'Mark this task as ready to be included in sprint planning',
+    'error' => $errors['is_ready_for_sprint'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Time Spent -->
                         <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
                             <?= renderTextInput([
-                                'name' => 'time_spent',
-                                'type' => 'number',
-                                'label' => 'Time Spent (minutes)',
-                                'value' => $formData['time_spent'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->time_spent) : ''),
-                                'min' => '0',
-                                'step' => '15',
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['time_spent'] ?? ''
-                            ]) ?>
+    'name' => 'time_spent',
+    'type' => 'number',
+    'label' => 'Time Spent (minutes)',
+    'value' => $formData['time_spent'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->time_spent) : ''),
+    'min' => '0',
+    'step' => '15',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['time_spent'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Billable Toggle -->
                         <div>
                             <?= renderCheckbox([
-                                'name' => 'is_hourly',
-                                'label' => 'Mark as billable',
-                                'checked' => (isset($formData['is_hourly']) && $formData['is_hourly']) || ($duplicateTask && $duplicateTask->is_hourly),
-                                'help_text' => 'Track billable hours for client invoicing',
-                                'error' => $errors['is_hourly'] ?? ''
-                            ]) ?>
+    'name' => 'is_hourly',
+    'label' => 'Mark as billable',
+    'checked' => (isset($formData['is_hourly']) && $formData['is_hourly']) || ($duplicateTask && $duplicateTask->is_hourly),
+    'help_text' => 'Track billable hours for client invoicing',
+    'error' => $errors['is_hourly'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Hourly Rate (conditional on billable) -->
@@ -552,14 +553,14 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                                 </div>
                                 <div>
                                     <?= renderTextInput([
-                                        'name' => 'billable_time',
-                                        'type' => 'number',
-                                        'label' => 'Billable Time (minutes)',
-                                        'value' => $formData['billable_time'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->billable_time) : ''),
-                                        'min' => '0',
-                                        'step' => '15',
-                                        'error' => $errors['billable_time'] ?? ''
-                                    ]) ?>
+            'name' => 'billable_time',
+            'type' => 'number',
+            'label' => 'Billable Time (minutes)',
+            'value' => $formData['billable_time'] ?? ($duplicateTask ? formatTimeInput($duplicateTask->billable_time) : ''),
+            'min' => '0',
+            'step' => '15',
+            'error' => $errors['billable_time'] ?? '',
+        ]) ?>
                                 </div>
                             </div>
                         </div>

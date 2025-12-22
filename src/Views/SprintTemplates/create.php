@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>

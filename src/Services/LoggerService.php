@@ -1,4 +1,5 @@
 <?php
+
 //file: Services/LoggerService.php
 declare(strict_types=1);
 
@@ -17,24 +18,35 @@ class LoggerService
     private string $logFile;
     private bool $enabled;
 
-    private function __construct()
+    /**
+     * Constructor - Now public to support dependency injection
+     *
+     * @param string|null $logDirectory Optional custom log directory
+     */
+    public function __construct(?string $logDirectory = null)
     {
-        $this->logDirectory = dirname(BASE_PATH, 2) . '/log';
+        $this->logDirectory = $logDirectory ?? dirname(BASE_PATH, 2) . '/log';
         $this->logFile = $this->logDirectory . '/aureo.log';
         $this->enabled = true;
-        
+
         // Ensure log directory exists
         $this->ensureLogDirectoryExists();
-        
+
         // Configure PHP error logging
         $this->configurePHPErrorLogging();
     }
 
+    /**
+     * Get singleton instance (for backward compatibility)
+     * @return self
+     * @deprecated Use dependency injection instead
+     */
     public static function getInstance(): LoggerService
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 
@@ -47,6 +59,7 @@ class LoggerService
             if (!mkdir($this->logDirectory, 0755, true)) {
                 $this->enabled = false;
                 error_log("Failed to create log directory: {$this->logDirectory}");
+
                 return;
             }
         }
@@ -54,6 +67,7 @@ class LoggerService
         if (!is_writable($this->logDirectory)) {
             $this->enabled = false;
             error_log("Log directory is not writable: {$this->logDirectory}");
+
             return;
         }
     }
@@ -70,10 +84,10 @@ class LoggerService
         // Set custom error log location
         ini_set('log_errors', '1');
         ini_set('error_log', $this->logFile);
-        
+
         // Set error reporting level
         error_reporting(E_ALL);
-        
+
         // Don't display errors to users (log them instead)
         ini_set('display_errors', '0');
         ini_set('display_startup_errors', '0');
@@ -123,7 +137,7 @@ class LoggerService
             $exception->getLine(),
             $exception->getTraceAsString()
         );
-        
+
         $this->log('ERROR', $message, $context);
     }
 
@@ -133,15 +147,15 @@ class LoggerService
     public function query(string $sql, array $params = [], float $executionTime = null): void
     {
         $message = "SQL Query: {$sql}";
-        
+
         if (!empty($params)) {
             $message .= "\nParameters: " . json_encode($params);
         }
-        
+
         if ($executionTime !== null) {
             $message .= "\nExecution time: {$executionTime}s";
         }
-        
+
         $this->log('DEBUG', $message);
     }
 
@@ -154,9 +168,9 @@ class LoggerService
             'user_id' => $userId,
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-            'details' => $details
+            'details' => $details,
         ];
-        
+
         $this->log('INFO', "User Activity: {$action}", $context);
     }
 
@@ -167,7 +181,7 @@ class LoggerService
     {
         $context['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $context['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-        
+
         $this->log('WARNING', "Security Event: {$event}", $context);
     }
 
@@ -186,7 +200,7 @@ class LoggerService
             $userId = $_SESSION['user']['profile']['id'] ?? 'anonymous';
             $requestUri = $_SERVER['REQUEST_URI'] ?? 'unknown';
             $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
-            
+
             $logEntry = sprintf(
                 "[%s] [%s] [Session:%s] [User:%s] [%s %s] %s",
                 $timestamp,
@@ -197,15 +211,15 @@ class LoggerService
                 $requestUri,
                 $message
             );
-            
+
             if (!empty($context)) {
                 $logEntry .= "\nContext: " . json_encode($context, JSON_PRETTY_PRINT);
             }
-            
+
             $logEntry .= "\n" . str_repeat('-', 80) . "\n";
-            
+
             file_put_contents($this->logFile, $logEntry, FILE_APPEND | LOCK_EX);
-            
+
         } catch (Exception $e) {
             // Fallback to PHP's error_log if our logging fails
             error_log("LoggerService failed: " . $e->getMessage());
@@ -236,6 +250,7 @@ class LoggerService
         }
 
         $logLines = explode("\n", $content);
+
         return array_slice($logLines, -$lines);
     }
 
@@ -247,6 +262,7 @@ class LoggerService
         if (file_exists($this->logFile)) {
             return unlink($this->logFile);
         }
+
         return true;
     }
 

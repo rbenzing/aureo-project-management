@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -243,19 +244,20 @@ use App\Core\Config;
                                     class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
                                     <option value="">Select company to add</option>
                                     <?php foreach ($companies['records'] as $company): ?>
-                                        <?php 
+                                        <?php
                                         // Skip user's primary company and already assigned companies
                                         $isAlreadyAssigned = false;
                                         if (!empty($user->companies)) {
                                             foreach ($user->companies as $userCompany) {
                                                 if ($userCompany->id == $company->id) {
                                                     $isAlreadyAssigned = true;
+
                                                     break;
                                                 }
                                             }
                                         }
                                         if ($company->id != $user->company_id && !$isAlreadyAssigned):
-                                        ?>
+                                            ?>
                                             <option value="<?= htmlspecialchars((string)$company->id); ?>">
                                                 <?= htmlspecialchars($company->name); ?>
                                             </option>

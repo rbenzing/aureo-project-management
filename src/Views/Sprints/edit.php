@@ -91,7 +91,7 @@ unset($_SESSION['form_data']);
                             'value' => $formData['name'] ?? $sprint->name ?? '',
                             'required' => true,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />',
-                            'placeholder' => 'Enter sprint name...'
+                            'placeholder' => 'Enter sprint name...',
                         ]) ?>
 
                         <!-- Description -->
@@ -101,7 +101,7 @@ unset($_SESSION['form_data']);
                             'value' => $formData['description'] ?? $sprint->description ?? '',
                             'rows' => 4,
                             'placeholder' => 'Describe the sprint goals and objectives...',
-                            'help_text' => 'Provide a clear description of what this sprint aims to accomplish.'
+                            'help_text' => 'Provide a clear description of what this sprint aims to accomplish.',
                         ]) ?>
 
                         <!-- Sprint Dates -->
@@ -113,7 +113,7 @@ unset($_SESSION['form_data']);
                                 'label' => 'Start Date',
                                 'value' => $formData['start_date'] ?? $sprint->start_date ?? '',
                                 'required' => true,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />'
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
                             ]) ?>
 
                             <!-- End Date -->
@@ -123,7 +123,7 @@ unset($_SESSION['form_data']);
                                 'label' => 'End Date',
                                 'value' => $formData['end_date'] ?? $sprint->end_date ?? '',
                                 'required' => true,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />'
+                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
                             ]) ?>
                         </div>
 
@@ -164,8 +164,8 @@ unset($_SESSION['form_data']);
                                             <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                                 <?php
                                                 $taskStatusInfo = getTaskStatusInfo($taskObj->status_id ?? 1);
-                                                echo renderStatusPill($taskStatusInfo['label'], $taskStatusInfo['color'], 'sm');
-                                                ?>
+                                    echo renderStatusPill($taskStatusInfo['label'], $taskStatusInfo['color'], 'sm');
+                                    ?>
                                                 <?php if (!empty($taskObj->due_date)): ?>
                                                     <span>Due: <?= date('M j, Y', strtotime($taskObj->due_date)) ?></span>
                                                 <?php endif; ?>
@@ -178,20 +178,23 @@ unset($_SESSION['form_data']);
                             <!-- Available Project Tasks (not in sprint) -->
                             <?php if (!empty($projectTasks)): ?>
                                 <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-4 mb-2">Available Project Tasks:</h3>
-                                <?php 
+                                <?php
                                 // Skip tasks already in sprint
-                                $sprintTaskIds = array_map(function($task) {
+                                $sprintTaskIds = array_map(function ($task) {
                                     $taskObj = is_array($task) ? (object)$task : $task;
+
                                     return $taskObj->id ?? 0;
                                 }, $sprintTasks ?? []);
-                                
+
                                 foreach ($projectTasks as $task):
                                     // Convert array to object if needed
                                     $taskObj = is_array($task) ? (object)$task : $task;
 
                                     // Skip if task is already in sprint
-                                    if (in_array($taskObj->id ?? 0, $sprintTaskIds)) continue;
-                                ?>
+                                    if (in_array($taskObj->id ?? 0, $sprintTaskIds)) {
+                                        continue;
+                                    }
+                                    ?>
                                     <div class="task-item flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
                                         <input
                                             type="checkbox"
@@ -204,9 +207,9 @@ unset($_SESSION['form_data']);
                                             <div class="text-sm font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($taskObj->title ?? 'Untitled Task') ?></div>
                                             <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                                 <?php
-                                                $taskStatusInfo = getTaskStatusInfo($taskObj->status_id ?? 1);
-                                                echo renderStatusPill($taskStatusInfo['label'], $taskStatusInfo['color'], 'sm');
-                                                ?>
+                                                    $taskStatusInfo = getTaskStatusInfo($taskObj->status_id ?? 1);
+                                    echo renderStatusPill($taskStatusInfo['label'], $taskStatusInfo['color'], 'sm');
+                                    ?>
                                                 <span class="ml-2"></span>
                                                 <?php if (!empty($taskObj->due_date)): ?>
                                                     <span>Due: <?= date('M j, Y', strtotime($taskObj->due_date)) ?></span>
@@ -240,21 +243,21 @@ unset($_SESSION['form_data']);
                         <?php
                         // Prepare status options with proper labels
                         $statusOptions = [];
-                        foreach ($statuses ?? [] as $status) {
-                            $statusInfo = getSprintStatusInfo($status->id);
-                            $statusOptions[$status->id] = $statusInfo['label'];
-                        }
-                        ?>
+foreach ($statuses ?? [] as $status) {
+    $statusInfo = getSprintStatusInfo($status->id);
+    $statusOptions[$status->id] = $statusInfo['label'];
+}
+?>
                         <?= renderSelect([
-                            'name' => 'status_id',
-                            'label' => 'Status',
-                            'value' => $formData['status_id'] ?? $sprint->status_id ?? '',
-                            'options' => $statusOptions,
-                            'required' => true,
-                            'form' => 'sprint-form',
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                            'help_text' => isset($sprint->status_id) && $sprint->status_id == 2 ? 'Changing status from Active may affect task scheduling.' : ''
-                        ]) ?>
+    'name' => 'status_id',
+    'label' => 'Status',
+    'value' => $formData['status_id'] ?? $sprint->status_id ?? '',
+    'options' => $statusOptions,
+    'required' => true,
+    'form' => 'sprint-form',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'help_text' => isset($sprint->status_id) && $sprint->status_id == 2 ? 'Changing status from Active may affect task scheduling.' : '',
+]) ?>
                     </div>
 
                     <!-- Sprint Info -->
@@ -280,9 +283,9 @@ unset($_SESSION['form_data']);
                             </div>
                             <div class="mt-2">
                                 <?php
-                                $statusInfo = getSprintStatusInfo($sprint->status_id ?? 1);
-                                echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                                ?>
+        $statusInfo = getSprintStatusInfo($sprint->status_id ?? 1);
+echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+?>
                             </div>
                         </div>
 
@@ -333,9 +336,9 @@ unset($_SESSION['form_data']);
     // Include view helpers for centralized status functions
     require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
-    // Include sprint helpers for additional functions
-    include_once BASE_PATH . '/inc/helpers.php';
-    ?>
+// Include sprint helpers for additional functions
+include_once BASE_PATH . '/inc/helpers.php';
+?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

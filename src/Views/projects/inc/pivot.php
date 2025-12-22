@@ -21,7 +21,7 @@ $statusLabels = [
     3 => 'Completed',
     4 => 'On Hold',
     5 => 'Delayed',
-    6 => 'Cancelled'
+    6 => 'Cancelled',
 ];
 
 $statusColors = [
@@ -30,7 +30,7 @@ $statusColors = [
     3 => 'bg-green-600',
     4 => 'bg-purple-600',
     5 => 'bg-red-600',
-    6 => 'bg-gray-600'
+    6 => 'bg-gray-600',
 ];
 
 // Create arrays to hold unique companies and owners
@@ -46,30 +46,33 @@ if (!empty($projects)) {
         if (isset($project->company_name) && !empty($project->company_name)) {
             $companies[$project->company_name] = $project->company_name;
         }
-        
+
         if (isset($project->owner) && !empty($project->owner)) {
             $owners[$project->owner] = $project->owner;
         }
-        
+
         // Apply filters
         $includeProject = true;
-        
+
         if (!empty($filterType) && !empty($filterValue)) {
             switch ($filterType) {
                 case 'status':
                     $includeProject = isset($project->status_id) && $project->status_id == $filterValue;
+
                     break;
                 case 'company':
                     $includeProject = isset($project->company_name) && $project->company_name == $filterValue;
+
                     break;
                 case 'owner':
                     $includeProject = isset($project->owner) && $project->owner == $filterValue;
+
                     break;
                 default:
                     $includeProject = true;
             }
         }
-        
+
         if ($includeProject) {
             $filteredProjects[] = $project;
         }
@@ -144,13 +147,13 @@ asort($owners);
     
     <!-- Status count summary -->
     <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6">
-        <?php foreach ($statusLabels as $statusId => $statusLabel): 
+        <?php foreach ($statusLabels as $statusId => $statusLabel):
             $count = count($groupedProjects[$statusId]);
-            $totalCount = array_reduce($groupedProjects, function($carry, $group) {
+            $totalCount = array_reduce($groupedProjects, function ($carry, $group) {
                 return $carry + count($group);
             }, 0);
             $percentage = $totalCount > 0 ? round(($count / $totalCount) * 100) : 0;
-        ?>
+            ?>
             <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= $statusLabel ?></div>
                 <div class="text-xl font-bold text-gray-900 dark:text-white"><?= $count ?></div>
@@ -164,7 +167,7 @@ asort($owners);
     <!-- Project Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <?php foreach ($groupedProjects as $statusId => $statusProjects): ?>
-            <?php if (!empty($statusProjects) || empty($filterValue)): // Only show non-empty columns or all when no filter ?>
+            <?php if (!empty($statusProjects) || empty($filterValue)): // Only show non-empty columns or all when no filter?>
                 <div class="bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden">
                     <div class="<?= $statusColors[$statusId] ?? 'bg-gray-600' ?> px-4 py-2 font-medium text-white">
                         <?= $statusLabels[$statusId] ?? 'Unknown' ?> (<?= count($statusProjects) ?>)
@@ -184,12 +187,12 @@ asort($owners);
                                         </div>
                                         
                                         <?php if (isset($project->due_date) && !empty($project->due_date)): ?>
-                                            <?php 
-                                                $dueDate = new DateTime($project->due_date);
-                                                $today = new DateTime();
-                                                $interval = $today->diff($dueDate);
-                                                $isPast = $dueDate < $today;
-                                                $isSoon = !$isPast && $interval->days <= 7;
+                                            <?php
+                                                    $dueDate = new DateTime($project->due_date);
+                                            $today = new DateTime();
+                                            $interval = $today->diff($dueDate);
+                                            $isPast = $dueDate < $today;
+                                            $isSoon = !$isPast && $interval->days <= 7;
                                             ?>
                                             <div class="mt-2 text-xs <?= $isPast ? 'text-red-600 dark:text-red-400' : ($isSoon ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400') ?>">
                                                 Due: <?= $dueDate->format('M j, Y') ?>
@@ -205,16 +208,16 @@ asort($owners);
                                             <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                                                 <?php
                                                 $totalTasks = count($project->tasks);
-                                                $completedTasks = 0;
-                                                
-                                                foreach ($project->tasks as $task) {
-                                                    if (isset($task->status_id) && $task->status_id == 6) { // Assuming 6 is completed
-                                                        $completedTasks++;
-                                                    }
+                                            $completedTasks = 0;
+
+                                            foreach ($project->tasks as $task) {
+                                                if (isset($task->status_id) && $task->status_id == 6) { // Assuming 6 is completed
+                                                    $completedTasks++;
                                                 }
-                                                
-                                                $completionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
-                                                ?>
+                                            }
+
+                                            $completionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
+                                            ?>
                                                 <div class="flex justify-between mb-1">
                                                     <span><?= $completedTasks ?>/<?= $totalTasks ?> tasks</span>
                                                     <span><?= round($completionRate) ?>%</span>

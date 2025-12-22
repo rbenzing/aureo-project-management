@@ -21,9 +21,11 @@ if (!empty($sprints)) {
             switch ($sprint->status_id) {
                 case 1: // Planning
                     $planningCount++;
+
                     break;
                 case 2: // Active
                     $activeSprintCount++;
+
                     break;
                 case 4: // Completed
                     $completedSprintCount++;
@@ -31,6 +33,7 @@ if (!empty($sprints)) {
                         $totalVelocity += $sprint->velocity_percentage;
                         $velocityCount++;
                     }
+
                     break;
             }
         }

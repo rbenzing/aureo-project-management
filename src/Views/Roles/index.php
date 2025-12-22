@@ -17,13 +17,14 @@ $canDeleteRoles = isset($_SESSION['user']['permissions']) && in_array('delete_ro
 $canViewRoles = isset($_SESSION['user']['permissions']) && in_array('view_roles', $_SESSION['user']['permissions']);
 
 // Ensure roles array has proper properties
-$roles = array_map(function($role) {
+$roles = array_map(function ($role) {
     // Ensure permissions is an array
     $role->permissions = $role->permissions ?? [];
     // Ensure user_count exists
     $role->user_count = $role->user_count ?? 0;
     // Ensure permission_count exists
     $role->permission_count = $role->permission_count ?? 0;
+
     return $role;
 }, $roles);
 ?>
@@ -157,15 +158,15 @@ $roles = array_map(function($role) {
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users Assigned</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            <?php 
+                            <?php
                             $totalUsers = 0;
-                            if (!empty($roles)) {
-                                foreach ($roles as $role) {
-                                    $totalUsers += $role->user_count;
-                                }
-                            }
-                            echo $totalUsers;
-                            ?>
+if (!empty($roles)) {
+    foreach ($roles as $role) {
+        $totalUsers += $role->user_count;
+    }
+}
+echo $totalUsers;
+?>
                         </p>
                     </div>
                 </div>
@@ -183,10 +184,10 @@ $roles = array_map(function($role) {
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Permissions</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             <?php
-                            $permissionModel = new \App\Models\Permission();
-                            $allPermissions = $permissionModel->getAll(['is_deleted' => 0])['records'];
-                            echo count($allPermissions);
-                            ?>
+$permissionModel = new \App\Models\Permission();
+$allPermissions = $permissionModel->getAll(['is_deleted' => 0])['records'];
+echo count($allPermissions);
+?>
                         </p>
                     </div>
                 </div>
@@ -302,35 +303,35 @@ $roles = array_map(function($role) {
                                     </a>
                                 <?php endif; ?>
                                 
-                                <?php 
-                                // Calculate pagination range
-                                $startPage = max(1, $page - 2);
-                                $endPage = min($totalPages, $page + 2);
-                                
-                                // Show first page if not in range
-                                if ($startPage > 1) {
-                                    echo '<a href="/roles/page/1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">1</a>';
-                                    if ($startPage > 2) {
-                                        echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
-                                    }
-                                }
-                                
-                                // Show page numbers
-                                for ($i = $startPage; $i <= $endPage; $i++) {
-                                    $isCurrentPage = $i === $page;
-                                    echo '<a href="/roles/page/' . $i . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 ' . 
-                                         ($isCurrentPage ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700') . 
-                                         ' text-sm font-medium">' . $i . '</a>';
-                                }
-                                
-                                // Show last page if not in range
-                                if ($endPage < $totalPages) {
-                                    if ($endPage < $totalPages - 1) {
-                                        echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
-                                    }
-                                    echo '<a href="/roles/page/' . $totalPages . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">' . $totalPages . '</a>';
-                                }
-                                ?>
+                                <?php
+    // Calculate pagination range
+    $startPage = max(1, $page - 2);
+                $endPage = min($totalPages, $page + 2);
+
+                // Show first page if not in range
+                if ($startPage > 1) {
+                    echo '<a href="/roles/page/1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">1</a>';
+                    if ($startPage > 2) {
+                        echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
+                    }
+                }
+
+                // Show page numbers
+                for ($i = $startPage; $i <= $endPage; $i++) {
+                    $isCurrentPage = $i === $page;
+                    echo '<a href="/roles/page/' . $i . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 ' .
+                         ($isCurrentPage ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700') .
+                         ' text-sm font-medium">' . $i . '</a>';
+                }
+
+                // Show last page if not in range
+                if ($endPage < $totalPages) {
+                    if ($endPage < $totalPages - 1) {
+                        echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">...</span>';
+                    }
+                    echo '<a href="/roles/page/' . $totalPages . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">' . $totalPages . '</a>';
+                }
+                ?>
                                 
                                 <?php if ($page < $totalPages): ?>
                                     <a href="/roles/page/<?= $page + 1 ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">

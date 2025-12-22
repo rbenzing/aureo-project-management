@@ -1,4 +1,5 @@
 <?php
+
 //file: Core/Response.php
 declare(strict_types=1);
 
@@ -12,14 +13,14 @@ if (!defined('BASE_PATH')) {
 
 /**
  * Response Class
- * 
+ *
  * Handles HTTP responses, particularly JSON responses for API endpoints
  */
 class Response
 {
     /**
      * Send JSON response
-     * 
+     *
      * @param array $data Response data
      * @param int $statusCode HTTP status code
      * @return void
@@ -28,24 +29,24 @@ class Response
     {
         // Set HTTP status code
         http_response_code($statusCode);
-        
+
         // Set JSON content type header
         header('Content-Type: application/json');
-        
+
         // Prevent caching for API responses
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        
+
         // Output JSON response
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        
+
         // Exit to prevent further output
         exit;
     }
-    
+
     /**
      * Send success JSON response
-     * 
+     *
      * @param array $data Response data
      * @param string $message Success message
      * @return void
@@ -55,13 +56,13 @@ class Response
         self::json([
             'success' => true,
             'message' => $message,
-            'data' => $data
+            'data' => $data,
         ]);
     }
-    
+
     /**
      * Send error JSON response
-     * 
+     *
      * @param string $message Error message
      * @param int $statusCode HTTP status code
      * @param array $errors Additional error details
@@ -71,19 +72,19 @@ class Response
     {
         $response = [
             'success' => false,
-            'error' => $message
+            'error' => $message,
         ];
-        
+
         if (!empty($errors)) {
             $response['errors'] = $errors;
         }
-        
+
         self::json($response, $statusCode);
     }
-    
+
     /**
      * Send redirect response
-     * 
+     *
      * @param string $url Redirect URL
      * @param int $statusCode HTTP status code (301, 302, etc.)
      * @return void
@@ -94,10 +95,10 @@ class Response
         header("Location: $url");
         exit;
     }
-    
+
     /**
      * Send plain text response
-     * 
+     *
      * @param string $text Response text
      * @param int $statusCode HTTP status code
      * @return void
@@ -109,10 +110,10 @@ class Response
         echo $text;
         exit;
     }
-    
+
     /**
      * Send HTML response
-     * 
+     *
      * @param string $html Response HTML
      * @param int $statusCode HTTP status code
      * @return void

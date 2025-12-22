@@ -1,4 +1,5 @@
 <?php
+
 // file: Models/Sprint.php
 declare(strict_types=1);
 
@@ -6,11 +7,10 @@ namespace App\Models;
 
 use PDO;
 use RuntimeException;
-use InvalidArgumentException;
 
 /**
  * Sprint Model
- * 
+ *
  * Handles all sprint-related database operations
  */
 class Sprint extends BaseModel
@@ -42,15 +42,15 @@ class Sprint extends BaseModel
         'sprint_goal',
         'start_date',
         'end_date',
-        'status_id'
+        'status_id',
     ];
 
     /**
      * Sprint relationship types
      */
-    const RELATIONSHIP_PROJECT = 'project';
-    const RELATIONSHIP_MILESTONE = 'milestone';
-    const RELATIONSHIP_EPIC = 'epic';
+    public const RELATIONSHIP_PROJECT = 'project';
+    public const RELATIONSHIP_MILESTONE = 'milestone';
+    public const RELATIONSHIP_EPIC = 'epic';
 
     /**
      * Define searchable fields
@@ -58,7 +58,7 @@ class Sprint extends BaseModel
     protected array $searchable = [
         'name',
         'description',
-        'sprint_goal'
+        'sprint_goal',
     ];
 
     /**
@@ -69,12 +69,12 @@ class Sprint extends BaseModel
         'project_id' => ['required'],
         'start_date' => ['required', 'date'],
         'end_date' => ['required', 'date'],
-        'status_id' => ['required']
+        'status_id' => ['required'],
     ];
 
     /**
      * Get sprints with tasks
-     * 
+     *
      * @param int $limit Items per page
      * @param int $page Current page number
      * @return array
@@ -114,7 +114,7 @@ class Sprint extends BaseModel
 
     /**
      * Find sprint with details including tasks
-     * 
+     *
      * @param int $id
      * @return object|null
      */
@@ -143,19 +143,20 @@ class Sprint extends BaseModel
 
     /**
      * Get sprint statuses
-     * 
+     *
      * @return array
      */
     public function getSprintStatuses(): array
     {
         $sql = "SELECT * FROM statuses_sprint WHERE is_deleted = 0";
         $stmt = $this->db->executeQuery($sql);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
      * Get tasks for a sprint
-     * 
+     *
      * @param int $sprintId
      * @return array
      */
@@ -173,6 +174,7 @@ class Sprint extends BaseModel
                 ORDER BY t.priority DESC, t.due_date ASC";
 
         $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -195,7 +197,7 @@ class Sprint extends BaseModel
                     'type' => 'epic',
                     'data' => $epic,
                     'milestones' => [],
-                    'tasks' => []
+                    'tasks' => [],
                 ];
 
                 // Get milestones for this epic that have tasks in this sprint
@@ -205,7 +207,7 @@ class Sprint extends BaseModel
                     $milestoneData = [
                         'type' => 'milestone',
                         'data' => $milestone,
-                        'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id)
+                        'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id),
                     ];
                     $epicData['milestones'][] = $milestoneData;
                 }
@@ -223,7 +225,7 @@ class Sprint extends BaseModel
                 $milestoneData = [
                     'type' => 'milestone',
                     'data' => $milestone,
-                    'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id)
+                    'tasks' => $this->getSprintMilestoneTasks($sprintId, $milestone->id),
                 ];
                 $hierarchy[] = $milestoneData;
             }
@@ -234,13 +236,14 @@ class Sprint extends BaseModel
                 $hierarchy[] = [
                     'type' => 'unassigned_tasks',
                     'data' => (object)['title' => 'Unassigned Tasks'],
-                    'tasks' => $unassignedTasks
+                    'tasks' => $unassignedTasks,
                 ];
             }
 
             return $hierarchy;
         } catch (\Exception $e) {
             error_log("Failed to get sprint hierarchy: " . $e->getMessage());
+
             return [];
         }
     }
@@ -273,9 +276,11 @@ class Sprint extends BaseModel
                 m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint epics: " . $e->getMessage());
+
             return [];
         }
     }
@@ -311,11 +316,13 @@ class Sprint extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':sprint_id' => $sprintId,
-                ':epic_id' => $epicId
+                ':epic_id' => $epicId,
             ]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint epic milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -354,11 +361,13 @@ class Sprint extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':sprint_id' => $sprintId,
-                ':milestone_id' => $milestoneId
+                ':milestone_id' => $milestoneId,
             ]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint milestone tasks: " . $e->getMessage());
+
             return [];
         }
     }
@@ -397,11 +406,13 @@ class Sprint extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':sprint_id' => $sprintId,
-                ':epic_id' => $epicId
+                ':epic_id' => $epicId,
             ]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint epic tasks: " . $e->getMessage());
+
             return [];
         }
     }
@@ -435,9 +446,11 @@ class Sprint extends BaseModel
                 m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint standalone milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -478,16 +491,18 @@ class Sprint extends BaseModel
                 t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get sprint unassigned tasks: " . $e->getMessage());
+
             return [];
         }
     }
 
     /**
      * Add tasks to sprint
-     * 
+     *
      * @param int $sprintId
      * @param array $taskIds
      * @return bool
@@ -518,16 +533,18 @@ class Sprint extends BaseModel
             }
 
             $this->db->commit();
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollBack();
+
             throw new RuntimeException("Failed to add tasks to sprint: " . $e->getMessage());
         }
     }
 
     /**
      * Remove task from sprint
-     * 
+     *
      * @param int $sprintId
      * @param int $taskId
      * @return bool
@@ -538,13 +555,13 @@ class Sprint extends BaseModel
 
         return $this->db->executeInsertUpdate($sql, [
             ':sprint_id' => $sprintId,
-            ':task_id' => $taskId
+            ':task_id' => $taskId,
         ]);
     }
 
     /**
      * Get active sprint for a project
-     * 
+     *
      * @param int $projectId
      * @return object|null
      */
@@ -593,6 +610,7 @@ class Sprint extends BaseModel
                     ORDER BY s.start_date DESC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching sprints for project: " . $e->getMessage());
@@ -601,7 +619,7 @@ class Sprint extends BaseModel
 
     /**
      * Get active sprints for a user
-     * 
+     *
      * @param int $userId
      * @param string|null $status Filter by status name (e.g., 'active')
      * @return array
@@ -643,6 +661,7 @@ class Sprint extends BaseModel
             $sql .= " ORDER BY s.start_date DESC";
 
             $stmt = $this->db->executeQuery($sql, $params);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get user sprints: " . $e->getMessage());
@@ -651,7 +670,7 @@ class Sprint extends BaseModel
 
     /**
      * Get sprint velocity (total completed tasks vs total tasks)
-     * 
+     *
      * @param int $sprintId
      * @return array
      */
@@ -676,13 +695,13 @@ class Sprint extends BaseModel
         return [
             'total_tasks' => $totalTasks,
             'completed_tasks' => $completedTasks,
-            'velocity_percentage' => $velocityPercentage
+            'velocity_percentage' => $velocityPercentage,
         ];
     }
 
     /**
      * Start a sprint (change status to active)
-     * 
+     *
      * @param int $sprintId
      * @return bool
      */
@@ -756,11 +775,12 @@ class Sprint extends BaseModel
             $sql = "SELECT COUNT(*) FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
             $stmt = $this->db->executeQuery($sql, [
                 ':sprint_id' => $sprintId,
-                ':task_id' => $taskId
+                ':task_id' => $taskId,
             ]);
 
             if ($stmt->fetchColumn() > 0) {
                 $this->db->commit();
+
                 return true; // Already assigned
             }
 
@@ -771,11 +791,12 @@ class Sprint extends BaseModel
             $sql = "INSERT INTO sprint_tasks (sprint_id, task_id) VALUES (:sprint_id, :task_id)";
             $result = $this->db->executeInsertUpdate($sql, [
                 ':sprint_id' => $sprintId,
-                ':task_id' => $taskId
+                ':task_id' => $taskId,
             ]);
 
             if (!$result) {
                 $this->db->rollback();
+
                 return false;
             }
 
@@ -785,9 +806,11 @@ class Sprint extends BaseModel
             }
 
             $this->db->commit();
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollback();
+
             throw new RuntimeException("Error assigning task to sprint: " . $e->getMessage());
         }
     }
@@ -819,13 +842,14 @@ class Sprint extends BaseModel
                 $sql = "INSERT IGNORE INTO sprint_tasks (sprint_id, task_id) VALUES (:sprint_id, :task_id)";
                 $this->db->executeInsertUpdate($sql, [
                     ':sprint_id' => $sprintId,
-                    ':task_id' => $subtask->id
+                    ':task_id' => $subtask->id,
                 ]);
             }
 
             return true;
         } catch (\Exception $e) {
             error_log("Error assigning subtasks to sprint: " . $e->getMessage());
+
             return false;
         }
     }
@@ -868,7 +892,7 @@ class Sprint extends BaseModel
             $sql = "DELETE FROM sprint_tasks WHERE sprint_id = :sprint_id AND task_id = :task_id";
             $result = $this->db->executeInsertUpdate($sql, [
                 ':sprint_id' => $sprintId,
-                ':task_id' => $taskId
+                ':task_id' => $taskId,
             ]);
 
             // If includeSubtasks is true, also remove all subtasks
@@ -877,10 +901,12 @@ class Sprint extends BaseModel
             }
 
             $this->db->commit();
+
             return $result;
         } catch (\Exception $e) {
             $this->db->rollback();
             error_log("Error removing task from sprint: " . $e->getMessage());
+
             return false;
         }
     }
@@ -904,10 +930,11 @@ class Sprint extends BaseModel
 
             return $this->db->executeInsertUpdate($sql, [
                 ':sprint_id' => $sprintId,
-                ':parent_task_id' => $parentTaskId
+                ':parent_task_id' => $parentTaskId,
             ]);
         } catch (\Exception $e) {
             error_log("Error removing subtasks from sprint: " . $e->getMessage());
+
             return false;
         }
     }
@@ -952,9 +979,11 @@ class Sprint extends BaseModel
                     ORDER BY t.is_subtask ASC, t.parent_task_id ASC, t.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting sprint tasks with subtasks: " . $e->getMessage());
+
             return [];
         }
     }
@@ -984,9 +1013,11 @@ class Sprint extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
             $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+
             return $result ?: [];
         } catch (\Exception $e) {
             error_log("Error getting active sprints for user: " . $e->getMessage());
+
             return [];
         }
     }
@@ -1014,9 +1045,11 @@ class Sprint extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
             $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+
             return $result ?: [];
         } catch (\Exception $e) {
             error_log("Error getting active sprints in user projects: " . $e->getMessage());
+
             return [];
         }
     }
@@ -1054,10 +1087,12 @@ class Sprint extends BaseModel
             }
 
             $this->db->commit();
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollback();
             error_log("Error adding milestones to sprint: " . $e->getMessage());
+
             return false;
         }
     }
@@ -1082,9 +1117,11 @@ class Sprint extends BaseModel
                     ORDER BY m.milestone_type DESC, m.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':sprint_id' => $sprintId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting sprint milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -1111,9 +1148,11 @@ class Sprint extends BaseModel
                     ORDER BY s.start_date DESC";
 
             $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting sprints by milestone: " . $e->getMessage());
+
             return [];
         }
     }
@@ -1131,7 +1170,7 @@ class Sprint extends BaseModel
                 'type' => self::RELATIONSHIP_PROJECT,
                 'project' => null,
                 'milestones' => [],
-                'epics' => []
+                'epics' => [],
             ];
 
             // Get project information
@@ -1143,11 +1182,11 @@ class Sprint extends BaseModel
 
             // Get associated milestones
             $milestones = $this->getSprintMilestones($sprintId);
-            $relationships['milestones'] = array_filter($milestones, function($m) {
+            $relationships['milestones'] = array_filter($milestones, function ($m) {
                 return $m->milestone_type === 'milestone';
             });
 
-            $relationships['epics'] = array_filter($milestones, function($m) {
+            $relationships['epics'] = array_filter($milestones, function ($m) {
                 return $m->milestone_type === 'epic';
             });
 
@@ -1161,11 +1200,12 @@ class Sprint extends BaseModel
             return $relationships;
         } catch (\Exception $e) {
             error_log("Error getting sprint relationships: " . $e->getMessage());
+
             return [
                 'type' => self::RELATIONSHIP_PROJECT,
                 'project' => null,
                 'milestones' => [],
-                'epics' => []
+                'epics' => [],
             ];
         }
     }
@@ -1216,9 +1256,11 @@ class Sprint extends BaseModel
                         t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, $milestoneIds);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting tasks from milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -1250,10 +1292,12 @@ class Sprint extends BaseModel
             }
 
             $this->db->commit();
+
             return $sprintId;
         } catch (\Exception $e) {
             $this->db->rollback();
             error_log("Error creating sprint from milestones: " . $e->getMessage());
+
             throw new RuntimeException("Failed to create sprint from milestones: " . $e->getMessage());
         }
     }
@@ -1272,7 +1316,7 @@ class Sprint extends BaseModel
                 'total_estimated_hours' => 0,
                 'by_milestone' => [],
                 'by_epic' => [],
-                'direct_tasks' => []
+                'direct_tasks' => [],
             ];
 
             // Get sprint tasks with milestone associations
@@ -1306,7 +1350,7 @@ class Sprint extends BaseModel
                             'title' => $task->milestone_title,
                             'story_points' => 0,
                             'estimated_hours' => 0,
-                            'task_count' => 0
+                            'task_count' => 0,
                         ];
                     }
 
@@ -1318,7 +1362,7 @@ class Sprint extends BaseModel
                         'id' => $task->id,
                         'title' => $task->title,
                         'story_points' => $task->story_points,
-                        'estimated_hours' => $task->estimated_time / 3600
+                        'estimated_hours' => $task->estimated_time / 3600,
                     ];
                 }
             }
@@ -1326,12 +1370,13 @@ class Sprint extends BaseModel
             return $breakdown;
         } catch (\Exception $e) {
             error_log("Error getting sprint capacity breakdown: " . $e->getMessage());
+
             return [
                 'total_story_points' => 0,
                 'total_estimated_hours' => 0,
                 'by_milestone' => [],
                 'by_epic' => [],
-                'direct_tasks' => []
+                'direct_tasks' => [],
             ];
         }
     }

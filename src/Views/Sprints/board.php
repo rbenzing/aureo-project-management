@@ -101,8 +101,8 @@ $currentPage = 'sprints';
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($sprint->name) ?></h1>
                         <?php
                         $statusInfo = getSprintStatusInfo($sprint->status_id);
-                        echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md') . '</span>';
-                        ?>
+echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md') . '</span>';
+?>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         Project: <a href="/projects/view/<?= $project->id ?>" class="text-blue-600 dark:text-blue-400 hover:underline"><?= htmlspecialchars($project->name) ?></a>
@@ -246,14 +246,14 @@ $currentPage = 'sprints';
             <div class="p-6">
                 <div class="flex gap-6 overflow-x-auto min-h-96" id="kanban-board">
                     <?php foreach ($tasksByStatus as $statusId => $statusData): ?>
-                        <?php if (!empty($statusData['tasks']) || in_array($statusId, [1, 2, 3, 4, 6])): // Show main statuses even if empty ?>
+                        <?php if (!empty($statusData['tasks']) || in_array($statusId, [1, 2, 3, 4, 6])): // Show main statuses even if empty?>
                             <div class="kanban-column bg-gray-50 dark:bg-gray-700 rounded-lg p-4 min-h-96 flex-shrink-0 w-80" data-status-id="<?= $statusId ?>">
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-sm font-medium text-gray-900 dark:text-white">
                                         <?php
-                                        $statusInfo = getTaskStatusInfo($statusId);
-                                        echo htmlspecialchars($statusInfo['label']);
-                                        ?>
+                $statusInfo = getTaskStatusInfo($statusId);
+                            echo htmlspecialchars($statusInfo['label']);
+                            ?>
                                     </h3>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
                                         <?= count($statusData['tasks']) ?>
@@ -295,22 +295,34 @@ $currentPage = 'sprints';
                                                         
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                                                             <?php
-                                                            $priority = $task->priority ?? 'none';
-                                                            switch (strtolower($priority)) {
-                                                                case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                                                case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                                                case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                                                default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-                                                            }
-                                                            ?>">
+                                                $priority = $task->priority ?? 'none';
+                                        switch (strtolower($priority)) {
+                                            case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+                                                break;
+                                            case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+
+                                                break;
+                                            case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
+                                                break;
+                                            default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                                        }
+                                        ?>">
                                                             <?php
-                                                            switch (strtolower($priority)) {
-                                                                case 'high': echo 'High'; break;
-                                                                case 'medium': echo 'Medium'; break;
-                                                                case 'low': echo 'Low'; break;
-                                                                default: echo 'Normal';
-                                                            }
-                                                            ?>
+                                        switch (strtolower($priority)) {
+                                            case 'high': echo 'High';
+
+                                                break;
+                                            case 'medium': echo 'Medium';
+
+                                                break;
+                                            case 'low': echo 'Low';
+
+                                                break;
+                                            default: echo 'Normal';
+                                        }
+                                        ?>
                                                         </span>
                                                     </div>
                                                     

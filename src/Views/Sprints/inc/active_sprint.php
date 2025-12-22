@@ -94,26 +94,26 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                     <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h4>
                     <?php
                     $statusIndicator = '';
-                    if ($progressPercentage > $taskPercentage + 20) {
-                        $statusIndicator = '<span class="text-red-500 dark:text-red-400">Behind Schedule</span>';
-                    } elseif ($taskPercentage >= $progressPercentage) {
-                        $statusIndicator = '<span class="text-green-500 dark:text-green-400">On Track</span>';
-                    } else {
-                        $statusIndicator = '<span class="text-yellow-500 dark:text-yellow-400">Slightly Behind</span>';
-                    }
-                    echo $statusIndicator;
-                    ?>
+if ($progressPercentage > $taskPercentage + 20) {
+    $statusIndicator = '<span class="text-red-500 dark:text-red-400">Behind Schedule</span>';
+} elseif ($taskPercentage >= $progressPercentage) {
+    $statusIndicator = '<span class="text-green-500 dark:text-green-400">On Track</span>';
+} else {
+    $statusIndicator = '<span class="text-yellow-500 dark:text-yellow-400">Slightly Behind</span>';
+}
+echo $statusIndicator;
+?>
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
                     <?php
-                    if ($progressPercentage > $taskPercentage + 20) {
-                        echo 'Sprint tasks are falling behind schedule.';
-                    } elseif ($taskPercentage >= $progressPercentage) {
-                        echo 'Sprint is on track or ahead of schedule.';
-                    } else {
-                        echo 'Sprint slightly behind, but recoverable.';
-                    }
-                    ?>
+if ($progressPercentage > $taskPercentage + 20) {
+    echo 'Sprint tasks are falling behind schedule.';
+} elseif ($taskPercentage >= $progressPercentage) {
+    echo 'Sprint is on track or ahead of schedule.';
+} else {
+    echo 'Sprint slightly behind, but recoverable.';
+}
+?>
                 </div>
             </div>
         </div>
@@ -132,11 +132,11 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <?php 
-                            $limit = min(5, count($activeSprint->tasks));
-                            for($i = 0; $i < $limit; $i++): 
-                                $task = $activeSprint->tasks[$i];
-                            ?>
+                            <?php
+        $limit = min(5, count($activeSprint->tasks));
+            for ($i = 0; $i < $limit; $i++):
+                $task = $activeSprint->tasks[$i];
+                ?>
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <a href="/tasks/view/<?= $task->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
@@ -145,19 +145,19 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <?php
-                                        // Use consistent status styling
-                                        $statusMap = [
-                                            1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
-                                            2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
-                                            3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
-                                            4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
-                                            5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
-                                            6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-                                            7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-                                        ];
-                                        $statusId = $task->status_id ?? 1;
-                                        $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-                                        ?>
+                            // Use consistent status styling
+                            $statusMap = [
+                                1 => ['label' => 'OPEN', 'color' => 'bg-blue-600'],
+                                2 => ['label' => 'IN PROGRESS', 'color' => 'bg-yellow-500'],
+                                3 => ['label' => 'ON HOLD', 'color' => 'bg-purple-500'],
+                                4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
+                                5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
+                                6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+                                7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
+                            ];
+                $statusId = $task->status_id ?? 1;
+                $status = $statusMap[$statusId] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                ?>
                                         <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $status['color'] ?>">
                                             <?= $status['label'] ?>
                                         </span>

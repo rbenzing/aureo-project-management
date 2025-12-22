@@ -85,13 +85,13 @@ include_once BASE_PATH . '/inc/helpers.php';
                         <div class="text-xl font-semibold text-gray-900 dark:text-gray-100">
                             <?php
                             $totalActiveSprints = 0;
-                            if (!empty($projectSprintCounts)) {
-                                foreach ($projectSprintCounts as $counts) {
-                                    $totalActiveSprints += $counts['active'] ?? 0;
-                                }
-                            }
-                            echo $totalActiveSprints;
-                            ?>
+            if (!empty($projectSprintCounts)) {
+                foreach ($projectSprintCounts as $counts) {
+                    $totalActiveSprints += $counts['active'] ?? 0;
+                }
+            }
+            echo $totalActiveSprints;
+            ?>
                         </div>
                     </div>
                 </div>
@@ -106,14 +106,14 @@ include_once BASE_PATH . '/inc/helpers.php';
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Completed Sprints</div>
                         <div class="text-xl font-semibold text-blue-600 dark:text-blue-400">
                             <?php
-                            $totalCompletedSprints = 0;
-                            if (!empty($projectSprintCounts)) {
-                                foreach ($projectSprintCounts as $counts) {
-                                    $totalCompletedSprints += $counts['completed'] ?? 0;
-                                }
-                            }
-                            echo $totalCompletedSprints;
-                            ?>
+            $totalCompletedSprints = 0;
+            if (!empty($projectSprintCounts)) {
+                foreach ($projectSprintCounts as $counts) {
+                    $totalCompletedSprints += $counts['completed'] ?? 0;
+                }
+            }
+            echo $totalCompletedSprints;
+            ?>
                         </div>
                     </div>
                 </div>
@@ -128,14 +128,14 @@ include_once BASE_PATH . '/inc/helpers.php';
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Planning Sprints</div>
                         <div class="text-xl font-semibold text-yellow-600 dark:text-yellow-400">
                             <?php
-                            $totalPlanningSprints = 0;
-                            if (!empty($projectSprintCounts)) {
-                                foreach ($projectSprintCounts as $counts) {
-                                    $totalPlanningSprints += $counts['planning'] ?? 0;
-                                }
-                            }
-                            echo $totalPlanningSprints;
-                            ?>
+            $totalPlanningSprints = 0;
+            if (!empty($projectSprintCounts)) {
+                foreach ($projectSprintCounts as $counts) {
+                    $totalPlanningSprints += $counts['planning'] ?? 0;
+                }
+            }
+            echo $totalPlanningSprints;
+            ?>
                         </div>
                     </div>
                 </div>
@@ -195,11 +195,11 @@ include_once BASE_PATH . '/inc/helpers.php';
                         <select id="status-filter" class="h-10 appearance-none w-full px-4 py-2 dark:text-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="all">All Statuses</option>
                             <?php
-                            for ($i = 1; $i <= 5; $i++) {
-                                $statusInfo = getSprintStatusInfo($i);
-                                echo '<option value="' . (string)$i . '">' . htmlspecialchars($statusInfo['label']) . '</option>';
-                            }
-                            ?>
+            for ($i = 1; $i <= 5; $i++) {
+                $statusInfo = getSprintStatusInfo($i);
+                echo '<option value="' . (string)$i . '">' . htmlspecialchars($statusInfo['label']) . '</option>';
+            }
+?>
                         </select>
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,21 +233,22 @@ include_once BASE_PATH . '/inc/helpers.php';
 
 
             <!-- Active Sprint Panel (if exists) -->
-            <?php 
+            <?php
             $activeSprint = null;
-            if (!empty($sprints)) {
-                foreach ($sprints as $sprint) {
-                    if (isset($sprint->status_id) && $sprint->status_id == 2) { // Active status
-                        $activeSprint = $sprint;
-                        break;
-                    }
-                }
-            }
-            
-            if ($activeSprint): 
-                include BASE_PATH . '/inc/active_sprint.php';
-            endif; 
-            ?>
+if (!empty($sprints)) {
+    foreach ($sprints as $sprint) {
+        if (isset($sprint->status_id) && $sprint->status_id == 2) { // Active status
+            $activeSprint = $sprint;
+
+            break;
+        }
+    }
+}
+
+if ($activeSprint):
+    include BASE_PATH . '/inc/active_sprint.php';
+endif;
+?>
 
             <!-- All Sprints List -->
             <?php include BASE_PATH . '/inc/sprint_list.php'; ?>

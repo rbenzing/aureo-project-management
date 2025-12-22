@@ -1,4 +1,5 @@
 <?php
+
 //file: Views/Layouts/FormComponents.php
 declare(strict_types=1);
 
@@ -29,7 +30,7 @@ function renderTextInput(array $options): string
         'icon' => '', // SVG path for icon
         'min' => '',
         'max' => '',
-        'step' => ''
+        'step' => '',
     ];
 
     $options = array_merge($defaults, $options);
@@ -133,19 +134,19 @@ function renderTextarea(array $options): string
         'rows' => 4,
         'class' => '',
         'help_text' => '',
-        'error' => ''
+        'error' => '',
     ];
-    
+
     $options = array_merge($defaults, $options);
-    
+
     $baseClasses = 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm';
     $errorClasses = $options['error'] ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600';
     $disabledClasses = $options['disabled'] ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' : '';
-    
+
     $classes = trim($baseClasses . ' ' . $errorClasses . ' ' . $disabledClasses . ' ' . $options['class']);
-    
+
     $html = '<div class="mb-4">';
-    
+
     // Label
     if (!empty($options['label'])) {
         $html .= '<label for="' . htmlspecialchars((string)$options['name']) . '" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">';
@@ -178,7 +179,7 @@ function renderTextarea(array $options): string
     $html .= '>';
     $html .= htmlspecialchars((string)$options['value']);
     $html .= '</textarea>';
-    
+
     // Help text
     if ($options['help_text']) {
         $html .= '<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars((string)$options['help_text']) . '</p>';
@@ -188,9 +189,9 @@ function renderTextarea(array $options): string
     if ($options['error']) {
         $html .= '<p class="mt-1 text-sm text-red-600 dark:text-red-400">' . htmlspecialchars((string)$options['error']) . '</p>';
     }
-    
+
     $html .= '</div>';
-    
+
     return $html;
 }
 
@@ -208,7 +209,7 @@ function renderSelect(array $options): string
         'help_text' => '',
         'error' => '',
         'empty_option' => '',
-        'icon' => '' // SVG path for icon
+        'icon' => '', // SVG path for icon
     ];
 
     $options = array_merge($defaults, $options);
@@ -307,14 +308,14 @@ function renderCheckbox(array $options): string
         'value' => '1',
         'class' => '',
         'help_text' => '',
-        'error' => ''
+        'error' => '',
     ];
-    
+
     $options = array_merge($defaults, $options);
-    
+
     $html = '<div class="mb-4">';
     $html .= '<div class="flex items-center">';
-    
+
     // Checkbox input
     $html .= '<input';
     $html .= ' type="checkbox"';
@@ -322,26 +323,26 @@ function renderCheckbox(array $options): string
     $html .= ' id="' . htmlspecialchars((string)$options['name']) . '"';
     $html .= ' value="' . htmlspecialchars((string)$options['value']) . '"';
     $html .= ' class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded ' . htmlspecialchars((string)$options['class']) . '"';
-    
+
     if ($options['checked']) {
         $html .= ' checked';
     }
-    
+
     if ($options['disabled']) {
         $html .= ' disabled';
     }
-    
+
     $html .= '>';
-    
+
     // Label
     if (!empty($options['label'])) {
         $html .= '<label for="' . htmlspecialchars((string)$options['name']) . '" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">';
         $html .= htmlspecialchars((string)$options['label']);
         $html .= '</label>';
     }
-    
+
     $html .= '</div>';
-    
+
     // Help text
     if ($options['help_text']) {
         $html .= '<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">' . htmlspecialchars((string)$options['help_text']) . '</p>';
@@ -351,9 +352,9 @@ function renderCheckbox(array $options): string
     if ($options['error']) {
         $html .= '<p class="mt-1 text-sm text-red-600 dark:text-red-400">' . htmlspecialchars((string)$options['error']) . '</p>';
     }
-    
+
     $html .= '</div>';
-    
+
     return $html;
 }
 
@@ -366,13 +367,13 @@ function renderFormButtons(array $options = []): string
         'submit_text' => 'Save',
         'cancel_url' => '',
         'show_cancel' => true,
-        'additional_buttons' => []
+        'additional_buttons' => [],
     ];
-    
+
     $options = array_merge($defaults, $options);
-    
+
     $html = '<div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">';
-    
+
     // Cancel button
     if ($options['show_cancel'] && $options['cancel_url']) {
         $html .= '<a href="' . htmlspecialchars((string)$options['cancel_url']) . '" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">';
@@ -391,9 +392,9 @@ function renderFormButtons(array $options = []): string
     $html .= '<button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">';
     $html .= htmlspecialchars((string)$options['submit_text']);
     $html .= '</button>';
-    
+
     $html .= '</div>';
-    
+
     return $html;
 }
 

@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -127,9 +128,9 @@ use App\Core\Config;
                 <?php
                 // Check permissions for tasks and projects
                 $canViewTasks = in_array('view_tasks', $user->permissions ?? []);
-                $canViewProjects = in_array('view_projects', $user->permissions ?? []);
-                $hasContent = $canViewTasks || $canViewProjects;
-                ?>
+$canViewProjects = in_array('view_projects', $user->permissions ?? []);
+$hasContent = $canViewTasks || $canViewProjects;
+?>
 
                 <?php if ($canViewTasks): ?>
                 <!-- My Active Tasks Card -->
@@ -177,15 +178,15 @@ use App\Core\Config;
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <?php
-                                                    // Priority badge
-                                                    $priorityClasses = [
-                                                        'high' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
-                                                        'medium' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-                                                        'low' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-                                                        'none' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                                                    ];
-                                                    $priorityClass = $priorityClasses[$task->priority ?? 'none'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
-                                                    ?>
+                                    // Priority badge
+                                    $priorityClasses = [
+                                        'high' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
+                                        'medium' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+                                        'low' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
+                                        'none' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+                                    ];
+                                            $priorityClass = $priorityClasses[$task->priority ?? 'none'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+                                            ?>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?= $priorityClass ?>">
                                                         <?= ucfirst(htmlspecialchars($task->priority ?? 'None')) ?>
                                                     </span>
@@ -193,7 +194,7 @@ use App\Core\Config;
                                                 <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                     <?php if (!empty($task->due_date)): ?>
                                                         <?php
-                                                        $dueDate = strtotime($task->due_date);
+                                                $dueDate = strtotime($task->due_date);
                                                         $today = strtotime('today');
                                                         $isOverdue = $dueDate < $today && ($task->status_id != 6 && $task->status_id != 5); // Not completed or closed
                                                         ?>
@@ -265,10 +266,10 @@ use App\Core\Config;
                                                 'completed' => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
                                                 'on_hold' => ['label' => 'ON HOLD', 'color' => 'bg-yellow-500'],
                                                 'delayed' => ['label' => 'DELAYED', 'color' => 'bg-orange-500'],
-                                                'cancelled' => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+                                                'cancelled' => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
                                             ];
-                                            $statusInfo = $projectStatusMap[$project->status_name ?? 'ready'] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-                                            ?>
+                                    $statusInfo = $projectStatusMap[$project->status_name ?? 'ready'] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                                    ?>
                                             <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium whitespace-nowrap <?= $statusInfo['color'] ?>">
                                                 <?= $statusInfo['label'] ?>
                                             </span>

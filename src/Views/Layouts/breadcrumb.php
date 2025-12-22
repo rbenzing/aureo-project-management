@@ -1,4 +1,5 @@
 <?php
+
 //file: Views/Layouts/breadcrumb.php
 declare(strict_types=1);
 
@@ -25,4 +26,3 @@ foreach ($data ?? [] as $key => $value) {
 
 // Render the breadcrumbs
 echo Breadcrumb::render($route, $params);
-?>

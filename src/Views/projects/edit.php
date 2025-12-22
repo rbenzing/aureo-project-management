@@ -142,7 +142,7 @@ unset($_SESSION['form_data']);
                                     echo '>' . htmlspecialchars($template->name) . '</option>';
                                 }
                             }
-                            ?>
+?>
                         </select>
                     </div>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Selecting a template will replace your current description</p>

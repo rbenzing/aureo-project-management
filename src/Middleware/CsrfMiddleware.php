@@ -1,12 +1,13 @@
 <?php
+
 // file: Middleware/CsrfMiddleware.php
 declare(strict_types=1);
 
 namespace App\Middleware;
 
 use App\Core\Database;
-use App\Services\SettingsService;
 use App\Services\SecurityService;
+use App\Services\SettingsService;
 use Exception;
 
 class CsrfMiddleware
@@ -23,7 +24,7 @@ class CsrfMiddleware
 
     /**
      * Generate and store a new CSRF token
-     * 
+     *
      * @return string Generated token
      * @throws Exception If token generation fails
      */
@@ -47,7 +48,7 @@ class CsrfMiddleware
                     ':token' => $token,
                     ':session_id' => session_id(),
                     ':user_id' => $userId,
-                    ':expires_at' => $expiresAt
+                    ':expires_at' => $expiresAt,
                 ]
             );
             // set token session value
@@ -56,13 +57,14 @@ class CsrfMiddleware
             return $token;
         } catch (Exception $e) {
             error_log("CSRF token generation failed: " . $e->getMessage());
+
             throw new Exception('Failed to generate security token');
         }
     }
 
     /**
      * Validate a CSRF token
-     * 
+     *
      * @param string $requestToken Token to validate
      * @return bool True if token is valid
      * @throws Exception If validation fails
@@ -83,13 +85,14 @@ class CsrfMiddleware
              AND session_id = :session_id",
             [
                 ':token' => $requestToken,
-                ':session_id' => session_id()
+                ':session_id' => session_id(),
             ]
         );
         $storedToken = $stmt->fetch();
-        
-        if(empty($storedToken)) {
+
+        if (empty($storedToken)) {
             $this->cleanupExpiredTokens();
+
             throw new Exception('Missing or expired CSRF token');
         }
 
@@ -145,7 +148,7 @@ class CsrfMiddleware
 
     /**
      * Validate POST request CSRF token
-     * 
+     *
      * @throws Exception If validation fails
      */
     private function validatePostRequest(): void
@@ -175,7 +178,7 @@ class CsrfMiddleware
                 'method' => $_SERVER['REQUEST_METHOD'],
                 'uri' => $_SERVER['REQUEST_URI'],
                 'is_ajax' => $isAjax ?? false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             error_log("CSRF validation failed: " . $e->getMessage());

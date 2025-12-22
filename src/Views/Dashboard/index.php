@@ -8,9 +8,9 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use \App\Core\Config;
-use \App\Utils\Breadcrumb;
-use \App\Models\User;
+use App\Core\Config;
+use App\Models\User;
+use App\Utils\Breadcrumb;
 
 // Include view helpers for time formatting functions
 require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
@@ -153,7 +153,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                     <!-- Active Timer Widget (if any) -->
                     <?php if (isset($_SESSION['active_timer']) && (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking'))):
                         $activeTask = $dashboardData['active_timer']['task'] ?? null;
-                    ?>
+                        ?>
                         <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 timer-pulse">
                             <div class="flex items-center justify-between">
                                 <div class="mr-4">
@@ -342,7 +342,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                         $_SESSION['user']['permissions'] = $rolesAndPermissions['permissions'];
                     }
                 }
-                ?>
+?>
 
                 <?php if (hasUserPermission('view_time_tracking')): ?>
                     <div class="space-y-4">
@@ -353,9 +353,9 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <?php
-                                // Assume 40-hour work week
-                                $weeklyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_week'] / (40 * 3600)) * 100);
-                                ?>
+                // Assume 40-hour work week
+                $weeklyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_week'] / (40 * 3600)) * 100);
+                    ?>
                                 <div class="bg-blue-600 rounded-full h-2" style="width: <?= $weeklyPercentage ?>%"></div>
                             </div>
                         </div>
@@ -367,9 +367,9 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <?php
-                                // Assume 160-hour work month
-                                $monthlyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_month'] / (160 * 3600)) * 100);
-                                ?>
+                    // Assume 160-hour work month
+                    $monthlyPercentage = min(100, ($dashboardData['time_tracking_summary']['this_month'] / (160 * 3600)) * 100);
+                    ?>
                                 <div class="bg-purple-600 rounded-full h-2" style="width: <?= $monthlyPercentage ?>%"></div>
                             </div>
                         </div>
@@ -381,10 +381,10 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                             </div>
                             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                 <?php
-                                $billablePercentage = $dashboardData['time_tracking_summary']['total_hours'] > 0
-                                    ? min(100, ($dashboardData['time_tracking_summary']['billable_hours'] / $dashboardData['time_tracking_summary']['total_hours']) * 100)
-                                    : 0;
-                                ?>
+                    $billablePercentage = $dashboardData['time_tracking_summary']['total_hours'] > 0
+                        ? min(100, ($dashboardData['time_tracking_summary']['billable_hours'] / $dashboardData['time_tracking_summary']['total_hours']) * 100)
+                        : 0;
+                    ?>
                                 <div class="bg-green-600 rounded-full h-2" style="width: <?= $billablePercentage ?>%"></div>
                             </div>
                         </div>
@@ -463,10 +463,10 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                     <?php
                     // Show message if user has no create permissions
                     $hasAnyCreatePermission = hasUserPermission('create_projects') || hasUserPermission('create_tasks') ||
-                                             hasUserPermission('create_milestones') || hasUserPermission('create_sprints') ||
-                                             hasUserPermission('create_companies');
-                    if (!$hasAnyCreatePermission):
-                    ?>
+                                 hasUserPermission('create_milestones') || hasUserPermission('create_sprints') ||
+                                 hasUserPermission('create_companies');
+if (!$hasAnyCreatePermission):
+    ?>
                         <div class="text-center py-4">
                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -508,25 +508,25 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                 <!-- Upcoming Tasks Tab -->
                 <div class="p-4 task-content" id="upcoming-tasks">
                     <?php
-                    // Debug info for tasks
-                    if (isset($_GET['debug'])) {
-                        echo "<div class='mb-4 p-2 bg-green-100 text-black text-xs'>";
-                        echo "<strong>Tasks Debug:</strong><br>";
-                        echo "• Recent tasks: " . count($dashboardData['recent_tasks'] ?? []) . "<br>";
-                        echo "• Priority tasks: " . count($dashboardData['priority_tasks'] ?? []) . "<br>";
-                        echo "• Task types: " . json_encode($dashboardData['task_type_distribution'] ?? []) . "<br>";
-                        echo "• Story points this week: " . ($dashboardData['story_points_summary']['this_week'] ?? 0) . "<br>";
-                        echo "</div>";
-                    }
-                    ?>
-                    <?php 
-                    $upcomingTasks = array_filter($dashboardData['recent_tasks'], function($task) {
-                        return !empty($task->due_date) &&
-                              strtotime($task->due_date) >= time() &&
-                              $task->status_id != 5 && $task->status_id != 6; // Not closed or completed
-                    });
-                    
-                    if (!empty($upcomingTasks)): 
+    // Debug info for tasks
+    if (isset($_GET['debug'])) {
+        echo "<div class='mb-4 p-2 bg-green-100 text-black text-xs'>";
+        echo "<strong>Tasks Debug:</strong><br>";
+        echo "• Recent tasks: " . count($dashboardData['recent_tasks'] ?? []) . "<br>";
+        echo "• Priority tasks: " . count($dashboardData['priority_tasks'] ?? []) . "<br>";
+        echo "• Task types: " . json_encode($dashboardData['task_type_distribution'] ?? []) . "<br>";
+        echo "• Story points this week: " . ($dashboardData['story_points_summary']['this_week'] ?? 0) . "<br>";
+        echo "</div>";
+    }
+                ?>
+                    <?php
+                $upcomingTasks = array_filter($dashboardData['recent_tasks'], function ($task) {
+                    return !empty($task->due_date) &&
+                          strtotime($task->due_date) >= time() &&
+                          $task->status_id != 5 && $task->status_id != 6; // Not closed or completed
+                });
+
+                if (!empty($upcomingTasks)):
                     ?>
                         <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                             <?php foreach (array_slice($upcomingTasks, 0, 5) as $task): ?>
@@ -552,10 +552,10 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                                 <?php
                                                 // Check if this specific task has an active timer
                                                 $activeTimer = $_SESSION['active_timer'] ?? null;
-                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
 
-                                                if (hasUserPermission('view_time_tracking') && $isTimerActiveForThisTask):
-                                                ?>
+                                if (hasUserPermission('view_time_tracking') && $isTimerActiveForThisTask):
+                                    ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -566,7 +566,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -601,13 +601,13 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                 
                 <!-- In Progress Tasks Tab -->
                 <div class="p-4 task-content hidden" id="in-progress-tasks">
-                    <?php 
-                    $inProgressTasks = array_filter($dashboardData['recent_tasks'], function($task) {
+                    <?php
+                    $inProgressTasks = array_filter($dashboardData['recent_tasks'], function ($task) {
                         return $task->status_id == 2; // In Progress status
                     });
-                    
-                    if (!empty($inProgressTasks)): 
-                    ?>
+
+if (!empty($inProgressTasks)):
+    ?>
                         <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                             <?php foreach (array_slice($inProgressTasks, 0, 5) as $task): ?>
                                 <li class="py-3">
@@ -628,12 +628,12 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                             <?php endif; ?>
                                             <div class="flex items-center justify-end space-x-2 mt-1">
                                                 <?php
-                                                // Check if this specific task has an active timer
-                                                $activeTimer = $_SESSION['active_timer'] ?? null;
-                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+                                // Check if this specific task has an active timer
+                                $activeTimer = $_SESSION['active_timer'] ?? null;
+                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
 
-                                                if ($isTimerActiveForThisTask):
-                                                ?>
+                                if ($isTimerActiveForThisTask):
+                                    ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -644,7 +644,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -679,15 +679,15 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                 
                 <!-- Overdue Tasks Tab -->
                 <div class="p-4 task-content hidden" id="overdue-tasks">
-                    <?php 
-                    $overdueTasks = array_filter($dashboardData['recent_tasks'], function($task) {
+                    <?php
+                    $overdueTasks = array_filter($dashboardData['recent_tasks'], function ($task) {
                         return !empty($task->due_date) &&
                               strtotime($task->due_date) < time() &&
                               $task->status_id != 5 && $task->status_id != 6; // Not closed or completed
                     });
-                    
-                    if (!empty($overdueTasks)): 
-                    ?>
+
+if (!empty($overdueTasks)):
+    ?>
                         <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                             <?php foreach (array_slice($overdueTasks, 0, 5) as $task): ?>
                                 <li class="py-3">
@@ -706,12 +706,12 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                             </div>
                                             <div class="flex space-x-2 mt-1 justify-end">
                                                 <?php
-                                                // Check if this specific task has an active timer
-                                                $activeTimer = $_SESSION['active_timer'] ?? null;
-                                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
+                                // Check if this specific task has an active timer
+                                $activeTimer = $_SESSION['active_timer'] ?? null;
+                                $isTimerActiveForThisTask = isset($activeTimer) && $activeTimer['task_id'] == $task->id;
 
-                                                if ($isTimerActiveForThisTask):
-                                                ?>
+                                if ($isTimerActiveForThisTask):
+                                    ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -722,7 +722,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                                             </svg>
                                                         </button>
                                                     </form>
-                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all ?>
+                                                <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
@@ -798,7 +798,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                             }
                             echo "</div>";
                         }
-                        ?>
+?>
                         <?php if (!empty($dashboardData['recent_projects'])): ?>
                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                 <?php foreach (array_slice($dashboardData['recent_projects'], 0, 4) as $project): ?>
@@ -814,17 +814,17 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                             </div>
                                             <div>
                                                 <?php
-                                                // Project status mapping to match task style
-                                                $projectStatusMap = [
-                                                    1 => ['label' => 'READY', 'color' => 'bg-gray-600'],
-                                                    2 => ['label' => 'IN PROGRESS', 'color' => 'bg-blue-600'],
-                                                    3 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-                                                    4 => ['label' => 'ON HOLD', 'color' => 'bg-yellow-500'],
-                                                    6 => ['label' => 'DELAYED', 'color' => 'bg-orange-500'],
-                                                    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
-                                                ];
-                                                $projectStatus = $projectStatusMap[$project->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
-                                                ?>
+                        // Project status mapping to match task style
+                        $projectStatusMap = [
+                            1 => ['label' => 'READY', 'color' => 'bg-gray-600'],
+                            2 => ['label' => 'IN PROGRESS', 'color' => 'bg-blue-600'],
+                            3 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
+                            4 => ['label' => 'ON HOLD', 'color' => 'bg-yellow-500'],
+                            6 => ['label' => 'DELAYED', 'color' => 'bg-orange-500'],
+                            7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
+                        ];
+                                    $projectStatus = $projectStatusMap[$project->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
+                                    ?>
                                                 <span class="px-3 py-1 text-xs rounded-full bg-opacity-20 text-white font-medium <?= $projectStatus['color'] ?>">
                                                     <?= $projectStatus['label'] ?>
                                                 </span>
@@ -866,7 +866,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                             }
                             echo "</div>";
                         }
-                        ?>
+                ?>
                         <?php if (!empty($dashboardData['upcoming_milestones'])): ?>
                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
                                 <?php foreach (array_slice($dashboardData['upcoming_milestones'], 0, 4) as $milestone): ?>
@@ -1051,11 +1051,11 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                 }
                 echo "</div>";
             }
-            ?>
+?>
 
             <?php if (isset($dashboardData['active_sprints']) && !empty($dashboardData['active_sprints'])): ?>
                 <ul class="space-y-4">
-                    <?php foreach (array_slice($dashboardData['active_sprints'], 0, 3) as $sprint): 
+                    <?php foreach (array_slice($dashboardData['active_sprints'], 0, 3) as $sprint):
                         // Calculate sprint progress
                         $sprintStartDate = strtotime($sprint->start_date);
                         $sprintEndDate = strtotime($sprint->end_date);
@@ -1063,10 +1063,10 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                         $sprintDuration = $sprintEndDate - $sprintStartDate;
                         $elapsed = $today - $sprintStartDate;
                         $progressPercentage = min(100, max(0, ($elapsed / $sprintDuration) * 100));
-                        
+
                         // Calculate days remaining
                         $daysRemaining = ceil(($sprintEndDate - $today) / (60 * 60 * 24));
-                    ?>
+                        ?>
                         <li class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                             <div class="flex justify-between items-start mb-2">
                                 <div>

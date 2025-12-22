@@ -1,17 +1,17 @@
 <?php
+
 // file: Models/Milestone.php
 declare(strict_types=1);
 
 namespace App\Models;
 
-use PDO;
 use InvalidArgumentException;
+use PDO;
 use RuntimeException;
-use App\Services\SecurityService;
 
 /**
  * Milestone Model
- * 
+ *
  * Handles all milestone-related database operations
  */
 class Milestone extends BaseModel
@@ -47,7 +47,7 @@ class Milestone extends BaseModel
         'complete_date',
         'epic_id',
         'project_id',
-        'status_id'
+        'status_id',
     ];
 
     /**
@@ -55,7 +55,7 @@ class Milestone extends BaseModel
      */
     protected array $searchable = [
         'title',
-        'description'
+        'description',
     ];
 
     /**
@@ -64,7 +64,7 @@ class Milestone extends BaseModel
     protected array $validationRules = [
         'title' => ['required', 'string'],
         'project_id' => ['required'],
-        'status_id' => ['required']
+        'status_id' => ['required'],
     ];
 
     // Additional method to ensure status name is always populated
@@ -101,6 +101,7 @@ class Milestone extends BaseModel
             try {
                 $securityService = \App\Services\SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to find milestone details");
+
                 throw new \RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new \RuntimeException("Failed to find milestone details");
@@ -143,13 +144,13 @@ class Milestone extends BaseModel
      */
     public function getAllWithProgress(int $limit = 10, int $page = 1, array $conditions = []): array
     {
-        $limit  = (int) $limit; // ensure integer
-        $page   = (int) $page;  // ensure integer
+        $limit = (int) $limit; // ensure integer
+        $page = (int) $page;  // ensure integer
         $offset = ($page - 1) * $limit;
 
         // Start with a default clause to exclude deleted milestones
         $whereClauses = ['m.is_deleted = 0'];
-        $params       = [];
+        $params = [];
 
         // Process additional conditions
         foreach ($conditions as $column => $value) {
@@ -160,26 +161,28 @@ class Milestone extends BaseModel
 
             // Process complex conditions (operators)
             if (is_array($value)) {
-                $operator  = key($value);
+                $operator = key($value);
                 $condValue = $value[$operator];
 
                 switch ($operator) {
                     case '>':
-                        $whereClauses[]    = "m.{$column} > :{$column}";
+                        $whereClauses[] = "m.{$column} > :{$column}";
                         $params[":{$column}"] = $condValue;
+
                         break;
                     case '<':
-                        $whereClauses[]    = "m.{$column} < :{$column}";
+                        $whereClauses[] = "m.{$column} < :{$column}";
                         $params[":{$column}"] = $condValue;
+
                         break;
                     default:
                         // Fallback to '=' if the operator isn't recognized
-                        $whereClauses[]    = "m.{$column} = :{$column}";
+                        $whereClauses[] = "m.{$column} = :{$column}";
                         $params[":{$column}"] = $condValue;
                 }
             } else {
                 // Simple equality
-                $whereClauses[]    = "m.{$column} = :{$column}";
+                $whereClauses[] = "m.{$column} = :{$column}";
                 $params[":{$column}"] = $value;
             }
         }
@@ -239,10 +242,11 @@ class Milestone extends BaseModel
             ORDER BY m.due_date ASC, m.title ASC
             LIMIT :limit OFFSET :offset";
 
-        $params[':limit']  = $limit;
+        $params[':limit'] = $limit;
         $params[':offset'] = $offset;
 
         $stmt = $this->db->executeQuery($sql, $params);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -303,6 +307,7 @@ class Milestone extends BaseModel
                 ORDER BY m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching milestones for project: " . $e->getMessage());
@@ -318,12 +323,13 @@ class Milestone extends BaseModel
     {
         $sql = "SELECT * FROM statuses_milestone WHERE is_deleted = 0";
         $stmt = $this->db->executeQuery($sql);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
      * Get epics for project
-     * 
+     *
      * @param int $projectId
      * @return array
      */
@@ -337,12 +343,13 @@ class Milestone extends BaseModel
                 AND m.is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
      * Get milestones for epic
-     * 
+     *
      * @param int $epicId
      * @return array
      */
@@ -356,6 +363,7 @@ class Milestone extends BaseModel
                 AND m.is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -376,6 +384,7 @@ class Milestone extends BaseModel
                 AND t.is_deleted = 0";
 
         $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -433,19 +442,20 @@ class Milestone extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':milestone_id' => $milestoneId,
-                ':project_id' => $milestone->project_id
+                ':project_id' => $milestone->project_id,
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error in getRelatedSprints: " . $e->getMessage());
+
             return []; // Return empty array on error to not break the page
         }
     }
 
     /**
      * Add tasks to milestone
-     * 
+     *
      * @param int $milestoneId
      * @param array $taskIds
      * @return bool
@@ -465,21 +475,23 @@ class Milestone extends BaseModel
                         VALUES (:milestone_id, :task_id)";
                 $this->db->executeInsertUpdate($sql, [
                     ':milestone_id' => $milestoneId,
-                    ':task_id' => $taskId
+                    ':task_id' => $taskId,
                 ]);
             }
 
             $this->db->commit();
+
             return true;
         } catch (\Exception $e) {
             $this->db->rollBack();
+
             throw new \RuntimeException("Failed to add tasks to milestone: " . $e->getMessage());
         }
     }
 
     /**
      * Calculate milestone progress based on completed tasks
-     * 
+     *
      * @param int $milestoneId
      * @return float Percentage of completion (0-100)
      */
@@ -505,7 +517,7 @@ class Milestone extends BaseModel
 
     /**
      * Check for circular epic references
-     * 
+     *
      * @param int $currentId
      * @param int $newParentId
      * @throws InvalidArgumentException
@@ -524,7 +536,7 @@ class Milestone extends BaseModel
 
         $stmt = $this->db->executeQuery($sql, [
             ':start_id' => $newParentId,
-            ':check_id' => $currentId
+            ':check_id' => $currentId,
         ]);
 
         if ($stmt->fetchColumn() > 0) {
@@ -554,9 +566,11 @@ class Milestone extends BaseModel
                     ORDER BY s.start_date DESC";
 
             $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting associated sprints: " . $e->getMessage());
+
             return [];
         }
     }
@@ -603,9 +617,11 @@ class Milestone extends BaseModel
             $sql .= " ORDER BY m.milestone_type DESC, m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, $params);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting available milestones for sprint: " . $e->getMessage());
+
             return [];
         }
     }

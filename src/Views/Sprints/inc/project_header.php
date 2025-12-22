@@ -16,10 +16,10 @@ if (!defined('BASE_PATH')) {
             <?php
             $breadcrumbParams = [
                 'route' => 'sprints/project',
-                'params' => ['project_id' => $project->id ?? 0]
+                'params' => ['project_id' => $project->id ?? 0],
             ];
-            include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
-            ?>
+include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
+?>
         </div>
 
         <!-- Create New Sprint Button -->

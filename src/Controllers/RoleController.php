@@ -1,17 +1,17 @@
 <?php
+
 // file: Controllers/RoleController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CSRFMiddleware;
-use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Role;
 use App\Utils\Validator;
-use RuntimeException;
 use InvalidArgumentException;
+use RuntimeException;
 
 class RoleController
 {
@@ -101,9 +101,9 @@ class RoleController
     {
         try {
             $this->authMiddleware->hasPermission('create_roles');
-            
+
             $permissions = $this->permissionModel->getOrganizedPermissions();
-            
+
             include BASE_PATH . '/../Views/Roles/create.php';
         } catch (\Exception $e) {
             error_log("Exception in RoleController::createForm: " . $e->getMessage());
@@ -123,6 +123,7 @@ class RoleController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -137,7 +138,7 @@ class RoleController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:100|unique:roles,name',
                 'description' => 'nullable|string|max:500',
-                'permissions' => 'array'
+                'permissions' => 'array',
             ]);
 
             if ($validator->fails()) {
@@ -150,8 +151,8 @@ class RoleController
             try {
                 $roleData = [
                     'name' => htmlspecialchars($data['name']),
-                    'description' => isset($data['description']) ? 
-                        htmlspecialchars($data['description']) : null
+                    'description' => isset($data['description']) ?
+                        htmlspecialchars($data['description']) : null,
                 ];
 
                 $roleId = $this->roleModel->create($roleData);
@@ -170,6 +171,7 @@ class RoleController
 
             } catch (\Exception $e) {
                 $this->roleModel->rollBack();
+
                 throw $e;
             }
 
@@ -232,6 +234,7 @@ class RoleController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -251,7 +254,7 @@ class RoleController
             $validator = new Validator($data, [
                 'name' => 'required|string|max:100|unique:roles,name',
                 'description' => 'nullable|string|max:500',
-                'permissions' => 'array'
+                'permissions' => 'array',
             ]);
 
             if ($validator->fails()) {
@@ -264,14 +267,14 @@ class RoleController
             try {
                 $roleData = [
                     'name' => htmlspecialchars($data['name']),
-                    'description' => isset($data['description']) ? 
-                        htmlspecialchars($data['description']) : null
+                    'description' => isset($data['description']) ?
+                        htmlspecialchars($data['description']) : null,
                 ];
 
                 $this->roleModel->update($id, $roleData);
 
                 // Sync permissions
-                $permissions = !empty($data['permissions']) ? 
+                $permissions = !empty($data['permissions']) ?
                     array_map('intval', $data['permissions']) : [];
                 $this->roleModel->syncPermissions($id, $permissions);
 
@@ -283,6 +286,7 @@ class RoleController
 
             } catch (\Exception $e) {
                 $this->roleModel->rollBack();
+
                 throw $e;
             }
 

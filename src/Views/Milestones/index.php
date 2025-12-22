@@ -47,10 +47,10 @@ $totalPages = $totalPages ?? 1;
         // Set up breadcrumb parameters
         $breadcrumbParams = [
             'route' => 'milestones',
-            'params' => []
+            'params' => [],
         ];
-        include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
-        ?>
+include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
+?>
 
         <?php if (!empty($project)): ?>
             <!-- Project Header with Navigation -->

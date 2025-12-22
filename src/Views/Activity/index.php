@@ -14,7 +14,8 @@ use App\Core\Config;
 include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Set up activity-specific helper functions
-function getActivityIcon(string $eventType): string {
+function getActivityIcon(string $eventType): string
+{
     return match($eventType) {
         'login_attempt' => '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v14a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2H7a2 2 0 00-2 2v6z"></path></svg>',
         'logout' => '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>',
@@ -28,7 +29,8 @@ function getActivityIcon(string $eventType): string {
     };
 }
 
-function getEntityTypeColor(string $entityType): string {
+function getEntityTypeColor(string $entityType): string
+{
     return match($entityType) {
         'project' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
         'task' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -42,11 +44,12 @@ function getEntityTypeColor(string $entityType): string {
     };
 }
 
-function formatActivityDescription(object $activity): string {
+function formatActivityDescription(object $activity): string
+{
     if (!empty($activity->description)) {
         return htmlspecialchars($activity->description);
     }
-    
+
     // Fallback description generation
     $action = match($activity->event_type) {
         'login_attempt' => 'attempted to log in',
@@ -59,7 +62,7 @@ function formatActivityDescription(object $activity): string {
         'form_view' => 'accessed form for',
         default => 'performed ' . $activity->event_type . ' on'
     };
-    
+
     // Use entity_name if available, otherwise extract from path
     if (!empty($activity->entity_name)) {
         $target = htmlspecialchars($activity->entity_name);
@@ -71,7 +74,7 @@ function formatActivityDescription(object $activity): string {
         $target = $pathParts[0] ?? 'resource';
         $target = ucfirst($target);
     }
-    
+
     return $action . ' ' . $target;
 }
 ?>
@@ -189,16 +192,16 @@ function formatActivityDescription(object $activity): string {
                                                             <?= htmlspecialchars($activity->first_name . ' ' . $activity->last_name) ?>
                                                         </span>
                                                         <?= formatActivityDescription($activity) ?>
-                                                        <?php 
+                                                        <?php
                                                         // Show entity type badge if available
                                                         $entityType = $activity->entity_type ?? null;
-                                                        if (!$entityType && $activity->path) {
-                                                            // Extract entity type from path as fallback
-                                                            $pathParts = explode('/', trim($activity->path, '/'));
-                                                            $entityType = $pathParts[0] ?? null;
-                                                        }
-                                                        if ($entityType): 
-                                                        ?>
+                                if (!$entityType && $activity->path) {
+                                    // Extract entity type from path as fallback
+                                    $pathParts = explode('/', trim($activity->path, '/'));
+                                    $entityType = $pathParts[0] ?? null;
+                                }
+                                if ($entityType):
+                                    ?>
                                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= getEntityTypeColor($entityType) ?> ml-2">
                                                                 <?= htmlspecialchars(ucfirst($entityType)) ?>
                                                             </span>

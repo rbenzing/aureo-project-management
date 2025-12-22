@@ -1,12 +1,13 @@
 <?php
+
 //file: Controllers/FavoritesController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Models\Favorite;
 use App\Core\Response;
 use App\Middleware\AuthMiddleware;
+use App\Models\Favorite;
 
 /**
  * Favorites Controller
@@ -23,7 +24,7 @@ class FavoritesController
         $this->authMiddleware = new AuthMiddleware();
         $this->favoriteModel = new Favorite();
     }
-    
+
     /**
      * Get user favorites (AJAX endpoint)
      */
@@ -34,6 +35,7 @@ class FavoritesController
 
             if (!$userId) {
                 Response::json(['error' => 'User not authenticated'], 401);
+
                 return;
             }
 
@@ -41,13 +43,13 @@ class FavoritesController
 
             Response::json([
                 'success' => true,
-                'favorites' => $favorites
+                'favorites' => $favorites,
             ]);
         } catch (\Exception $e) {
             Response::json(['error' => 'Failed to get favorites: ' . $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Add a favorite (AJAX endpoint)
      */
@@ -58,58 +60,63 @@ class FavoritesController
 
             if (!$userId) {
                 Response::json(['error' => 'User not authenticated'], 401);
+
                 return;
             }
 
             // Validate CSRF token
             if (!$this->validateCsrfToken()) {
                 Response::json(['error' => 'Invalid CSRF token'], 403);
+
                 return;
             }
-            
+
             $input = json_decode(file_get_contents('php://input'), true);
-            
+
             if (!$input) {
                 Response::json(['error' => 'Invalid JSON input'], 400);
+
                 return;
             }
-            
+
             $type = $input['type'] ?? '';
             $title = $input['title'] ?? '';
             $itemId = $input['item_id'] ?? null;
             $url = $input['url'] ?? null;
             $icon = $input['icon'] ?? null;
-            
+
             if (empty($type) || empty($title)) {
                 Response::json(['error' => 'Type and title are required'], 400);
+
                 return;
             }
-            
+
             // Validate type
             $validTypes = ['project', 'task', 'milestone', 'sprint', 'page'];
             if (!in_array($type, $validTypes)) {
                 Response::json(['error' => 'Invalid favorite type'], 400);
+
                 return;
             }
-            
+
             $success = $this->favoriteModel->addFavorite($userId, $type, $title, $itemId, $url, $icon);
-            
+
             if ($success) {
                 Response::json([
                     'success' => true,
-                    'message' => 'Favorite added successfully'
+                    'message' => 'Favorite added successfully',
                 ]);
             } else {
                 Response::json([
                     'success' => false,
-                    'message' => 'Favorite already exists or could not be added'
+                    'message' => 'Favorite already exists or could not be added',
                 ]);
             }
         } catch (\Exception $e) {
             Response::json(['error' => 'Failed to add favorite: ' . $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Remove a favorite (AJAX endpoint)
      */
@@ -120,49 +127,52 @@ class FavoritesController
 
             if (!$userId) {
                 Response::json(['error' => 'User not authenticated'], 401);
+
                 return;
             }
-            
+
             // Validate CSRF token
             /*if (!$this->validateCsrfToken()) {
                 Response::json(['error' => 'Invalid CSRF token'], 403);
                 return;
             }*/
-            
+
             $input = json_decode(file_get_contents('php://input'), true);
-            
+
             if (!$input) {
                 Response::json(['error' => 'Invalid JSON input'], 400);
+
                 return;
             }
-            
+
             $type = $input['type'] ?? '';
             $itemId = $input['item_id'] ?? null;
             $url = $input['url'] ?? null;
-            
+
             if (empty($type)) {
                 Response::json(['error' => 'Type is required'], 400);
+
                 return;
             }
-            
+
             $success = $this->favoriteModel->removeFavorite($userId, $type, $itemId, $url);
-            
+
             if ($success) {
                 Response::json([
                     'success' => true,
-                    'message' => 'Favorite removed successfully'
+                    'message' => 'Favorite removed successfully',
                 ]);
             } else {
                 Response::json([
                     'success' => false,
-                    'message' => 'Favorite not found or could not be removed'
+                    'message' => 'Favorite not found or could not be removed',
                 ]);
             }
         } catch (\Exception $e) {
             Response::json(['error' => 'Failed to remove favorite: ' . $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Update favorites sort order (AJAX endpoint)
      */
@@ -173,42 +183,45 @@ class FavoritesController
 
             if (!$userId) {
                 Response::json(['error' => 'User not authenticated'], 401);
+
                 return;
             }
-            
+
             // Validate CSRF token
             if (!$this->validateCsrfToken()) {
                 Response::json(['error' => 'Invalid CSRF token'], 403);
+
                 return;
             }
-            
+
             $input = json_decode(file_get_contents('php://input'), true);
-            
+
             if (!$input || !isset($input['favorite_ids']) || !is_array($input['favorite_ids'])) {
                 Response::json(['error' => 'Invalid input: favorite_ids array required'], 400);
+
                 return;
             }
-            
+
             $favoriteIds = array_map('intval', $input['favorite_ids']);
-            
+
             $success = $this->favoriteModel->updateSortOrder($userId, $favoriteIds);
-            
+
             if ($success) {
                 Response::json([
                     'success' => true,
-                    'message' => 'Sort order updated successfully'
+                    'message' => 'Sort order updated successfully',
                 ]);
             } else {
                 Response::json([
                     'success' => false,
-                    'message' => 'Failed to update sort order'
+                    'message' => 'Failed to update sort order',
                 ]);
             }
         } catch (\Exception $e) {
             Response::json(['error' => 'Failed to update sort order: ' . $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Check if item is favorited (AJAX endpoint)
      */
@@ -219,29 +232,31 @@ class FavoritesController
 
             if (!$userId) {
                 Response::json(['error' => 'User not authenticated'], 401);
+
                 return;
             }
-            
+
             $type = $_GET['type'] ?? '';
             $itemId = isset($_GET['item_id']) ? (int)$_GET['item_id'] : null;
             $url = $_GET['url'] ?? null;
-            
+
             if (empty($type)) {
                 Response::json(['error' => 'Type is required'], 400);
+
                 return;
             }
-            
+
             $exists = $this->favoriteModel->favoriteExists($userId, $type, $itemId, $url);
-            
+
             Response::json([
                 'success' => true,
-                'is_favorited' => $exists
+                'is_favorited' => $exists,
             ]);
         } catch (\Exception $e) {
             Response::json(['error' => 'Failed to check favorite: ' . $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Validate CSRF token
      */

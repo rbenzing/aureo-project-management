@@ -8,8 +8,8 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use App\Utils\Time;
 use App\Utils\Sort;
+use App\Utils\Time;
 
 // Include helper functions for consistent styling
 include_once BASE_PATH . '/../src/Views/Tasks/inc/helper_functions.php';
@@ -76,7 +76,7 @@ $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' :
                         4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
                         5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
                         6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-                        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+                        7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
                     ];
                     $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
                     ?>

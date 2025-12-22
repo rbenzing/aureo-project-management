@@ -14,18 +14,20 @@ $taskSortDir = isset($currentSortDirection) ? $currentSortDirection : (isset($_G
 
 /**
  * Generate sort indicator icon based on field and current sort state
- * 
+ *
  * @param string $field Field name
  * @param string $currentField Current sorted field
  * @param string $currentDir Current sort direction
  * @return string HTML
  */
-function getSortIndicator($field, $currentField, $currentDir) {
+function getSortIndicator($field, $currentField, $currentDir)
+{
     if ($field === $currentField) {
-        return $currentDir === 'asc' 
+        return $currentDir === 'asc'
             ? '<svg class="w-4 h-4 ml-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>'
             : '<svg class="w-4 h-4 ml-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
     }
+
     return '<svg class="w-4 h-4 ml-1 text-gray-400 opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>';
 }
 
@@ -37,7 +39,8 @@ function getSortIndicator($field, $currentField, $currentDir) {
  * @param string $currentDir Current sort direction
  * @return string URL
  */
-function getSortUrl($field, $currentField, $currentDir) {
+function getSortUrl($field, $currentField, $currentDir)
+{
     $newDir = ($field === $currentField && $currentDir === 'asc') ? 'desc' : 'asc';
 
     // Determine base URL based on current context
@@ -80,7 +83,7 @@ function getSortUrl($field, $currentField, $currentDir) {
                 <?= getSortIndicator('project_name', $taskSortField, $taskSortDir) ?>
             </a>
         </th>
-        <?php if (!$isMyTasksView): // Only show assignee column in backlog view ?>
+        <?php if (!$isMyTasksView): // Only show assignee column in backlog view?>
         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
             <a href="<?= getSortUrl('assigned_to', $taskSortField, $taskSortDir) ?>" class="group inline-flex items-center">
                 <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

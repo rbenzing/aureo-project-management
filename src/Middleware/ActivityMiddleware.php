@@ -1,4 +1,5 @@
 <?php
+
 // file: Middleware/ActivityMiddleware.php
 declare(strict_types=1);
 
@@ -14,7 +15,7 @@ class ActivityMiddleware
         '/assets/',
         '/favicon.ico',
         '/ping',
-        '/health'
+        '/health',
     ];
 
     private array $sensitiveFields = [
@@ -26,7 +27,7 @@ class ActivityMiddleware
         'credit_card',
         'card_number',
         'cvv',
-        'secret'
+        'secret',
     ];
 
     /**
@@ -39,7 +40,7 @@ class ActivityMiddleware
 
     /**
      * Main middleware handler
-     * 
+     *
      * @return void
      */
     public function handle(): void
@@ -56,7 +57,7 @@ class ActivityMiddleware
 
     /**
      * Get the client's IP address with enhanced security
-     * 
+     *
      * @return string
      */
     private function getClientIp(): string
@@ -67,7 +68,7 @@ class ActivityMiddleware
             'HTTP_X_FORWARDED',
             'HTTP_FORWARDED_FOR',
             'HTTP_FORWARDED',
-            'REMOTE_ADDR'
+            'REMOTE_ADDR',
         ];
 
         $validIp = null;
@@ -75,9 +76,10 @@ class ActivityMiddleware
         foreach ($ipSources as $source) {
             if (!empty($_SERVER[$source])) {
                 $ip = $this->sanitizeIpAddress($_SERVER[$source]);
-                
+
                 if ($this->validateIpAddress($ip)) {
                     $validIp = $ip;
+
                     break;
                 }
             }
@@ -88,7 +90,7 @@ class ActivityMiddleware
 
     /**
      * Sanitize IP address
-     * 
+     *
      * @param string $ip
      * @return string
      */
@@ -96,16 +98,16 @@ class ActivityMiddleware
     {
         // Handle comma-separated IP lists (common in X-Forwarded-For)
         $ip = trim(explode(',', $ip)[0]);
-        
+
         // Remove any non-IP characters
         $ip = preg_replace('/[^0-9a-fA-F.:\/]/', '', $ip);
-        
+
         return $ip;
     }
 
     /**
      * Validate IP address
-     * 
+     *
      * @param string $ip
      * @return bool
      */
@@ -114,13 +116,13 @@ class ActivityMiddleware
         try {
             // Use IPTools for robust IP validation
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '::1';
-    
+
             if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
                 $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
             } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $ipAddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
             }
-            
+
             //TODO: Reject private, reserved, and loopback addresses
             return $ip === $ipAddress;
         } catch (\Exception $e) {
@@ -130,14 +132,14 @@ class ActivityMiddleware
 
     /**
      * Log the current activity
-     * 
-     * @return void 
+     *
+     * @return void
      */
     private function logActivity(): void
     {
         $userId = $_SESSION['user']['id'] ?? null;
         $sessionId = session_id();
-        
+
         $requestData = $this->collectRequestData();
         $eventType = $this->determineEventType($requestData['path'], $requestData['method']);
 
@@ -178,7 +180,7 @@ class ActivityMiddleware
                     ':referer' => $this->sanitizeUrl($requestData['referer']),
                     ':user_agent' => $this->sanitizeUserAgent($requestData['user_agent']),
                     ':ip_address' => $requestData['ip_address'],
-                    ':request_data' => json_encode($requestData['post_data'])
+                    ':request_data' => json_encode($requestData['post_data']),
                 ]
             );
         } catch (\Exception $e) {
@@ -188,7 +190,7 @@ class ActivityMiddleware
 
     /**
      * Sanitize URL
-     * 
+     *
      * @param string|null $url
      * @return string|null
      */
@@ -199,12 +201,13 @@ class ActivityMiddleware
         }
 
         $sanitized = filter_var($url, FILTER_SANITIZE_URL);
+
         return filter_var($sanitized, FILTER_VALIDATE_URL) ? $sanitized : null;
     }
 
     /**
      * Sanitize User Agent
-     * 
+     *
      * @param string|null $userAgent
      * @return string
      */
@@ -220,7 +223,7 @@ class ActivityMiddleware
 
     /**
      * Collect all relevant request data
-     * 
+     *
      * @return array
      */
     private function collectRequestData(): array
@@ -238,7 +241,7 @@ class ActivityMiddleware
 
     /**
      * Check if the path should be ignored
-     * 
+     *
      * @param string $path
      * @return bool
      */
@@ -249,12 +252,13 @@ class ActivityMiddleware
                 return true;
             }
         }
+
         return false;
     }
 
     /**
      * Sanitize POST data for logging
-     * 
+     *
      * @param array $postData
      * @return array
      */
@@ -266,7 +270,7 @@ class ActivityMiddleware
             $keyString = (string)$key;
             if (in_array(strtolower($keyString), $this->sensitiveFields, true)) {
                 $sanitized[$key] = '[REDACTED]';
-            } else if (is_array($value)) {
+            } elseif (is_array($value)) {
                 $sanitized[$key] = $this->sanitizePostData($value);
             } else {
                 $sanitized[$key] = is_string($value) ?
@@ -280,7 +284,7 @@ class ActivityMiddleware
 
     /**
      * Determine the event type based on the request
-     * 
+     *
      * @param string $path
      * @param string $method
      * @return string
@@ -304,7 +308,7 @@ class ActivityMiddleware
 
     /**
      * Determine event type for GET requests
-     * 
+     *
      * @param string $action
      * @return string
      */
@@ -322,7 +326,7 @@ class ActivityMiddleware
 
     /**
      * Determine event type for POST requests
-     * 
+     *
      * @param string $action
      * @return string
      */
@@ -340,25 +344,27 @@ class ActivityMiddleware
 
     /**
      * Add custom paths to ignore
-     * 
+     *
      * @param array $paths
      * @return self
      */
     public function addIgnoredPaths(array $paths): self
     {
         $this->ignoredPaths = array_merge($this->ignoredPaths, $paths);
+
         return $this;
     }
 
     /**
      * Add custom sensitive fields
-     * 
+     *
      * @param array $fields
      * @return self
      */
     public function addSensitiveFields(array $fields): self
     {
         $this->sensitiveFields = array_merge($this->sensitiveFields, $fields);
+
         return $this;
     }
 }

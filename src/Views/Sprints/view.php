@@ -87,8 +87,8 @@ include_once BASE_PATH . '/inc/helpers.php';
                             </h1>
                             <?php
                             $statusInfo = getSprintStatusInfo($sprint->status_id ?? 1);
-                            echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm') . '</span>';
-                            ?>
+echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm') . '</span>';
+?>
                         </div>
                         <p class="text-gray-600 dark:text-gray-400 mt-1">
                             Project: <a href="/projects/view/<?= $project->id ?? 0 ?>" class="text-indigo-600 dark:text-indigo-400 hover:underline">
@@ -98,16 +98,16 @@ include_once BASE_PATH . '/inc/helpers.php';
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <?php if (isset($sprint->status_id) && $sprint->status_id == 1): // Planning 
-                    ?>
+                    <?php if (isset($sprint->status_id) && $sprint->status_id == 1): // Planning
+                        ?>
                         <form action="/sprints/start/<?= $sprint->id ?? 0 ?>" method="POST" class="inline" onsubmit="return confirm('Start this sprint? This will set it as the active sprint for the project.');">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                                 Start Sprint
                             </button>
                         </form>
-                    <?php elseif (isset($sprint->status_id) && $sprint->status_id == 2): // Active 
-                    ?>
+                    <?php elseif (isset($sprint->status_id) && $sprint->status_id == 2): // Active
+                        ?>
                         <form action="/sprints/complete/<?= $sprint->id ?? 0 ?>" method="POST" class="inline" onsubmit="return confirm('Complete this sprint? This will update the sprint status to completed.');">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -129,8 +129,8 @@ include_once BASE_PATH . '/inc/helpers.php';
                         </button>
                         <div class="more-dropdown-menu absolute hidden right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
                             <div class="py-1">
-                                <?php if (isset($sprint->status_id) && $sprint->status_id !== 3): // Not delayed 
-                                ?>
+                                <?php if (isset($sprint->status_id) && $sprint->status_id !== 3): // Not delayed
+                                    ?>
                                     <form action="/sprints/delay/<?= $sprint->id ?? 0 ?>" method="POST" class="block">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                         <button
@@ -142,8 +142,8 @@ include_once BASE_PATH . '/inc/helpers.php';
                                     </form>
                                 <?php endif; ?>
 
-                                <?php if (isset($sprint->status_id) && $sprint->status_id !== 5): // Not cancelled 
-                                ?>
+                                <?php if (isset($sprint->status_id) && $sprint->status_id !== 5): // Not cancelled
+                                    ?>
                                     <form action="/sprints/cancel/<?= $sprint->id ?? 0 ?>" method="POST" class="block">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                         <button
@@ -221,7 +221,7 @@ include_once BASE_PATH . '/inc/helpers.php';
                             $today = new DateTime();
                             $daysRemaining = $today <= $endDate ? $today->diff($endDate)->days : 0;
                             $isOverdue = $today > $endDate;
-                        ?>
+                            ?>
                             <div class="mt-1 text-sm <?= $isOverdue ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400' ?>">
                                 <?= $isOverdue ? 'Overdue by ' . abs($daysRemaining) . ' days' : $daysRemaining . ' days remaining' ?>
                             </div>
@@ -232,44 +232,44 @@ include_once BASE_PATH . '/inc/helpers.php';
                     <?php
                     // Calculate sprint progress percentages
                     $daysElapsed = 0;
-                    $totalDays = 0;
-                    $timeProgress = 0;
+$totalDays = 0;
+$timeProgress = 0;
 
-                    if (isset($sprint->start_date) && isset($sprint->end_date)) {
-                        $startDate = new DateTime($sprint->start_date);
-                        $endDate = new DateTime($sprint->end_date);
-                        $today = new DateTime();
+if (isset($sprint->start_date) && isset($sprint->end_date)) {
+    $startDate = new DateTime($sprint->start_date);
+    $endDate = new DateTime($sprint->end_date);
+    $today = new DateTime();
 
-                        $totalDays = $startDate->diff($endDate)->days + 1; // +1 to include start day
+    $totalDays = $startDate->diff($endDate)->days + 1; // +1 to include start day
 
-                        if ($today < $startDate) {
-                            // Sprint hasn't started yet
-                            $daysElapsed = 0;
-                        } elseif ($today > $endDate) {
-                            // Sprint has ended
-                            $daysElapsed = $totalDays;
-                        } else {
-                            // Sprint is in progress
-                            $daysElapsed = $startDate->diff($today)->days + 1; // +1 to include today
-                        }
+    if ($today < $startDate) {
+        // Sprint hasn't started yet
+        $daysElapsed = 0;
+    } elseif ($today > $endDate) {
+        // Sprint has ended
+        $daysElapsed = $totalDays;
+    } else {
+        // Sprint is in progress
+        $daysElapsed = $startDate->diff($today)->days + 1; // +1 to include today
+    }
 
-                        $timeProgress = $totalDays > 0 ? min(100, round(($daysElapsed / $totalDays) * 100)) : 0;
-                    }
+    $timeProgress = $totalDays > 0 ? min(100, round(($daysElapsed / $totalDays) * 100)) : 0;
+}
 
-                    // Calculate task completion percentages
-                    $taskCompletion = 0;
-                    $totalTasks = count($tasks ?? []);
-                    $completedTasks = 0;
+// Calculate task completion percentages
+$taskCompletion = 0;
+$totalTasks = count($tasks ?? []);
+$completedTasks = 0;
 
-                    if ($totalTasks > 0) {
-                        foreach ($tasks ?? [] as $task) {
-                            if (isset($task->status_id) && $task->status_id == 6) { // 6 = Completed status
-                                $completedTasks++;
-                            }
-                        }
-                        $taskCompletion = round(($completedTasks / $totalTasks) * 100);
-                    }
-                    ?>
+if ($totalTasks > 0) {
+    foreach ($tasks ?? [] as $task) {
+        if (isset($task->status_id) && $task->status_id == 6) { // 6 = Completed status
+            $completedTasks++;
+        }
+    }
+    $taskCompletion = round(($completedTasks / $totalTasks) * 100);
+}
+?>
 
                     <!-- Time Progress -->
                     <div>
@@ -303,49 +303,54 @@ include_once BASE_PATH . '/inc/helpers.php';
                     <div>
                         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
                         <?php
-                        // Calculate sprint health
-                        $statusIndicator = '';
-                        $statusMessage = '';
+    // Calculate sprint health
+    $statusIndicator = '';
+$statusMessage = '';
 
-                        if (isset($sprint->status_id)) {
-                            switch ($sprint->status_id) {
-                                case 1: // Planning
-                                    $statusIndicator = '<span class="text-blue-600 dark:text-blue-400">Planning</span>';
-                                    $statusMessage = 'Sprint is in planning phase.';
-                                    break;
-                                case 2: // Active
-                                    if ($timeProgress > $taskCompletion + 20) {
-                                        $statusIndicator = '<span class="text-red-600 dark:text-red-400">Behind Schedule</span>';
-                                        $statusMessage = 'Sprint tasks are falling behind schedule.';
-                                    } elseif ($taskCompletion >= $timeProgress) {
-                                        $statusIndicator = '<span class="text-green-600 dark:text-green-400">On Track</span>';
-                                        $statusMessage = 'Sprint is on track or ahead of schedule.';
-                                    } else {
-                                        $statusIndicator = '<span class="text-yellow-600 dark:text-yellow-400">Slightly Behind</span>';
-                                        $statusMessage = 'Sprint slightly behind, but recoverable.';
-                                    }
-                                    break;
-                                case 3: // Delayed
-                                    $statusIndicator = '<span class="text-yellow-600 dark:text-yellow-400">Delayed</span>';
-                                    $statusMessage = 'Sprint has been marked as delayed.';
-                                    break;
-                                case 4: // Completed
-                                    $statusIndicator = '<span class="text-green-600 dark:text-green-400">Completed</span>';
-                                    $statusMessage = 'Sprint has been completed.';
-                                    break;
-                                case 5: // Cancelled
-                                    $statusIndicator = '<span class="text-red-600 dark:text-red-400">Cancelled</span>';
-                                    $statusMessage = 'Sprint has been cancelled.';
-                                    break;
-                                default:
-                                    $statusIndicator = '<span class="text-gray-600 dark:text-gray-400">Unknown</span>';
-                                    $statusMessage = 'Unknown sprint status.';
-                            }
-                        }
+if (isset($sprint->status_id)) {
+    switch ($sprint->status_id) {
+        case 1: // Planning
+            $statusIndicator = '<span class="text-blue-600 dark:text-blue-400">Planning</span>';
+            $statusMessage = 'Sprint is in planning phase.';
 
-                        echo '<div class="mt-1 text-gray-900 dark:text-gray-100">' . $statusIndicator . '</div>';
-                        echo '<div class="mt-1 text-sm text-gray-500 dark:text-gray-400">' . $statusMessage . '</div>';
-                        ?>
+            break;
+        case 2: // Active
+            if ($timeProgress > $taskCompletion + 20) {
+                $statusIndicator = '<span class="text-red-600 dark:text-red-400">Behind Schedule</span>';
+                $statusMessage = 'Sprint tasks are falling behind schedule.';
+            } elseif ($taskCompletion >= $timeProgress) {
+                $statusIndicator = '<span class="text-green-600 dark:text-green-400">On Track</span>';
+                $statusMessage = 'Sprint is on track or ahead of schedule.';
+            } else {
+                $statusIndicator = '<span class="text-yellow-600 dark:text-yellow-400">Slightly Behind</span>';
+                $statusMessage = 'Sprint slightly behind, but recoverable.';
+            }
+
+            break;
+        case 3: // Delayed
+            $statusIndicator = '<span class="text-yellow-600 dark:text-yellow-400">Delayed</span>';
+            $statusMessage = 'Sprint has been marked as delayed.';
+
+            break;
+        case 4: // Completed
+            $statusIndicator = '<span class="text-green-600 dark:text-green-400">Completed</span>';
+            $statusMessage = 'Sprint has been completed.';
+
+            break;
+        case 5: // Cancelled
+            $statusIndicator = '<span class="text-red-600 dark:text-red-400">Cancelled</span>';
+            $statusMessage = 'Sprint has been cancelled.';
+
+            break;
+        default:
+            $statusIndicator = '<span class="text-gray-600 dark:text-gray-400">Unknown</span>';
+            $statusMessage = 'Unknown sprint status.';
+    }
+}
+
+echo '<div class="mt-1 text-gray-900 dark:text-gray-100">' . $statusIndicator . '</div>';
+echo '<div class="mt-1 text-sm text-gray-500 dark:text-gray-400">' . $statusMessage . '</div>';
+?>
                     </div>
                 </div>
             </div>
@@ -362,17 +367,19 @@ include_once BASE_PATH . '/inc/helpers.php';
                         <div class="mt-1">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                 <?php
-                                switch ($sprint->relationships['type']) {
-                                    case 'epic':
-                                        echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-                                        break;
-                                    case 'milestone':
-                                        echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-                                        break;
-                                    default:
-                                        echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-                                }
-                                ?>">
+        switch ($sprint->relationships['type']) {
+            case 'epic':
+                echo 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+
+                break;
+            case 'milestone':
+                echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                break;
+            default:
+                echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        }
+                ?>">
                                 <?= ucfirst($sprint->relationships['type']) ?>-based Sprint
                             </span>
                         </div>
@@ -487,7 +494,7 @@ include_once BASE_PATH . '/inc/helpers.php';
                 <h2 class="text-lg font-medium text-gray-900 dark:text-white">Sprint Tasks, Epics & Milestones</h2>
 
                 <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active
-                ?>
+                    ?>
                     <a href="/tasks/create?sprint_id=<?= $sprint->id ?? 0 ?>&project_id=<?= $project->id ?? 0 ?>" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700">
                         Add Task
                     </a>

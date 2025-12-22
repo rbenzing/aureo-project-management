@@ -9,8 +9,8 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
-use App\Utils\Time;
 use App\Services\SettingsService;
+use App\Utils\Time;
 
 // Include form components
 require_once BASE_PATH . '/../src/views/Layouts/FormComponents.php';
@@ -26,11 +26,15 @@ unset($_SESSION['form_data']);
 $markComplete = isset($_GET['mark_complete']) && $_GET['mark_complete'] == 1;
 
 // Format time for display using settings
-function formatTimeInput($seconds) {
-    if (!$seconds) return '';
+function formatTimeInput($seconds)
+{
+    if (!$seconds) {
+        return '';
+    }
 
     // Convert seconds to the configured time unit for display
     $settingsService = \App\Services\SettingsService::getInstance();
+
     return \App\Utils\Time::convertFromSeconds($seconds);
 }
 
@@ -138,28 +142,28 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             'required' => true,
                             'disabled' => $markComplete,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h7a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />',
-                            'error' => $errors['title'] ?? ''
+                            'error' => $errors['title'] ?? '',
                         ]) ?>
 
                         <?php if (!$markComplete): ?>
                         <!-- Templates Row -->
                         <?php
                         $settingsService = SettingsService::getInstance();
-                        $templateSettings = $settingsService->getTemplateSettings();
-                        $taskTemplateSettings = $templateSettings['task'] ?? [];
-                        $showQuickTemplates = $taskTemplateSettings['show_quick_templates'] ?? true;
-                        $showCustomTemplates = $taskTemplateSettings['show_custom_templates'] ?? true;
+                            $templateSettings = $settingsService->getTemplateSettings();
+                            $taskTemplateSettings = $templateSettings['task'] ?? [];
+                            $showQuickTemplates = $taskTemplateSettings['show_quick_templates'] ?? true;
+                            $showCustomTemplates = $taskTemplateSettings['show_custom_templates'] ?? true;
 
-                        // Filter templates to only show task templates
-                        $taskTemplates = [];
-                        if (!empty($templates)) {
-                            foreach ($templates as $template) {
-                                if ($template->template_type === 'task') {
-                                    $taskTemplates[] = $template;
+                            // Filter templates to only show task templates
+                            $taskTemplates = [];
+                            if (!empty($templates)) {
+                                foreach ($templates as $template) {
+                                    if ($template->template_type === 'task') {
+                                        $taskTemplates[] = $template;
+                                    }
                                 }
                             }
-                        }
-                        ?>
+                            ?>
                         <?php if ($showQuickTemplates || $showCustomTemplates): ?>
                         <div class="mb-4 grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
                             <?php if ($showQuickTemplates): ?>
@@ -175,9 +179,9 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                     <select id="quick_template_edit" name="quick_template_edit" class="w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm border-gray-300 dark:border-gray-600">
                                         <option value="">Select a quick template...</option>
                                         <?php
-                                        $quickTemplates = Config::get('QUICK_TASK_TEMPLATES', []);
-                                        foreach ($quickTemplates as $name => $content):
-                                        ?>
+                                            $quickTemplates = Config::get('QUICK_TASK_TEMPLATES', []);
+                                foreach ($quickTemplates as $name => $content):
+                                    ?>
                                             <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
                                                     data-title="<?= htmlspecialchars($name) ?>"
                                                     data-priority="medium"
@@ -232,7 +236,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             'rows' => 8,
                             'disabled' => $markComplete,
                             'help_text' => 'Add any additional details or context for this task.',
-                            'error' => $errors['description'] ?? ''
+                            'error' => $errors['description'] ?? '',
                         ]) ?>
 
                         <!-- Acceptance Criteria -->
@@ -244,7 +248,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             'disabled' => $markComplete,
                             'placeholder' => 'Define the criteria that must be met for this task to be considered complete...',
                             'help_text' => 'Clear criteria that define when this task is complete.',
-                            'error' => $errors['acceptance_criteria'] ?? ''
+                            'error' => $errors['acceptance_criteria'] ?? '',
                         ]) ?>
 
 
@@ -263,126 +267,126 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                             <?php
                             // Prepare assignee options
                             $assigneeOptions = ['' => 'Unassigned'];
-                            foreach ($users as $user) {
-                                $userId = $user->id ?? null;
-                                $firstName = $user->first_name ?? '';
-                                $lastName = $user->last_name ?? '';
-                                if ($userId) {
-                                    $assigneeOptions[$userId] = trim($firstName . ' ' . $lastName);
-                                }
-                            }
-                            ?>
+foreach ($users as $user) {
+    $userId = $user->id ?? null;
+    $firstName = $user->first_name ?? '';
+    $lastName = $user->last_name ?? '';
+    if ($userId) {
+        $assigneeOptions[$userId] = trim($firstName . ' ' . $lastName);
+    }
+}
+?>
                             <?= renderSelect([
-                                'name' => 'assigned_to',
-                                'label' => 'Assign To',
-                                'value' => $formData['assigned_to'] ?? $task->assigned_to,
-                                'options' => $assigneeOptions,
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
-                                'error' => $errors['assigned_to'] ?? ''
-                            ]) ?>
+    'name' => 'assigned_to',
+    'label' => 'Assign To',
+    'value' => $formData['assigned_to'] ?? $task->assigned_to,
+    'options' => $assigneeOptions,
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
+    'error' => $errors['assigned_to'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Status -->
                         <div>
                             <?php
-                            // Prepare status options with proper labels
-                            $statusOptions = [];
-                            foreach ($statuses as $status) {
-                                $statusInfo = getTaskStatusInfo($status->id);
-                                $statusOptions[$status->id] = $statusInfo['label'];
-                            }
-                            ?>
+// Prepare status options with proper labels
+$statusOptions = [];
+foreach ($statuses as $status) {
+    $statusInfo = getTaskStatusInfo($status->id);
+    $statusOptions[$status->id] = $statusInfo['label'];
+}
+?>
                             <?= renderSelect([
-                                'name' => 'status_id',
-                                'label' => 'Status',
-                                'value' => $formData['status_id'] ?? $task->status_id,
-                                'options' => $statusOptions,
-                                'required' => true,
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['status_id'] ?? ''
-                            ]) ?>
+    'name' => 'status_id',
+    'label' => 'Status',
+    'value' => $formData['status_id'] ?? $task->status_id,
+    'options' => $statusOptions,
+    'required' => true,
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['status_id'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Due Date -->
                         <div>
                             <?= renderTextInput([
-                                'name' => 'due_date',
-                                'type' => 'date',
-                                'label' => 'Due Date',
-                                'value' => $formData['due_date'] ?? $task->due_date ?? '',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                'error' => $errors['due_date'] ?? ''
-                            ]) ?>
+    'name' => 'due_date',
+    'type' => 'date',
+    'label' => 'Due Date',
+    'value' => $formData['due_date'] ?? $task->due_date ?? '',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['due_date'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Task Type -->
                         <div>
                             <?php
-                            // Determine the task type value - if it's a subtask, show 'subtask' instead of 'task'
-                            $taskTypeValue = $formData['task_type'] ?? $task->task_type ?? 'task';
-                            if ($task->is_subtask && $taskTypeValue === 'task') {
-                                $taskTypeValue = 'subtask';
-                            }
-                            ?>
+// Determine the task type value - if it's a subtask, show 'subtask' instead of 'task'
+$taskTypeValue = $formData['task_type'] ?? $task->task_type ?? 'task';
+if ($task->is_subtask && $taskTypeValue === 'task') {
+    $taskTypeValue = 'subtask';
+}
+?>
                             <?= renderSelect([
-                                'name' => 'task_type',
-                                'label' => 'Task Type',
-                                'value' => $taskTypeValue,
-                                'options' => [
-                                    'task' => 'Task',
-                                    'subtask' => 'Subtask',
-                                    'story' => 'User Story',
-                                    'bug' => 'Bug',
-                                    'epic' => 'Epic'
-                                ],
-                                'required' => true,
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
-                                'error' => $errors['task_type'] ?? ''
-                            ]) ?>
+    'name' => 'task_type',
+    'label' => 'Task Type',
+    'value' => $taskTypeValue,
+    'options' => [
+        'task' => 'Task',
+        'subtask' => 'Subtask',
+        'story' => 'User Story',
+        'bug' => 'Bug',
+        'epic' => 'Epic',
+    ],
+    'required' => true,
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+    'error' => $errors['task_type'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Priority -->
                         <div>
                             <?= renderSelect([
-                                'name' => 'priority',
-                                'label' => 'Priority',
-                                'value' => $formData['priority'] ?? $task->priority ?? 'none',
-                                'options' => [
-                                    'none' => 'None',
-                                    'low' => 'Low',
-                                    'medium' => 'Medium',
-                                    'high' => 'High'
-                                ],
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
-                                'error' => $errors['priority'] ?? ''
-                            ]) ?>
+    'name' => 'priority',
+    'label' => 'Priority',
+    'value' => $formData['priority'] ?? $task->priority ?? 'none',
+    'options' => [
+        'none' => 'None',
+        'low' => 'Low',
+        'medium' => 'Medium',
+        'high' => 'High',
+    ],
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
+    'error' => $errors['priority'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Story Points -->
                         <div>
                             <?= renderSelect([
-                                'name' => 'story_points',
-                                'label' => 'Story Points',
-                                'value' => $formData['story_points'] ?? $task->story_points ?? '',
-                                'options' => [
-                                    '' => 'None',
-                                    '1' => '1',
-                                    '2' => '2',
-                                    '3' => '3',
-                                    '5' => '5',
-                                    '8' => '8',
-                                    '13' => '13'
-                                ],
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
-                                'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
-                                'error' => $errors['story_points'] ?? ''
-                            ]) ?>
+    'name' => 'story_points',
+    'label' => 'Story Points',
+    'value' => $formData['story_points'] ?? $task->story_points ?? '',
+    'options' => [
+        '' => 'None',
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '5' => '5',
+        '8' => '8',
+        '13' => '13',
+    ],
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
+    'help_text' => 'Fibonacci sequence for agile estimation (1, 2, 3, 5, 8, 13)',
+    'error' => $errors['story_points'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Backlog Priority (Hidden - controlled by drag & drop) -->
@@ -393,75 +397,75 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         <!-- Project Selection -->
                         <div>
                             <?php
-                            // Prepare project options
-                            $projectOptions = [];
-                            foreach ($projects['records'] as $p) {
-                                $projectOptions[$p->id] = $p->name;
-                            }
-                            ?>
+// Prepare project options
+$projectOptions = [];
+foreach ($projects['records'] as $p) {
+    $projectOptions[$p->id] = $p->name;
+}
+?>
                             <?= renderSelect([
-                                'name' => 'project_id',
-                                'label' => 'Project',
-                                'value' => $formData['project_id'] ?? $task->project_id,
-                                'options' => $projectOptions,
-                                'empty_option' => 'Select a project',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
-                                'error' => $errors['project_id'] ?? ''
-                            ]) ?>
+    'name' => 'project_id',
+    'label' => 'Project',
+    'value' => $formData['project_id'] ?? $task->project_id,
+    'options' => $projectOptions,
+    'empty_option' => 'Select a project',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
+    'error' => $errors['project_id'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Parent Task (for subtasks) -->
                         <div>
                             <?php
-                            // Prepare parent task options from controller data
-                            $parentTaskOptions = [];
-                            if (isset($availableParentTasks)) {
-                                foreach ($availableParentTasks as $availableTask) {
-                                    $parentTaskOptions[$availableTask->id] = $availableTask->title;
-                                }
-                            }
-                            ?>
+// Prepare parent task options from controller data
+$parentTaskOptions = [];
+if (isset($availableParentTasks)) {
+    foreach ($availableParentTasks as $availableTask) {
+        $parentTaskOptions[$availableTask->id] = $availableTask->title;
+    }
+}
+?>
                             <?= renderSelect([
-                                'name' => 'parent_task_id',
-                                'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
-                                'value' => $formData['parent_task_id'] ?? $task->parent_task_id ?? '',
-                                'options' => $parentTaskOptions,
-                                'empty_option' => 'None (Main task)',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
-                                'help_text' => 'Select a parent task to make this a subtask',
-                                'error' => $errors['parent_task_id'] ?? ''
-                            ]) ?>
+    'name' => 'parent_task_id',
+    'label' => 'Parent Task <span class="text-gray-400 dark:text-gray-500 font-normal">(optional)</span>',
+    'value' => $formData['parent_task_id'] ?? $task->parent_task_id ?? '',
+    'options' => $parentTaskOptions,
+    'empty_option' => 'None (Main task)',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
+    'help_text' => 'Select a parent task to make this a subtask',
+    'error' => $errors['parent_task_id'] ?? '',
+]) ?>
                             <input type="hidden" name="is_subtask" id="is_subtask" value="<?= $task->is_subtask ? '1' : '0' ?>">
                         </div>
 
                         <!-- Start Date -->
                         <div>
                             <?= renderTextInput([
-                                'name' => 'start_date',
-                                'type' => 'date',
-                                'label' => 'Start Date',
-                                'value' => $formData['start_date'] ?? $task->start_date ?? '',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                'error' => $errors['start_date'] ?? ''
-                            ]) ?>
+    'name' => 'start_date',
+    'type' => 'date',
+    'label' => 'Start Date',
+    'value' => $formData['start_date'] ?? $task->start_date ?? '',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['start_date'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Complete Date (visible when task is completed) -->
                         <?php if ($task->status_id == 6 || $task->complete_date): ?>
                         <div>
                             <?= renderTextInput([
-                                'name' => 'complete_date',
-                                'type' => 'date',
-                                'label' => 'Complete Date',
-                                'value' => $formData['complete_date'] ?? ($task->complete_date ? date('Y-m-d', strtotime($task->complete_date)) : ''),
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'help_text' => 'Date when this task was completed',
-                                'error' => $errors['complete_date'] ?? ''
-                            ]) ?>
+    'name' => 'complete_date',
+    'type' => 'date',
+    'label' => 'Complete Date',
+    'value' => $formData['complete_date'] ?? ($task->complete_date ? date('Y-m-d', strtotime($task->complete_date)) : ''),
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'help_text' => 'Date when this task was completed',
+    'error' => $errors['complete_date'] ?? '',
+]) ?>
                         </div>
                         <?php endif; ?>
 
@@ -469,57 +473,57 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                         <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
                             <?= renderTextInput([
-                                'name' => 'estimated_time',
-                                'type' => 'number',
-                                'label' => 'Estimated Time (minutes)',
-                                'value' => $formData['estimated_time'] ?? formatTimeInput($task->estimated_time) ?? '',
-                                'min' => '0',
-                                'step' => '15',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['estimated_time'] ?? ''
-                            ]) ?>
+    'name' => 'estimated_time',
+    'type' => 'number',
+    'label' => 'Estimated Time (minutes)',
+    'value' => $formData['estimated_time'] ?? formatTimeInput($task->estimated_time) ?? '',
+    'min' => '0',
+    'step' => '15',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['estimated_time'] ?? '',
+]) ?>
                         </div>
                         <?php endif; ?>
 
                         <!-- Sprint Planning -->
                         <div>
                             <?= renderCheckbox([
-                                'name' => 'is_ready_for_sprint',
-                                'label' => 'Ready for Sprint Planning',
-                                'checked' => ($formData['is_ready_for_sprint'] ?? $task->is_ready_for_sprint) ? true : false,
-                                'disabled' => $markComplete,
-                                'help_text' => 'Mark this task as ready to be included in sprint planning',
-                                'error' => $errors['is_ready_for_sprint'] ?? ''
-                            ]) ?>
+    'name' => 'is_ready_for_sprint',
+    'label' => 'Ready for Sprint Planning',
+    'checked' => ($formData['is_ready_for_sprint'] ?? $task->is_ready_for_sprint) ? true : false,
+    'disabled' => $markComplete,
+    'help_text' => 'Mark this task as ready to be included in sprint planning',
+    'error' => $errors['is_ready_for_sprint'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Time Spent -->
                         <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('edit_time_tracking')): ?>
                         <div>
                             <?= renderTextInput([
-                                'name' => 'time_spent',
-                                'type' => 'number',
-                                'label' => 'Time Spent (minutes)',
-                                'value' => $formData['time_spent'] ?? formatTimeInput($task->time_spent) ?? '',
-                                'min' => '0',
-                                'step' => '15',
-                                'disabled' => $markComplete,
-                                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                'error' => $errors['time_spent'] ?? ''
-                            ]) ?>
+    'name' => 'time_spent',
+    'type' => 'number',
+    'label' => 'Time Spent (minutes)',
+    'value' => $formData['time_spent'] ?? formatTimeInput($task->time_spent) ?? '',
+    'min' => '0',
+    'step' => '15',
+    'disabled' => $markComplete,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['time_spent'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Billable Toggle -->
                         <div>
                             <?= renderCheckbox([
-                                'name' => 'is_hourly',
-                                'label' => 'Mark as billable',
-                                'checked' => ($formData['is_hourly'] ?? $task->is_hourly) ? true : false,
-                                'disabled' => $markComplete,
-                                'help_text' => 'Track billable hours for client invoicing',
-                                'error' => $errors['is_hourly'] ?? ''
-                            ]) ?>
+    'name' => 'is_hourly',
+    'label' => 'Mark as billable',
+    'checked' => ($formData['is_hourly'] ?? $task->is_hourly) ? true : false,
+    'disabled' => $markComplete,
+    'help_text' => 'Track billable hours for client invoicing',
+    'error' => $errors['is_hourly'] ?? '',
+]) ?>
                         </div>
 
                         <!-- Hourly Rate (conditional on billable) -->
@@ -539,15 +543,15 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                                 </div>
                                 <div>
                                     <?= renderTextInput([
-                                        'name' => 'billable_time',
-                                        'type' => 'number',
-                                        'label' => 'Billable Time (minutes)',
-                                        'value' => $formData['billable_time'] ?? formatTimeInput($task->billable_time) ?? '',
-                                        'min' => '0',
-                                        'step' => '15',
-                                        'disabled' => $markComplete,
-                                        'error' => $errors['billable_time'] ?? ''
-                                    ]) ?>
+            'name' => 'billable_time',
+            'type' => 'number',
+            'label' => 'Billable Time (minutes)',
+            'value' => $formData['billable_time'] ?? formatTimeInput($task->billable_time) ?? '',
+            'min' => '0',
+            'step' => '15',
+            'disabled' => $markComplete,
+            'error' => $errors['billable_time'] ?? '',
+        ]) ?>
                                 </div>
                             </div>
                         </div>

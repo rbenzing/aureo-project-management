@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -106,10 +107,10 @@ use App\Core\Config;
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Projects</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            <?php 
+                            <?php
                             // This would need to be calculated in the controller
                             echo $activeProjects ?? 0;
-                            ?>
+?>
                         </p>
                     </div>
                 </div>
@@ -126,10 +127,10 @@ use App\Core\Config;
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            <?php 
-                            // This would need to be calculated in the controller
-                            echo $totalUsers ?? 0;
-                            ?>
+                            <?php
+// This would need to be calculated in the controller
+echo $totalUsers ?? 0;
+?>
                         </p>
                     </div>
                 </div>
@@ -187,47 +188,47 @@ use App\Core\Config;
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <?php 
-                                    // Here we'd ideally have a dedicated count from the controller
-                                    // This is a fallback solution using the data we have
-                                    $userCount = 0;
-                                    
-                                    // If we have the user data attached directly to companies
-                                    if (isset($companyUserCounts) && isset($companyUserCounts[$company->id])) {
-                                        // Direct lookup from a precomputed count
-                                        $userCount = (int)$companyUserCounts[$company->id];
-                                    } elseif (property_exists($company, 'user_count')) {
-                                        // Some implementations attach counts directly to objects
-                                        $userCount = (int)$company->user_count;
-                                    } elseif (method_exists('\App\Models\Company', 'getUsers') && isset($company->id)) {
-                                        // If there's no pre-computed count, we could count users on demand
-                                        // This is less efficient but works as a fallback
-                                        $companyModel = new \App\Models\Company();
-                                        $users = $companyModel->getUsers($company->id);
-                                        $userCount = count($users);
-                                    }
-                                    ?>
+                                    <?php
+        // Here we'd ideally have a dedicated count from the controller
+        // This is a fallback solution using the data we have
+        $userCount = 0;
+
+                            // If we have the user data attached directly to companies
+                            if (isset($companyUserCounts) && isset($companyUserCounts[$company->id])) {
+                                // Direct lookup from a precomputed count
+                                $userCount = (int)$companyUserCounts[$company->id];
+                            } elseif (property_exists($company, 'user_count')) {
+                                // Some implementations attach counts directly to objects
+                                $userCount = (int)$company->user_count;
+                            } elseif (method_exists('\App\Models\Company', 'getUsers') && isset($company->id)) {
+                                // If there's no pre-computed count, we could count users on demand
+                                // This is less efficient but works as a fallback
+                                $companyModel = new \App\Models\Company();
+                                $users = $companyModel->getUsers($company->id);
+                                $userCount = count($users);
+                            }
+                            ?>
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                         <?= $userCount ?> users
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <?php 
-                                    // Similar approach for project counts
-                                    $projectCount = 0;
-                                    
-                                    if (isset($companyProjectCounts) && isset($companyProjectCounts[$company->id])) {
-                                        $projectCount = (int)$companyProjectCounts[$company->id];
-                                    } elseif (property_exists($company, 'project_count')) {
-                                        $projectCount = (int)$company->project_count;
-                                    } elseif (method_exists('\App\Models\Company', 'getProjects') && isset($company->id)) {
-                                        // We need to be careful with this approach as it can lead to N+1 query problems
-                                        $companyModel = new \App\Models\Company();
-                                        $companyModel->id = $company->id; // Set ID on model instance
-                                        $projects = $companyModel->getProjects(); // Call without parameter
-                                        $projectCount = count($projects);
-                                    }
-                                    ?>
+                                    <?php
+                            // Similar approach for project counts
+                            $projectCount = 0;
+
+                            if (isset($companyProjectCounts) && isset($companyProjectCounts[$company->id])) {
+                                $projectCount = (int)$companyProjectCounts[$company->id];
+                            } elseif (property_exists($company, 'project_count')) {
+                                $projectCount = (int)$company->project_count;
+                            } elseif (method_exists('\App\Models\Company', 'getProjects') && isset($company->id)) {
+                                // We need to be careful with this approach as it can lead to N+1 query problems
+                                $companyModel = new \App\Models\Company();
+                                $companyModel->id = $company->id; // Set ID on model instance
+                                $projects = $companyModel->getProjects(); // Call without parameter
+                                $projectCount = count($projects);
+                            }
+                            ?>
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                                         <?= $projectCount ?> projects
                                     </span>

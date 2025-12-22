@@ -10,6 +10,7 @@ if (!defined('BASE_PATH')) {
 
 use App\Core\Config;
 use App\Services\SettingsService;
+
 ?>
 
 <!DOCTYPE html>
@@ -154,21 +155,21 @@ use App\Services\SettingsService;
                 <!-- Templates Row -->
                 <?php
                 $settingsService = SettingsService::getInstance();
-                $templateSettings = $settingsService->getTemplateSettings();
-                $sprintTemplateSettings = $templateSettings['sprint'] ?? [];
-                $showQuickTemplates = $sprintTemplateSettings['show_quick_templates'] ?? true;
-                $showCustomTemplates = $sprintTemplateSettings['show_custom_templates'] ?? true;
+$templateSettings = $settingsService->getTemplateSettings();
+$sprintTemplateSettings = $templateSettings['sprint'] ?? [];
+$showQuickTemplates = $sprintTemplateSettings['show_quick_templates'] ?? true;
+$showCustomTemplates = $sprintTemplateSettings['show_custom_templates'] ?? true;
 
-                // Filter templates to only show sprint templates
-                $sprintTemplates = [];
-                if (!empty($templates)) {
-                    foreach ($templates as $template) {
-                        if ($template->template_type === 'sprint') {
-                            $sprintTemplates[] = $template;
-                        }
-                    }
-                }
-                ?>
+// Filter templates to only show sprint templates
+$sprintTemplates = [];
+if (!empty($templates)) {
+    foreach ($templates as $template) {
+        if ($template->template_type === 'sprint') {
+            $sprintTemplates[] = $template;
+        }
+    }
+}
+?>
                 <?php if ($showQuickTemplates || $showCustomTemplates): ?>
                 <div class="grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
                     <?php if ($showQuickTemplates): ?>
@@ -184,9 +185,9 @@ use App\Services\SettingsService;
                             <select id="quick_template" name="quick_template" class="pl-10 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm">
                                 <option value="">Select a quick template...</option>
                                 <?php
-                                $quickTemplates = Config::get('QUICK_SPRINT_TEMPLATES', []);
-                                foreach ($quickTemplates as $name => $content):
-                                ?>
+                $quickTemplates = Config::get('QUICK_SPRINT_TEMPLATES', []);
+                        foreach ($quickTemplates as $name => $content):
+                            ?>
                                     <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
                                             data-title="<?= htmlspecialchars($name) ?>"
                                             data-description="<?= htmlspecialchars($content) ?>">
@@ -317,7 +318,7 @@ use App\Services\SettingsService;
     <?php
     // Include sprint helpers for status functions
     include_once BASE_PATH . '/inc/helpers.php';
-    ?>
+?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

@@ -16,7 +16,7 @@ include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 $breadcrumbs = [
     ['name' => 'Dashboard', 'url' => '/dashboard'],
-    ['name' => 'Sprint Planning', 'url' => '/tasks/sprint-planning']
+    ['name' => 'Sprint Planning', 'url' => '/tasks/sprint-planning'],
 ];
 ?>
 
@@ -102,8 +102,8 @@ $breadcrumbs = [
                                                     6 => ['label' => 'Delayed', 'class' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'],
                                                     7 => ['label' => 'Cancelled', 'class' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
                                                 ];
-                                                $projectStatus = $projectStatusMap[$project->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'];
-                                                ?>
+                                        $projectStatus = $projectStatusMap[$project->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'];
+                                        ?>
                                                 <span class="px-2 py-1 text-xs rounded-full font-medium <?= $projectStatus['class'] ?>">
                                                     <?= $projectStatus['label'] ?>
                                                 </span>
@@ -216,14 +216,22 @@ $breadcrumbs = [
                                                         <?php endif; ?>
                                                         <div class="flex items-center space-x-2 mt-2">
                                                             <span class="px-2 py-1 text-xs rounded-full 
-                                                                <?php 
-                                                                switch($task->priority) {
-                                                                    case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                                                    case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                                                    case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                                                    default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; break;
-                                                                }
-                                                                ?>">
+                                                                <?php
+                                                        switch ($task->priority) {
+                                                            case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+                                                                break;
+                                                            case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+
+                                                                break;
+                                                            case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
+                                                                break;
+                                                            default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+
+                                                                break;
+                                                        }
+                                            ?>">
                                                                 <?= ucfirst($task->priority) ?>
                                                             </span>
                                                             <?php if (!empty($task->story_points)): ?>
@@ -282,14 +290,14 @@ $breadcrumbs = [
                                                             <?php
                                                             // Use consistent sprint status formatting
                                                             $sprintStatusMap = [
-                                                                1 => ['label' => 'Planning', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
-                                                                2 => ['label' => 'Active', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
-                                                                3 => ['label' => 'Delayed', 'class' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
-                                                                4 => ['label' => 'Completed', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
-                                                                5 => ['label' => 'Cancelled', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'],
+                                            1 => ['label' => 'Planning', 'class' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'],
+                                            2 => ['label' => 'Active', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
+                                            3 => ['label' => 'Delayed', 'class' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
+                                            4 => ['label' => 'Completed', 'class' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'],
+                                            5 => ['label' => 'Cancelled', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'],
                                                             ];
-                                                            $sprintStatus = $sprintStatusMap[$sprint->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'];
-                                                            ?>
+                                            $sprintStatus = $sprintStatusMap[$sprint->status_id ?? 1] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'];
+                                            ?>
                                                             <span class="px-2 py-1 text-xs rounded-full font-medium <?= $sprintStatus['class'] ?>">
                                                                 <?= $sprintStatus['label'] ?>
                                                             </span>

@@ -1,4 +1,5 @@
 <?php
+
 // file: Controllers/AuthController.php
 declare(strict_types=1);
 
@@ -8,21 +9,33 @@ use App\Core\Config;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\SessionMiddleware;
 use App\Models\User;
+use App\Services\SecurityService;
 use App\Utils\Email;
 use App\Utils\Validator;
-use App\Services\SecurityService;
-use RuntimeException;
 use InvalidArgumentException;
+use RuntimeException;
 
 class AuthController
 {
     private AuthMiddleware $authMiddleware;
     private User $userModel;
+    private SecurityService $securityService;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->userModel = new User();
+    /**
+     * Constructor - Now supports dependency injection
+     *
+     * @param AuthMiddleware|null $authMiddleware Optional AuthMiddleware instance
+     * @param User|null $userModel Optional User model instance
+     * @param SecurityService|null $securityService Optional SecurityService instance
+     */
+    public function __construct(
+        ?AuthMiddleware $authMiddleware = null,
+        ?User $userModel = null,
+        ?SecurityService $securityService = null
+    ) {
+        $this->authMiddleware = $authMiddleware ?? new AuthMiddleware();
+        $this->userModel = $userModel ?? new User();
+        $this->securityService = $securityService ?? SecurityService::getInstance();
     }
 
     /**
@@ -33,7 +46,7 @@ class AuthController
     public function loginForm(string $requestMethod, array $data): void
     {
         $companyName = Config::get('company_name', 'Aureo');
-        
+
         include BASE_PATH . '/../Views/Auth/login.php';
     }
 
@@ -46,13 +59,14 @@ class AuthController
     {
         if ($requestMethod !== 'POST') {
             $this->loginForm($requestMethod, $data);
+
             return;
         }
 
         try {
             $validator = new Validator($data, [
                 'email' => 'required|email',
-                'password' => 'required|string'
+                'password' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -82,11 +96,11 @@ class AuthController
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'company_id' => $user->company_id,
-                    'is_active' => $user->is_active
+                    'is_active' => $user->is_active,
                 ],
                 'roles' => $rolesAndPermissions['roles'],
                 'permissions' => $rolesAndPermissions['permissions'],
-                'config' => Config::all()
+                'config' => Config::all(),
             ]);
 
             header('Location: /dashboard');
@@ -97,8 +111,7 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::login', 'An error occurred during login.');
+            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::login', 'An error occurred during login.');
             header('Location: /login');
             exit;
         }
@@ -145,6 +158,7 @@ class AuthController
     {
         if ($requestMethod !== 'POST') {
             $this->registerForm($requestMethod, $data);
+
             return;
         }
 
@@ -154,7 +168,7 @@ class AuthController
                 'last_name' => 'required|string|max:100',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:8|strong_password',
-                'confirm_password' => 'required|string|same:password'
+                'confirm_password' => 'required|string|same:password',
             ]);
 
             if ($validator->fails()) {
@@ -167,7 +181,7 @@ class AuthController
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
                 'password_hash' => password_hash($data['password'], PASSWORD_ARGON2ID),
                 'role_id' => 2, // Default role for new registrations (client role)
-                'is_active' => false
+                'is_active' => false,
             ];
 
             $userId = $this->userModel->create($userData);
@@ -186,8 +200,7 @@ class AuthController
             header('Location: /register');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::register', 'An error occurred during registration.');
+            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::register', 'An error occurred during registration.');
             header('Location: /register');
             exit;
         }
@@ -214,7 +227,7 @@ class AuthController
             if ($requestMethod === 'POST') {
                 $validator = new Validator($data, [
                     'password' => 'required|string|min:8|strong_password',
-                    'confirm_password' => 'required|string|same:password'
+                    'confirm_password' => 'required|string|same:password',
                 ]);
 
                 if ($validator->fails()) {
@@ -237,8 +250,7 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::resetPassword', 'An error occurred during password reset.');
+            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::resetPassword', 'An error occurred during password reset.');
             header('Location: /login');
             exit;
         }
@@ -278,11 +290,11 @@ class AuthController
                         'email' => $user->email,
                         'phone' => $user->phone,
                         'company_id' => $user->company_id,
-                        'is_active' => true
+                        'is_active' => true,
                     ],
                     'roles' => $rolesAndPermissions['roles'],
                     'permissions' => $rolesAndPermissions['permissions'],
-                    'config' => Config::all()
+                    'config' => Config::all(),
                 ]);
 
                 $_SESSION['success'] = 'Account activated successfully.';
@@ -295,8 +307,7 @@ class AuthController
             header('Location: /login');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::activate', 'An error occurred during account activation.');
+            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::activate', 'An error occurred during account activation.');
             header('Location: /login');
             exit;
         }
@@ -312,7 +323,7 @@ class AuthController
         try {
             if ($requestMethod === 'POST') {
                 $validator = new Validator($data, [
-                    'email' => 'required|email'
+                    'email' => 'required|email',
                 ]);
 
                 if ($validator->fails()) {
@@ -327,7 +338,7 @@ class AuthController
                 }
 
                 $resetToken = $this->userModel->generatePasswordResetToken($user->id);
-                
+
                 // This needs to be updated in your Email class to match schema
                 if (!Email::sendPasswordResetEmail($email, $resetToken)) {
                     throw new RuntimeException('Failed to send password reset email');
@@ -343,8 +354,7 @@ class AuthController
             header('Location: /forgot-password');
             exit;
         } catch (\Exception $e) {
-            $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'AuthController::forgotPassword');
+            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::forgotPassword');
             header('Location: /forgot-password');
             exit;
         }

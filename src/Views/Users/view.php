@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -203,8 +204,8 @@ use App\Core\Config;
                                             <?php
                                             // Determine badge color based on status
                                             $statusInfo = getProjectStatusInfo($project->status_id ?? 1);
-                                            echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
-                                            ?>
+                                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
+                                    ?>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -233,15 +234,15 @@ use App\Core\Config;
                                                 <?= htmlspecialchars($task->title) ?>
                                             </a>
                                             <?php
-                                            // Priority badge
-                                            $priorityClasses = [
-                                                'high' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
-                                                'medium' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-                                                'low' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-                                                'none' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                                            ];
-                                            $priorityClass = $priorityClasses[$task->priority ?? 'none'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
-                                            ?>
+                                    // Priority badge
+                                    $priorityClasses = [
+                                        'high' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
+                                        'medium' => 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+                                        'low' => 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
+                                        'none' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+                                    ];
+                                    $priorityClass = $priorityClasses[$task->priority ?? 'none'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+                                    ?>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $priorityClass ?>">
                                                 <?= ucfirst(htmlspecialchars($task->priority ?? 'None')) ?>
                                             </span>

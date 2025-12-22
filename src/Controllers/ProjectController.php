@@ -1,21 +1,21 @@
 <?php
+
 // file: Controllers/ProjectController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Middleware\AuthMiddleware;
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\Company;
 use App\Models\Template;
 use App\Models\User;
-use App\Utils\Validator;
-use App\Utils\Sort;
-use RuntimeException;
-use InvalidArgumentException;
 use App\Services\SecurityService;
+use App\Utils\Sort;
+use App\Utils\Validator;
+use InvalidArgumentException;
+use RuntimeException;
 
 class ProjectController
 {
@@ -91,12 +91,12 @@ class ProjectController
             $projects = [];
             foreach ($projectIds as $projectId) {
                 $project = $this->projectModel->findWithDetails($projectId);
-                
+
                 // Sort tasks if in tasks view
                 if ($viewBy === 'tasks' && isset($project->tasks) && is_array($project->tasks)) {
                     $project->tasks = Sort::sortObjects($project->tasks, $taskSortField, $taskSortDir);
                 }
-                
+
                 $projects[] = $project;
             }
 
@@ -109,7 +109,7 @@ class ProjectController
                 'in_progress' => $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]),
                 'completed' => $this->projectModel->count(['status_id' => 3, 'is_deleted' => 0]),
                 'on_hold' => $this->projectModel->count(['status_id' => 4, 'is_deleted' => 0]),
-                'delayed' => $this->projectModel->count(['status_id' => 6, 'is_deleted' => 0])
+                'delayed' => $this->projectModel->count(['status_id' => 6, 'is_deleted' => 0]),
             ];
 
             $totalPages = ceil($totalProjects / $limit);
@@ -147,7 +147,7 @@ class ProjectController
             // For task sorting within project view
             $taskSortField = isset($_GET['task_sort']) ? $_GET['task_sort'] : 'priority';
             $taskSortDir = isset($_GET['task_dir']) && $_GET['task_dir'] === 'asc' ? 'asc' : 'desc';
-            
+
             // Sort tasks if needed
             if (isset($project->tasks) && is_array($project->tasks)) {
                 $project->tasks = Sort::sortObjects($project->tasks, $taskSortField, $taskSortDir);
@@ -207,6 +207,7 @@ class ProjectController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -221,7 +222,7 @@ class ProjectController
                 'company_id' => 'required|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date',
-                'template_id' => 'nullable|integer|exists:templates,id'
+                'template_id' => 'nullable|integer|exists:templates,id',
             ]);
 
             if ($validator->fails()) {
@@ -247,7 +248,7 @@ class ProjectController
                 'company_id' => $data['company_id'] ? filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
-                'key_code' => $this->projectModel->transformKeyCodeFormat($data['name'])
+                'key_code' => $this->projectModel->transformKeyCodeFormat($data['name']),
             ];
 
             $projectId = $this->projectModel->create($projectData);
@@ -333,7 +334,7 @@ class ProjectController
                 'company_id' => 'nullable|integer|exists:companies,id',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after:start_date',
-                'template_id' => 'nullable|integer|exists:templates,id'
+                'template_id' => 'nullable|integer|exists:templates,id',
             ]);
 
             if ($validator->fails()) {
@@ -358,7 +359,7 @@ class ProjectController
                 'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
                 'company_id' => filter_var($data['company_id'], FILTER_VALIDATE_INT),
                 'start_date' => $data['start_date'] ?? null,
-                'end_date' => $data['end_date'] ?? null
+                'end_date' => $data['end_date'] ?? null,
             ];
 
             $this->projectModel->update($id, $projectData);

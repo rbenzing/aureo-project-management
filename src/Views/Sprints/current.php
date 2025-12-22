@@ -140,21 +140,33 @@ $currentPage = 'sprints';
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             <?php
                                             $priority = $task->priority ?? 'normal';
-                                            switch (strtolower($priority)) {
-                                                case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
-                                                case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                                case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                                default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-                                            }
-                                            ?>">
+                                switch (strtolower($priority)) {
+                                    case 'high': echo 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+                                        break;
+                                    case 'medium': echo 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+
+                                        break;
+                                    case 'low': echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
+                                        break;
+                                    default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                                }
+                                ?>">
                                             <?php
-                                            switch (strtolower($priority)) {
-                                                case 'high': echo 'High'; break;
-                                                case 'medium': echo 'Medium'; break;
-                                                case 'low': echo 'Low'; break;
-                                                default: echo 'Normal';
-                                            }
-                                            ?>
+                                switch (strtolower($priority)) {
+                                    case 'high': echo 'High';
+
+                                        break;
+                                    case 'medium': echo 'Medium';
+
+                                        break;
+                                    case 'low': echo 'Low';
+
+                                        break;
+                                    default: echo 'Normal';
+                                }
+                                ?>
                                         </span>
                                     </div>
                                 </div>
@@ -167,7 +179,7 @@ $currentPage = 'sprints';
             <!-- Active Sprints -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <?php foreach ($sprintDetails as $detail): ?>
-                    <?php 
+                    <?php
                     $sprint = $detail['sprint'];
                     $progress = $detail['progress'];
                     $userTasks = $detail['user_tasks'];
@@ -246,11 +258,15 @@ $currentPage = 'sprints';
                                             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                                                 <?php
                                                 switch ($task->status_id) {
-                                                    case 6: echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
-                                                    case 3: case 4: echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
+                                                    case 6: echo 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
+                                                        break;
+                                                    case 3: case 4: echo 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                                                        break;
                                                     default: echo 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
                                                 }
-                                                ?>">
+                                        ?>">
                                                 <?= htmlspecialchars($task->status_name) ?>
                                             </span>
                                         </div>

@@ -1,4 +1,5 @@
 <?php
+
 // file: Controllers/TaskController.php
 declare(strict_types=1);
 
@@ -6,17 +7,17 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Models\Task;
 use App\Models\Project;
-use App\Models\User;
 use App\Models\Sprint;
+use App\Models\Task;
 use App\Models\Template;
-use App\Utils\Validator;
-use App\Utils\Time;
-use App\Services\SettingsService;
+use App\Models\User;
 use App\Services\SecurityService;
-use RuntimeException;
+use App\Services\SettingsService;
+use App\Utils\Time;
+use App\Utils\Validator;
 use InvalidArgumentException;
+use RuntimeException;
 
 class TaskController
 {
@@ -190,7 +191,7 @@ class TaskController
 
                 // Get active/planning sprints for this project
                 $sprints = $this->sprintModel->getByProjectId($projectId);
-                $activeSprints = array_filter($sprints, function($sprint) {
+                $activeSprints = array_filter($sprints, function ($sprint) {
                     return in_array($sprint->status_id, [1, 2]); // Planning or Active
                 });
 
@@ -216,6 +217,7 @@ class TaskController
         if ($requestMethod !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+
             return;
         }
 
@@ -228,6 +230,7 @@ class TaskController
             if (!isset($input['tasks']) || !is_array($input['tasks'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid input data']);
+
                 return;
             }
 
@@ -248,7 +251,7 @@ class TaskController
 
             echo json_encode([
                 'success' => $success,
-                'message' => $success ? 'Backlog priorities updated successfully' : 'Some priorities failed to update'
+                'message' => $success ? 'Backlog priorities updated successfully' : 'Some priorities failed to update',
             ]);
 
         } catch (\Exception $e) {
@@ -352,6 +355,7 @@ class TaskController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -408,7 +412,7 @@ class TaskController
                 'acceptance_criteria' => 'nullable|string',
                 'task_type' => 'required|in:story,bug,task,epic,subtask',
                 'backlog_priority' => 'nullable|integer|min:1',
-                'is_ready_for_sprint' => 'boolean'
+                'is_ready_for_sprint' => 'boolean',
             ]);
 
             if ($validator->fails()) {
@@ -463,7 +467,7 @@ class TaskController
                 'backlog_priority' => isset($data['backlog_priority']) && $data['backlog_priority'] !== '' ?
                     filter_var($data['backlog_priority'], FILTER_VALIDATE_INT) : null,
                 'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) && $data['is_ready_for_sprint'] !== '' ?
-                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN) : false
+                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN) : false,
             ];
 
             $taskId = $this->taskModel->create($taskData);
@@ -575,6 +579,7 @@ class TaskController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -625,7 +630,7 @@ class TaskController
                 'acceptance_criteria' => 'nullable|string',
                 'task_type' => 'required|in:story,bug,task,epic,subtask',
                 'backlog_priority' => 'nullable|integer|min:1',
-                'is_ready_for_sprint' => 'boolean'
+                'is_ready_for_sprint' => 'boolean',
             ]);
 
             if ($validator->fails()) {
@@ -678,7 +683,7 @@ class TaskController
                 'backlog_priority' => isset($data['backlog_priority']) && $data['backlog_priority'] !== '' ?
                     filter_var($data['backlog_priority'], FILTER_VALIDATE_INT) : null,
                 'is_ready_for_sprint' => isset($data['is_ready_for_sprint']) && $data['is_ready_for_sprint'] !== '' ?
-                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : 0
+                    filter_var($data['is_ready_for_sprint'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) : 0,
             ];
 
             $this->taskModel->update($id, $taskData);
@@ -727,6 +732,7 @@ class TaskController
         if ($requestMethod !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+
             return;
         }
 
@@ -739,6 +745,7 @@ class TaskController
             if (!isset($input['task_id']) || !isset($input['status_id'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Task ID and status ID are required']);
+
                 return;
             }
 
@@ -748,6 +755,7 @@ class TaskController
             if (!$taskId || !$statusId) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid task ID or status ID']);
+
                 return;
             }
 
@@ -756,6 +764,7 @@ class TaskController
             if (!$task || $task->is_deleted) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Task not found']);
+
                 return;
             }
 
@@ -764,6 +773,7 @@ class TaskController
             if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'You do not have permission to update this task']);
+
                 return;
             }
 
@@ -773,6 +783,7 @@ class TaskController
             foreach ($statuses as $status) {
                 if ($status->id == $statusId) {
                     $validStatus = true;
+
                     break;
                 }
             }
@@ -780,6 +791,7 @@ class TaskController
             if (!$validStatus) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid status ID']);
+
                 return;
             }
 
@@ -798,7 +810,7 @@ class TaskController
                     'success' => true,
                     'message' => 'Task status updated successfully',
                     'task_id' => $taskId,
-                    'new_status_id' => $statusId
+                    'new_status_id' => $statusId,
                 ]);
             } else {
                 http_response_code(500);
@@ -907,7 +919,7 @@ class TaskController
                 'task_id' => $taskId,
                 'task_title' => $task->title,
                 'project_name' => $task->project_name ?? 'Unknown Project',
-                'start_time' => time()
+                'start_time' => time(),
             ];
 
             // Add timer start history entry
@@ -966,7 +978,7 @@ class TaskController
 
             // Update task time
             $taskUpdate = [
-                'time_spent' => ($task->time_spent ?? 0) + $duration
+                'time_spent' => ($task->time_spent ?? 0) + $duration,
             ];
 
             // If task is billable, update billable time too

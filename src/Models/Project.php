@@ -1,4 +1,5 @@
 <?php
+
 // file: Models/Project.php
 declare(strict_types=1);
 
@@ -7,11 +8,10 @@ namespace App\Models;
 use App\Core\Database;
 use PDO;
 use RuntimeException;
-use InvalidArgumentException;
 
 /**
  * Project Model
- * 
+ *
  * Handles all project-related database operations
  */
 class Project extends BaseModel
@@ -45,7 +45,7 @@ class Project extends BaseModel
         'start_date',
         'end_date',
         'status_id',
-        'key_code'
+        'key_code',
     ];
 
     /**
@@ -53,7 +53,7 @@ class Project extends BaseModel
      */
     protected array $searchable = [
         'name',
-        'description'
+        'description',
     ];
 
     /**
@@ -63,12 +63,12 @@ class Project extends BaseModel
         'name' => ['required', 'string'],
         'company_id' => ['required'],
         'owner_id' => ['required'],
-        'status_id' => ['required']
+        'status_id' => ['required'],
     ];
 
     /**
      * Get project with full details
-     * 
+     *
      * @param int $id
      * @return object|null
      */
@@ -118,7 +118,7 @@ class Project extends BaseModel
 
     /**
      * Get all projects with full details
-     * 
+     *
      * @param int $limit
      * @param int $page
      * @return array
@@ -158,7 +158,7 @@ class Project extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':limit' => $limit,
-                ':offset' => $offset
+                ':offset' => $offset,
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -169,7 +169,7 @@ class Project extends BaseModel
 
     /**
      * Calculate project health metrics
-     * 
+     *
      * @param int $projectId
      * @return array
      */
@@ -219,7 +219,7 @@ class Project extends BaseModel
                 'overall_health' => $this->calculateOverallProjectHealth(
                     $taskCompletionRate,
                     $milestoneCompletionRate
-                )
+                ),
             ];
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to calculate project health: " . $e->getMessage());
@@ -228,7 +228,7 @@ class Project extends BaseModel
 
     /**
      * Calculate overall project health score
-     * 
+     *
      * @param float $taskCompletionRate
      * @param float $milestoneCompletionRate
      * @return string
@@ -273,9 +273,11 @@ class Project extends BaseModel
                 t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get project tasks with assignees: " . $e->getMessage());
+
             return [];
         }
     }
@@ -299,7 +301,7 @@ class Project extends BaseModel
                     'type' => 'epic',
                     'data' => $epic,
                     'milestones' => [],
-                    'tasks' => []
+                    'tasks' => [],
                 ];
 
                 // Get milestones for this epic
@@ -309,7 +311,7 @@ class Project extends BaseModel
                     $milestoneData = [
                         'type' => 'milestone',
                         'data' => $milestone,
-                        'tasks' => $this->getMilestoneTasks($milestone->id)
+                        'tasks' => $this->getMilestoneTasks($milestone->id),
                     ];
                     $epicData['milestones'][] = $milestoneData;
                 }
@@ -327,7 +329,7 @@ class Project extends BaseModel
                 $milestoneData = [
                     'type' => 'milestone',
                     'data' => $milestone,
-                    'tasks' => $this->getMilestoneTasks($milestone->id)
+                    'tasks' => $this->getMilestoneTasks($milestone->id),
                 ];
                 $hierarchy[] = $milestoneData;
             }
@@ -338,13 +340,14 @@ class Project extends BaseModel
                 $hierarchy[] = [
                     'type' => 'unassigned_tasks',
                     'data' => (object)['title' => 'Unassigned Tasks'],
-                    'tasks' => $unassignedTasks
+                    'tasks' => $unassignedTasks,
                 ];
             }
 
             return $hierarchy;
         } catch (\Exception $e) {
             error_log("Failed to get project hierarchy: " . $e->getMessage());
+
             return [];
         }
     }
@@ -373,9 +376,11 @@ class Project extends BaseModel
                 m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get project epics: " . $e->getMessage());
+
             return [];
         }
     }
@@ -404,9 +409,11 @@ class Project extends BaseModel
                 m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get epic milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -440,9 +447,11 @@ class Project extends BaseModel
                 t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':milestone_id' => $milestoneId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get milestone tasks: " . $e->getMessage());
+
             return [];
         }
     }
@@ -476,9 +485,11 @@ class Project extends BaseModel
                 t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':epic_id' => $epicId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get epic tasks: " . $e->getMessage());
+
             return [];
         }
     }
@@ -508,9 +519,11 @@ class Project extends BaseModel
                 m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get standalone milestones: " . $e->getMessage());
+
             return [];
         }
     }
@@ -549,16 +562,18 @@ class Project extends BaseModel
                 t.priority DESC, t.due_date ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Failed to get unassigned tasks: " . $e->getMessage());
+
             return [];
         }
     }
 
     /**
      * Get project milestones
-     * 
+     *
      * @param int $projectId
      * @return array
      */
@@ -579,6 +594,7 @@ class Project extends BaseModel
                     m.due_date ASC, m.title ASC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get project milestones: " . $e->getMessage());
@@ -587,7 +603,7 @@ class Project extends BaseModel
 
     /**
      * Get project sprints
-     * 
+     *
      * @param int $projectId
      * @return array
      */
@@ -613,6 +629,7 @@ class Project extends BaseModel
                     s.start_date DESC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get project sprints: " . $e->getMessage());
@@ -621,7 +638,7 @@ class Project extends BaseModel
 
     /**
      * Get project team members
-     * 
+     *
      * @param int $projectId
      * @return array
      */
@@ -653,7 +670,7 @@ class Project extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':project_id' => $projectId,
-                ':project_id_2' => $projectId
+                ':project_id_2' => $projectId,
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -664,7 +681,7 @@ class Project extends BaseModel
 
     /**
      * Transform project name into a project key code format
-     * 
+     *
      * @param string $name Project name
      * @return string Key code (e.g. "Project Management System" -> "PMS")
      */
@@ -692,7 +709,7 @@ class Project extends BaseModel
 
     /**
      * Get all project statuses
-     * 
+     *
      * @return array
      */
     public function getAllStatuses(): array
@@ -700,6 +717,7 @@ class Project extends BaseModel
         try {
             $sql = "SELECT * FROM statuses_project WHERE is_deleted = 0";
             $stmt = $this->db->executeQuery($sql);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to fetch project statuses: " . $e->getMessage());
@@ -744,7 +762,7 @@ class Project extends BaseModel
                 ':user_id1' => $userId,
                 ':user_id2' => $userId,
                 ':user_id3' => $userId,
-                ':limit' => $limit
+                ':limit' => $limit,
             ]);
 
             $results = $stmt->fetchAll(PDO::FETCH_OBJ);

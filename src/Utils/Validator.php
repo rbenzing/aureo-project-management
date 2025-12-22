@@ -1,4 +1,5 @@
 <?php
+
 // file: Utils/Validator.php
 declare(strict_types=1);
 
@@ -46,7 +47,7 @@ class Validator
         'array',
         'exists',
         'after',
-        'strong_password'
+        'strong_password',
     ];
 
     /**
@@ -72,7 +73,7 @@ class Validator
         'array' => ':field must be an array.',
         'exists' => ':field does not exist in the database.',
         'after' => ':field must be a date after :param.',
-        'strong_password' => ':field must be at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char.'
+        'strong_password' => ':field must be at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char.',
     ];
 
     public function __construct(array $data, array $rules)
@@ -93,12 +94,14 @@ class Validator
             $fieldRules = is_string($ruleSet) ? explode('|', $ruleSet) : $ruleSet;
             $parsed[$field] = array_map(function ($rule) {
                 $parts = explode(':', $rule);
+
                 return [
                     'name' => $parts[0],
-                    'parameters' => isset($parts[1]) ? explode(',', $parts[1]) : []
+                    'parameters' => isset($parts[1]) ? explode(',', $parts[1]) : [],
                 ];
             }, $fieldRules);
         }
+
         return $parsed;
     }
 
@@ -173,6 +176,7 @@ class Validator
                 return true;
             }
         }
+
         return false;
     }
 

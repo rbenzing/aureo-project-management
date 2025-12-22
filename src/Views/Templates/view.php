@@ -9,10 +9,10 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
-use App\Models\Template;
 
 // Parse markdown content for display
-function parseMarkdown($content) {
+function parseMarkdown($content)
+{
     // Use security service for HTML sanitization
     try {
         $securityService = \App\Services\SecurityService::getInstance();
@@ -198,15 +198,16 @@ function parseMarkdown($content) {
                             <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
                                 <?php
                                 $settingsService = \App\Services\SettingsService::getInstance();
-                                $timezone = $settingsService->getDefaultTimezone();
-                                try {
-                                    $date = new DateTime($template->updated_at);
-                                    $date->setTimezone(new DateTimeZone($timezone));
-                                    echo $date->format('F j, Y \a\t g:i A');
-                                } catch (Exception $e) {
-                                    echo date('F j, Y \a\t g:i A', strtotime($template->updated_at));
-                                }
-                                ?>
+                            $timezone = $settingsService->getDefaultTimezone();
+
+                            try {
+                                $date = new DateTime($template->updated_at);
+                                $date->setTimezone(new DateTimeZone($timezone));
+                                echo $date->format('F j, Y \a\t g:i A');
+                            } catch (Exception $e) {
+                                echo date('F j, Y \a\t g:i A', strtotime($template->updated_at));
+                            }
+                            ?>
                             </dd>
                         </div>
                         <?php endif; ?>

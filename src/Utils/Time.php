@@ -1,4 +1,5 @@
 <?php
+
 // file: Utils/Time.php
 declare(strict_types=1);
 
@@ -26,14 +27,17 @@ class Time
             if ($useSettings) {
                 $settingsService = SettingsService::getInstance();
                 $unit = $settingsService->getTimeUnitLabel();
+
                 return "0 {$unit}";
             }
+
             return '0h 0m';
         }
 
         if ($useSettings) {
             $settingsService = SettingsService::getInstance();
             $converted = $settingsService->convertTime($seconds);
+
             return $converted['formatted'];
         }
 
@@ -46,7 +50,7 @@ class Time
 
     /**
      * Format duration between two timestamps
-     * 
+     *
      * @param int $startTime Unix timestamp
      * @param int $endTime Unix timestamp
      * @return array Formatted duration parts [hours, minutes, seconds]
@@ -64,13 +68,13 @@ class Time
             'minutes' => $minutes,
             'seconds' => $seconds,
             'total_seconds' => $duration,
-            'formatted' => self::formatSeconds($duration)
+            'formatted' => self::formatSeconds($duration),
         ];
     }
 
     /**
      * Calculate time remaining until a given date
-     * 
+     *
      * @param string $dueDate Due date (YYYY-MM-DD)
      * @return int Days remaining (negative if overdue)
      */

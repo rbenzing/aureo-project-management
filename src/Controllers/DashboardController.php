@@ -1,20 +1,19 @@
 <?php
+
 // file: Controllers/DashboardController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Middleware\AuthMiddleware;
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Task;
-use App\Models\Milestone;
-use App\Models\Sprint;
-use App\Core\Database;
 use App\Core\Config;
-use App\Services\SecurityService;
+use App\Core\Database;
+use App\Middleware\AuthMiddleware;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\Sprint;
+use App\Models\Task;
+use App\Models\User;
 use RuntimeException;
-use InvalidArgumentException;
 
 class DashboardController
 {
@@ -25,14 +24,30 @@ class DashboardController
     private Milestone $milestoneModel;
     private Sprint $sprintModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->userModel = new User();
-        $this->projectModel = new Project();
-        $this->taskModel = new Task();
-        $this->milestoneModel = new Milestone();
-        $this->sprintModel = new Sprint();
+    /**
+     * Constructor - Now supports dependency injection
+     *
+     * @param AuthMiddleware|null $authMiddleware Optional AuthMiddleware instance
+     * @param User|null $userModel Optional User model instance
+     * @param Project|null $projectModel Optional Project model instance
+     * @param Task|null $taskModel Optional Task model instance
+     * @param Milestone|null $milestoneModel Optional Milestone model instance
+     * @param Sprint|null $sprintModel Optional Sprint model instance
+     */
+    public function __construct(
+        ?AuthMiddleware $authMiddleware = null,
+        ?User $userModel = null,
+        ?Project $projectModel = null,
+        ?Task $taskModel = null,
+        ?Milestone $milestoneModel = null,
+        ?Sprint $sprintModel = null
+    ) {
+        $this->authMiddleware = $authMiddleware ?? new AuthMiddleware();
+        $this->userModel = $userModel ?? new User();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->taskModel = $taskModel ?? new Task();
+        $this->milestoneModel = $milestoneModel ?? new Milestone();
+        $this->sprintModel = $sprintModel ?? new Sprint();
     }
 
     /**
@@ -86,20 +101,20 @@ class DashboardController
                         'overdue' => 0,
                         'sprint_ready' => 0,
                         'backlog_items' => 0,
-                        'bugs' => 0
+                        'bugs' => 0,
                     ],
                     'time_tracking_summary' => [
                         'total_hours' => 0,
                         'billable_hours' => 0,
                         'this_week' => 0,
-                        'this_month' => 0
+                        'this_month' => 0,
                     ],
                     'project_summary' => [
                         'total' => 0,
                         'in_progress' => 0,
                         'completed' => 0,
                         'delayed' => 0,
-                        'on_hold' => 0
+                        'on_hold' => 0,
                     ],
                     'active_timer' => null,
                     'active_sprints' => [],
@@ -107,15 +122,15 @@ class DashboardController
                         'this_week' => 0,
                         'total' => 0,
                         'completed' => 0,
-                        'remaining' => 0
+                        'remaining' => 0,
                     ],
                     'task_type_distribution' => [
                         'story' => 0,
                         'bug' => 0,
                         'task' => 0,
-                        'epic' => 0
+                        'epic' => 0,
                     ],
-                    'priority_tasks' => []
+                    'priority_tasks' => [],
                 ];
             }
 
@@ -155,20 +170,20 @@ class DashboardController
                     'overdue' => 0,
                     'sprint_ready' => 0,
                     'backlog_items' => 0,
-                    'bugs' => 0
+                    'bugs' => 0,
                 ],
                 'time_tracking_summary' => [
                     'total_hours' => 0,
                     'billable_hours' => 0,
                     'this_week' => 0,
-                    'this_month' => 0
+                    'this_month' => 0,
                 ],
                 'project_summary' => [
                     'total' => 0,
                     'in_progress' => 0,
                     'completed' => 0,
                     'delayed' => 0,
-                    'on_hold' => 0
+                    'on_hold' => 0,
                 ],
                 'active_timer' => null,
                 'active_sprints' => [],
@@ -176,15 +191,15 @@ class DashboardController
                     'this_week' => 0,
                     'total' => 0,
                     'completed' => 0,
-                    'remaining' => 0
+                    'remaining' => 0,
                 ],
                 'task_type_distribution' => [
                     'story' => 0,
                     'bug' => 0,
                     'task' => 0,
-                    'epic' => 0
+                    'epic' => 0,
                 ],
-                'priority_tasks' => []
+                'priority_tasks' => [],
             ];
 
             // Only fetch data if user has relevant permissions
@@ -221,7 +236,7 @@ class DashboardController
                 try {
                     $dashboardData['upcoming_milestones'] = $this->milestoneModel->getAllWithProgress(5, 1, [
                         'due_date' => ['>', date('Y-m-d')],
-                        'is_deleted' => 0
+                        'is_deleted' => 0,
                     ]);
                     error_log("Dashboard: Fetched " . count($dashboardData['upcoming_milestones']) . " upcoming milestones");
                 } catch (\Exception $e) {
@@ -248,7 +263,7 @@ class DashboardController
                         'total_hours' => $this->taskModel->getTotalTimeSpent($userId),
                         'billable_hours' => $this->taskModel->getTotalBillableTime($userId),
                         'this_week' => $this->taskModel->getWeeklyTimeSpent($userId),
-                        'this_month' => $this->taskModel->getMonthlyTimeSpent($userId)
+                        'this_month' => $this->taskModel->getMonthlyTimeSpent($userId),
                     ];
                     error_log("Dashboard: Time tracking summary - " . json_encode($dashboardData['time_tracking_summary']));
                 } catch (\Exception $e) {
@@ -265,23 +280,23 @@ class DashboardController
                         'in_progress' => $this->projectModel->count([
                             'owner_id' => $userId,
                             'status_id' => 2, // In Progress status
-                            'is_deleted' => 0
+                            'is_deleted' => 0,
                         ]),
                         'completed' => $this->projectModel->count([
                             'owner_id' => $userId,
                             'status_id' => 3, // Completed status
-                            'is_deleted' => 0
+                            'is_deleted' => 0,
                         ]),
                         'delayed' => $this->projectModel->count([
                             'owner_id' => $userId,
                             'status_id' => 6, // Delayed status
-                            'is_deleted' => 0
+                            'is_deleted' => 0,
                         ]),
                         'on_hold' => $this->projectModel->count([
                             'owner_id' => $userId,
                             'status_id' => 4, // On Hold status
-                            'is_deleted' => 0
-                        ])
+                            'is_deleted' => 0,
+                        ]),
                     ];
                     error_log("Dashboard: Project summary - " . json_encode($dashboardData['project_summary']));
                 } catch (\Exception $e) {
@@ -355,7 +370,7 @@ class DashboardController
             $stmt = $db->executeQuery($sql, [
                 ':user_id' => $userId,
                 ':week_start' => $weekStart,
-                ':week_end' => $weekEnd
+                ':week_end' => $weekEnd,
             ]);
             $weeklyPoints = (int) $stmt->fetchColumn();
 
@@ -384,10 +399,11 @@ class DashboardController
                 'this_week' => $weeklyPoints,
                 'total' => $totalPoints,
                 'completed' => $completedPoints,
-                'remaining' => $totalPoints - $completedPoints
+                'remaining' => $totalPoints - $completedPoints,
             ];
 
             error_log("Story points calculation for user $userId: " . json_encode($result));
+
             return $result;
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating story points summary: " . $e->getMessage());
@@ -419,7 +435,7 @@ class DashboardController
                 'story' => 0,
                 'bug' => 0,
                 'task' => 0,
-                'epic' => 0
+                'epic' => 0,
             ];
 
             foreach ($results as $result) {
@@ -427,6 +443,7 @@ class DashboardController
             }
 
             error_log("Task type distribution for user $userId: " . json_encode($distribution));
+
             return $distribution;
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating task type distribution: " . $e->getMessage());
@@ -470,6 +487,7 @@ class DashboardController
             $results = $stmt->fetchAll(\PDO::FETCH_OBJ);
 
             error_log("Priority tasks for user $userId: " . count($results) . " tasks found");
+
             return $results;
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching priority tasks: " . $e->getMessage());
@@ -493,7 +511,7 @@ class DashboardController
             $completed = $this->taskModel->count([
                 'assigned_to' => $userId,
                 'status_id' => 6,
-                'is_deleted' => 0
+                'is_deleted' => 0,
             ]);
 
             // Get overdue tasks (due_date < today AND status NOT IN [5,6])
@@ -501,21 +519,21 @@ class DashboardController
                 'assigned_to' => $userId,
                 'due_date' => ['<', $today],
                 'status_id' => ['NOT IN', [5, 6]],
-                'is_deleted' => 0
+                'is_deleted' => 0,
             ]);
 
             // Get in progress tasks (status_id = 2) excluding overdue ones
             $inProgressTotal = $this->taskModel->count([
                 'assigned_to' => $userId,
                 'status_id' => 2,
-                'is_deleted' => 0
+                'is_deleted' => 0,
             ]);
 
             $inProgressOverdue = $this->taskModel->count([
                 'assigned_to' => $userId,
                 'status_id' => 2,
                 'due_date' => ['<', $today],
-                'is_deleted' => 0
+                'is_deleted' => 0,
             ]);
 
             $inProgress = $inProgressTotal - $inProgressOverdue;
@@ -532,18 +550,19 @@ class DashboardController
                 'sprint_ready' => $this->taskModel->count([
                     'assigned_to' => $userId,
                     'is_ready_for_sprint' => 1,
-                    'is_deleted' => 0
+                    'is_deleted' => 0,
                 ]),
                 'backlog_items' => $this->getUserBacklogCount($userId),
                 'bugs' => $this->taskModel->count([
                     'assigned_to' => $userId,
                     'task_type' => 'bug',
                     'status_id' => ['NOT IN', [5, 6]],
-                    'is_deleted' => 0
-                ])
+                    'is_deleted' => 0,
+                ]),
             ];
         } catch (\Exception $e) {
             error_log("Error getting task summary: " . $e->getMessage());
+
             return [
                 'total' => 0,
                 'completed' => 0,
@@ -552,7 +571,7 @@ class DashboardController
                 'open_other' => 0,
                 'sprint_ready' => 0,
                 'backlog_items' => 0,
-                'bugs' => 0
+                'bugs' => 0,
             ];
         }
     }
@@ -583,6 +602,7 @@ class DashboardController
             $count = (int) $stmt->fetchColumn();
 
             error_log("Backlog count for user $userId: $count items");
+
             return $count;
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting user backlog items: " . $e->getMessage());

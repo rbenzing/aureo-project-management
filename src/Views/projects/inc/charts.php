@@ -9,7 +9,8 @@ if (!defined('BASE_PATH')) {
 }
 
 // Helper function to get a distinct color for each data point
-function getChartColor($index) {
+function getChartColor($index)
+{
     $colors = [
         '#3B82F6', // blue
         '#F59E0B', // yellow
@@ -20,9 +21,9 @@ function getChartColor($index) {
         '#EC4899', // pink
         '#14B8A6', // teal
         '#F97316', // orange
-        '#8B5CF6'  // indigo
+        '#8B5CF6',  // indigo
     ];
-    
+
     return $colors[$index % count($colors)];
 }
 
@@ -39,7 +40,7 @@ $statusColors = [
     '#10B981', // green
     '#8B5CF6', // purple
     '#EF4444', // red
-    '#6B7280'  // gray
+    '#6B7280',  // gray
 ];
 
 $projectBudgets = [];
@@ -71,14 +72,15 @@ if (!empty($projects)) {
         foreach ($projects as $project) {
             if ($project->id == $selectedProjectId) {
                 $selectedProject = $project;
+
                 break;
             }
         }
     }
-    
+
     // Determine which projects to process
     $projectsToProcess = ($selectedProject !== null) ? [$selectedProject] : $projects;
-    
+
     // CLIENT CHART: Only for all-projects view
     if ($selectedProject === null) {
         $clientProjectCounts = [];
@@ -93,66 +95,66 @@ if (!empty($projects)) {
         arsort($clientProjectCounts);
         $clientProjectCounts = array_slice($clientProjectCounts, 0, 5, true);
     }
-    
+
     // Process each project in batch
     foreach ($projectsToProcess as $project) {
         $projectId = $project->id ?? 0;
         $projectIds[] = $projectId;
-        
+
         // Count by status (for status chart)
         $statusId = (int)($project->status_id ?? 0);
         if ($statusId > 0 && $statusId <= count($statusLabels)) {
             $statusCounts[$statusId - 1]++;
         }
-        
+
         $projectName = htmlspecialchars($project->name ?? 'Unnamed Project');
         $projectNames[] = $projectName;
-        
+
         // Get tasks if needed and available
         $tasks = null;
         if ($selectedProject !== null) {
             $tasks = $project->tasks ?? $selectedProject->tasks ?? null;
-        } else if (isset($project->tasks)) {
+        } elseif (isset($project->tasks)) {
             $tasks = $project->tasks;
         }
-        
+
         // Only process tasks if we actually have them
         $estimatedTime = 0;
         $spentTime = 0;
-        
+
         if (!empty($tasks)) {
             // Process task data for charts
             if ($selectedProject !== null) {
                 // Reset counters for single project view
                 $taskStatusCounts = [];
                 $taskPriorityCounts = ['none' => 0, 'low' => 0, 'medium' => 0, 'high' => 0];
-                
+
                 // Prepare month labels for completion trend
                 // Only generate this once, not per task
                 $sixMonthsAgo = (new DateTime())->modify('-5 months')->modify('first day of this month');
                 $currentMonth = new DateTime('first day of this month');
                 $interval = new DateInterval('P1M');
                 $period = new DatePeriod($sixMonthsAgo, $interval, $currentMonth);
-                
+
                 $monthLabels = [];
                 $completedCounts = [];
-                
+
                 foreach ($period as $month) {
                     $monthLabels[] = $month->format('M Y');
                     $completedCounts[] = 0;
                 }
                 $monthLabels[] = $currentMonth->format('M Y');
                 $completedCounts[] = 0;
-                
+
                 // Initialize team member workload array
                 $teamMemberWorkload = [];
             }
-            
+
             // Process tasks using array operations when possible
             foreach ($tasks as $task) {
                 $estimatedTime += (float)($task->estimated_time ?? 0);
                 $spentTime += (float)($task->time_spent ?? 0);
-                
+
                 // Only process extra task details for selected project view
                 if ($selectedProject !== null) {
                     // Count by task status
@@ -161,70 +163,71 @@ if (!empty($projects)) {
                         $taskStatusCounts[$taskStatusName] = 0;
                     }
                     $taskStatusCounts[$taskStatusName]++;
-                    
+
                     // Count by priority
                     $priority = $task->priority ?? 'none';
                     $taskPriorityCounts[$priority]++;
-                    
+
                     // Track completion trend if task is completed
                     if (($task->status_id ?? 0) == 6 && isset($task->complete_date) && !empty($task->complete_date)) {
                         $completeDate = new DateTime($task->complete_date);
                         $monthDate = null;
-                        
+
                         // Find which month this task completion falls into
                         for ($i = 0; $i < count($monthLabels); $i++) {
                             $monthDate = DateTime::createFromFormat('M Y', $monthLabels[$i]);
                             $nextMonth = clone $monthDate;
                             $nextMonth->modify('+1 month');
-                            
+
                             if ($completeDate >= $monthDate && $completeDate < $nextMonth) {
                                 $completedCounts[$i]++;
+
                                 break;
                             }
                         }
                     }
-                    
+
                     // Track team member workload (for assignees)
                     if (isset($task->assigned_to) && !empty($task->assigned_to)) {
-                        $assigneeName = isset($task->first_name) && isset($task->last_name) ? 
+                        $assigneeName = isset($task->first_name) && isset($task->last_name) ?
                             "{$task->first_name} {$task->last_name}" : "User #{$task->assigned_to}";
-                        
+
                         if (!isset($teamMemberWorkload[$assigneeName])) {
                             $teamMemberWorkload[$assigneeName] = [
                                 'assigned' => 0,
                                 'completed' => 0,
-                                'hours_logged' => 0
+                                'hours_logged' => 0,
                             ];
                         }
-                        
+
                         $teamMemberWorkload[$assigneeName]['assigned']++;
-                        
+
                         if (($task->status_id ?? 0) == 6) { // Completed
                             $teamMemberWorkload[$assigneeName]['completed']++;
                         }
-                        
+
                         $teamMemberWorkload[$assigneeName]['hours_logged'] += ($task->time_spent ?? 0) / 3600;
                     }
                 }
             }
-            
+
             // Save completion trend data for selected project
             if ($selectedProject !== null) {
                 $taskCompletionTrend = [
                     'labels' => $monthLabels,
-                    'counts' => $completedCounts
+                    'counts' => $completedCounts,
                 ];
             }
         }
-        
+
         // Convert time to hours for charts
         $projectBudgets[] = $estimatedTime / 3600;
         $projectSpent[] = $spentTime / 3600;
-        
+
         // Calculate project duration if dates are available
         if (isset($project->start_date) && !empty($project->start_date)) {
             $startDate = new DateTime($project->start_date);
-            
+
             // End date could be actual end date or today for in-progress projects
             $endDate = null;
             if (isset($project->end_date) && !empty($project->end_date)) {
@@ -232,59 +235,61 @@ if (!empty($projects)) {
             } else {
                 $endDate = new DateTime();
             }
-            
+
             $duration = $startDate->diff($endDate)->days;
-            
+
             // Categorize by project status
             if ($statusId == 3) { // Completed
                 $completedProjectDurations[] = [
                     'name' => $projectName,
-                    'duration' => $duration
+                    'duration' => $duration,
                 ];
-            } else if ($statusId == 2) { // In Progress
+            } elseif ($statusId == 2) { // In Progress
                 $inProgressProjectDurations[] = [
                     'name' => $projectName,
-                    'duration' => $duration
+                    'duration' => $duration,
                 ];
             }
-            
+
             // Calculate monthly progress for selected project
             if ($selectedProject !== null && $project->id == $selectedProjectId) {
                 // Get starting month (project start or 6 months ago, whichever is more recent)
                 $startMonth = clone $startDate;
                 $startMonth->modify('first day of this month');
-                
+
                 $sixMonthsAgo = (new DateTime())->modify('-5 months')->modify('first day of this month');
                 $startingMonth = ($startMonth > $sixMonthsAgo) ? $startMonth : $sixMonthsAgo;
-                
+
                 $currentMonth = new DateTime('first day of this month');
                 $interval = new DateInterval('P1M');
                 $period = new DatePeriod($startingMonth, $interval, $currentMonth);
-                
+
                 $progressLabels = [];
                 $progressValues = [];
-                
+
                 // Calculate project duration once
                 $projectEndDate = $endDate;
                 $totalDuration = $startDate->diff($projectEndDate)->days;
-                if ($totalDuration == 0) $totalDuration = 1; // Avoid division by zero
-                
+                if ($totalDuration == 0) {
+                    $totalDuration = 1;
+                } // Avoid division by zero
+
                 foreach ($period as $month) {
                     $progressLabels[] = $month->format('M Y');
                     $elapsedDays = $startDate->diff($month)->days;
                     $progress = min(100, ($elapsedDays / $totalDuration) * 100);
                     $progressValues[] = round($progress, 1);
                 }
-                
+
                 // Add current month
                 $progressLabels[] = $currentMonth->format('M Y');
                 $elapsedDays = $startDate->diff(new DateTime())->days;
                 $progress = min(100, ($elapsedDays / $totalDuration) * 100);
                 $progressValues[] = round($progress, 1);
-                
+
                 $monthlyProjectProgress = [
                     'labels' => $progressLabels,
-                    'values' => $progressValues
+                    'values' => $progressValues,
                 ];
             }
         }
@@ -293,14 +298,14 @@ if (!empty($projects)) {
 
 // Sort duration arrays once after all processing
 if (!empty($completedProjectDurations)) {
-    usort($completedProjectDurations, function($a, $b) {
+    usort($completedProjectDurations, function ($a, $b) {
         return $b['duration'] - $a['duration'];
     });
     $completedProjectDurations = array_slice($completedProjectDurations, 0, 5);
 }
 
 if (!empty($inProgressProjectDurations)) {
-    usort($inProgressProjectDurations, function($a, $b) {
+    usort($inProgressProjectDurations, function ($a, $b) {
         return $b['duration'] - $a['duration'];
     });
     $inProgressProjectDurations = array_slice($inProgressProjectDurations, 0, 5);
@@ -308,7 +313,7 @@ if (!empty($inProgressProjectDurations)) {
 
 // Sort team member workload
 if (!empty($teamMemberWorkload)) {
-    uasort($teamMemberWorkload, function($a, $b) {
+    uasort($teamMemberWorkload, function ($a, $b) {
         return $b['assigned'] - $a['assigned'];
     });
     $teamMemberWorkload = array_slice($teamMemberWorkload, 0, 5, true);
@@ -375,40 +380,40 @@ if (!empty($teamMemberWorkload)) {
             <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                 <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Duration</h3>
                 <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    <?php 
+                    <?php
                     $durationText = 'N/A';
-                    if (isset($selectedProject->start_date) && !empty($selectedProject->start_date)) {
-                        $startDate = new DateTime($selectedProject->start_date);
-                        $endDate = isset($selectedProject->end_date) && !empty($selectedProject->end_date) ? 
-                            new DateTime($selectedProject->end_date) : new DateTime();
-                        $duration = $startDate->diff($endDate)->days;
-                        $durationText = $duration . ' days';
-                    }
-                    echo $durationText;
-                    ?>
+            if (isset($selectedProject->start_date) && !empty($selectedProject->start_date)) {
+                $startDate = new DateTime($selectedProject->start_date);
+                $endDate = isset($selectedProject->end_date) && !empty($selectedProject->end_date) ?
+                    new DateTime($selectedProject->end_date) : new DateTime();
+                $duration = $startDate->diff($endDate)->days;
+                $durationText = $duration . ' days';
+            }
+            echo $durationText;
+            ?>
                 </p>
             </div>
             
             <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <h3 class="text-sm font-medium text-purple-800 dark:text-purple-300">Completion</h3>
                 <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    <?php 
-                    // Calculate completion based on tasks
-                    $completionRate = 0;
-                    if (isset($selectedProject->tasks) && is_countable($selectedProject->tasks) && !empty($selectedProject->tasks)) {
-                        $totalTasks = count($selectedProject->tasks);
-                        $completedTasks = 0;
-                        
-                        foreach ($selectedProject->tasks as $task) {
-                            if (($task->status_id ?? 0) == 6) { // Completed status
-                                $completedTasks++;
-                            }
-                        }
-                        
-                        $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+                    <?php
+            // Calculate completion based on tasks
+            $completionRate = 0;
+            if (isset($selectedProject->tasks) && is_countable($selectedProject->tasks) && !empty($selectedProject->tasks)) {
+                $totalTasks = count($selectedProject->tasks);
+                $completedTasks = 0;
+
+                foreach ($selectedProject->tasks as $task) {
+                    if (($task->status_id ?? 0) == 6) { // Completed status
+                        $completedTasks++;
                     }
-                    echo $completionRate . '%';
-                    ?>
+                }
+
+                $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+            }
+            echo $completionRate . '%';
+            ?>
                 </p>
             </div>
         </div>
@@ -1012,14 +1017,14 @@ function initCharts() {
             datasets: [
                 {
                     label: 'Assigned Tasks',
-                    data: <?= json_encode(array_map(function($member) { return $member['assigned']; }, $teamMemberWorkload)) ?>,
+                    data: <?= json_encode(array_map(function ($member) { return $member['assigned']; }, $teamMemberWorkload)) ?>,
                     backgroundColor: '#3B82F6', // blue
                     borderColor: isDarkMode ? '#1F2937' : 'white',
                     borderWidth: 1
                 },
                 {
                     label: 'Completed Tasks',
-                    data: <?= json_encode(array_map(function($member) { return $member['completed']; }, $teamMemberWorkload)) ?>,
+                    data: <?= json_encode(array_map(function ($member) { return $member['completed']; }, $teamMemberWorkload)) ?>,
                     backgroundColor: '#10B981', // green
                     borderColor: isDarkMode ? '#1F2937' : 'white',
                     borderWidth: 1

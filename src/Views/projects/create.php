@@ -109,26 +109,26 @@ $errors = $errors ?? [];
                             'value' => $formData['name'] ?? '',
                             'required' => true,
                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
-                            'error' => $errors['name'] ?? ''
+                            'error' => $errors['name'] ?? '',
                         ]) ?>
                         <!-- Templates Row -->
                         <?php
                         $settingsService = SettingsService::getInstance();
-                        $templateSettings = $settingsService->getTemplateSettings();
-                        $projectTemplateSettings = $templateSettings['project'] ?? [];
-                        $showQuickTemplates = $projectTemplateSettings['show_quick_templates'] ?? true;
-                        $showCustomTemplates = $projectTemplateSettings['show_custom_templates'] ?? true;
+$templateSettings = $settingsService->getTemplateSettings();
+$projectTemplateSettings = $templateSettings['project'] ?? [];
+$showQuickTemplates = $projectTemplateSettings['show_quick_templates'] ?? true;
+$showCustomTemplates = $projectTemplateSettings['show_custom_templates'] ?? true;
 
-                        // Filter templates to only show project templates
-                        $projectTemplates = [];
-                        if (!empty($templates)) {
-                            foreach ($templates as $template) {
-                                if ($template->template_type === 'project') {
-                                    $projectTemplates[] = $template;
-                                }
-                            }
-                        }
-                        ?>
+// Filter templates to only show project templates
+$projectTemplates = [];
+if (!empty($templates)) {
+    foreach ($templates as $template) {
+        if ($template->template_type === 'project') {
+            $projectTemplates[] = $template;
+        }
+    }
+}
+?>
                         <?php if ($showQuickTemplates || $showCustomTemplates): ?>
                         <div class="mb-4 grid grid-cols-1 <?= ($showQuickTemplates && $showCustomTemplates) ? 'md:grid-cols-2' : '' ?> gap-4">
                             <?php if ($showQuickTemplates): ?>
@@ -144,9 +144,9 @@ $errors = $errors ?? [];
                                     <select id="quick_template" name="quick_template" class="w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100 sm:text-sm border-gray-300 dark:border-gray-600">
                                         <option value="">Select a quick template...</option>
                                         <?php
-                                        $quickTemplates = Config::get('QUICK_PROJECT_TEMPLATES', []);
-                                        foreach ($quickTemplates as $name => $content):
-                                        ?>
+                $quickTemplates = Config::get('QUICK_PROJECT_TEMPLATES', []);
+                                foreach ($quickTemplates as $name => $content):
+                                    ?>
                                             <option value="<?= htmlspecialchars(strtolower(str_replace(' ', '_', $name))) ?>"
                                                     data-title="<?= htmlspecialchars($name) ?>"
                                                     data-description="<?= htmlspecialchars($content) ?>">
@@ -198,7 +198,7 @@ $errors = $errors ?? [];
                             'value' => $formData['description'] ?? '',
                             'rows' => 8,
                             'help_text' => 'Briefly describe the project scope and objectives.',
-                            'error' => $errors['description'] ?? ''
+                            'error' => $errors['description'] ?? '',
                         ]) ?>
                 </div>
             </div>
@@ -214,85 +214,85 @@ $errors = $errors ?? [];
                         <?php
                         // Prepare owner options
                         $ownerOptions = [];
-                        if (isset($users) && is_array($users)) {
-                            foreach ($users as $user) {
-                                $ownerOptions[$user->id] = htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name);
-                            }
-                        }
-                        ?>
+if (isset($users) && is_array($users)) {
+    foreach ($users as $user) {
+        $ownerOptions[$user->id] = htmlspecialchars($user->first_name) . ' ' . htmlspecialchars($user->last_name);
+    }
+}
+?>
                         <?= renderSelect([
-                            'name' => 'owner_id',
-                            'label' => 'Project Owner',
-                            'value' => $formData['owner_id'] ?? '',
-                            'options' => $ownerOptions,
-                            'empty_option' => 'Select an owner',
-                            'required' => true,
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
-                            'error' => $errors['owner_id'] ?? ''
-                        ]) ?>
+    'name' => 'owner_id',
+    'label' => 'Project Owner',
+    'value' => $formData['owner_id'] ?? '',
+    'options' => $ownerOptions,
+    'empty_option' => 'Select an owner',
+    'required' => true,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />',
+    'error' => $errors['owner_id'] ?? '',
+]) ?>
 
                         <!-- Company -->
                         <?php
-                        // Prepare company options
-                        $companyOptions = [];
-                        if (isset($companies) && is_array($companies)) {
-                            foreach ($companies as $company) {
-                                $companyOptions[$company->id] = htmlspecialchars($company->name);
-                            }
-                        }
-                        ?>
+// Prepare company options
+$companyOptions = [];
+if (isset($companies) && is_array($companies)) {
+    foreach ($companies as $company) {
+        $companyOptions[$company->id] = htmlspecialchars($company->name);
+    }
+}
+?>
                         <?= renderSelect([
-                            'name' => 'company_id',
-                            'label' => 'Company',
-                            'value' => $formData['company_id'] ?? '',
-                            'options' => $companyOptions,
-                            'empty_option' => 'Select a company',
-                            'required' => true,
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />',
-                            'error' => $errors['company_id'] ?? ''
-                        ]) ?>
+    'name' => 'company_id',
+    'label' => 'Company',
+    'value' => $formData['company_id'] ?? '',
+    'options' => $companyOptions,
+    'empty_option' => 'Select a company',
+    'required' => true,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />',
+    'error' => $errors['company_id'] ?? '',
+]) ?>
 
                         <!-- Status -->
                         <?php
-                        // Prepare status options with proper labels
-                        $statusOptions = [];
-                        if (isset($statuses) && is_array($statuses)) {
-                            foreach ($statuses as $status) {
-                                $statusInfo = getProjectStatusInfo($status->id);
-                                $statusOptions[$status->id] = $statusInfo['label'];
-                            }
-                        }
-                        ?>
+// Prepare status options with proper labels
+$statusOptions = [];
+if (isset($statuses) && is_array($statuses)) {
+    foreach ($statuses as $status) {
+        $statusInfo = getProjectStatusInfo($status->id);
+        $statusOptions[$status->id] = $statusInfo['label'];
+    }
+}
+?>
                         <?= renderSelect([
-                            'name' => 'status_id',
-                            'label' => 'Status',
-                            'value' => $formData['status_id'] ?? '',
-                            'options' => $statusOptions,
-                            'empty_option' => 'Select a status',
-                            'required' => true,
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                            'error' => $errors['status_id'] ?? ''
-                        ]) ?>
+    'name' => 'status_id',
+    'label' => 'Status',
+    'value' => $formData['status_id'] ?? '',
+    'options' => $statusOptions,
+    'empty_option' => 'Select a status',
+    'required' => true,
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />',
+    'error' => $errors['status_id'] ?? '',
+]) ?>
 
                         <!-- Start Date -->
                         <?= renderTextInput([
-                            'name' => 'start_date',
-                            'type' => 'date',
-                            'label' => 'Start Date',
-                            'value' => $formData['start_date'] ?? '',
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                            'error' => $errors['start_date'] ?? ''
-                        ]) ?>
+    'name' => 'start_date',
+    'type' => 'date',
+    'label' => 'Start Date',
+    'value' => $formData['start_date'] ?? '',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['start_date'] ?? '',
+]) ?>
 
                         <!-- End Date -->
                         <?= renderTextInput([
-                            'name' => 'end_date',
-                            'type' => 'date',
-                            'label' => 'Expected End Date',
-                            'value' => $formData['end_date'] ?? '',
-                            'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                            'error' => $errors['end_date'] ?? ''
-                        ]) ?>
+    'name' => 'end_date',
+    'type' => 'date',
+    'label' => 'Expected End Date',
+    'value' => $formData['end_date'] ?? '',
+    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
+    'error' => $errors['end_date'] ?? '',
+]) ?>
                     </div>
                 </div>
             </div>

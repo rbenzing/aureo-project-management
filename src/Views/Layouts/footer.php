@@ -8,12 +8,13 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use \App\Core\Config;
-use \App\Services\SettingsService;
+use App\Core\Config;
+use App\Services\SettingsService;
 
 // Get current year using configured timezone
 $settingsService = SettingsService::getInstance();
 $timezone = $settingsService->getDefaultTimezone();
+
 try {
     $currentYear = (new DateTime('now', new DateTimeZone($timezone)))->format('Y');
 } catch (Exception $e) {

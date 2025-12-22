@@ -21,8 +21,10 @@ foreach ($filters as $key => $value) {
     }
 }
 
-function buildTimeTrackingPaginationUrl($page, array $queryParams): string {
+function buildTimeTrackingPaginationUrl($page, array $queryParams): string
+{
     $queryParams['page'] = (int)$page;
+
     return '/time-tracking?' . http_build_query($queryParams);
 }
 

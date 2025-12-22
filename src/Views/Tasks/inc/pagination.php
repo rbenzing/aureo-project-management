@@ -53,14 +53,14 @@ if (!defined('BASE_PATH')) {
                 <?php
                 $startPage = max(1, $page - 2);
                 $endPage = min($totalPages, $page + 2);
-                
+
                 // Ensure we always show 5 page links when possible
                 if ($startPage === 1) {
                     $endPage = min($totalPages, 5);
                 } elseif ($endPage === $totalPages) {
                     $startPage = max(1, $totalPages - 4);
                 }
-                
+
                 // First Page
                 if ($startPage > 1): ?>
                     <a href="<?= $isMyTasksView ? "/tasks/assigned/{$userId}/page/1" : "/tasks/page/1" ?>" 

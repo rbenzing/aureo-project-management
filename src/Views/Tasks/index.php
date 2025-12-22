@@ -36,7 +36,7 @@ $filterOptions = [
     'today' => 'Due Today',
     'week' => 'Due This Week',
     'in-progress' => 'In Progress',
-    'completed' => 'Completed'
+    'completed' => 'Completed',
 ];
 
 // Add additional filters based on context

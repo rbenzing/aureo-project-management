@@ -9,20 +9,25 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
-use App\Utils\Time;
 use App\Services\SettingsService;
+use App\Utils\Time;
 
 // Include view helpers for permission functions and time formatting
 require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
 // Helper functions for formatting and styling
-function formatTimeTracking($seconds) {
+function formatTimeTracking($seconds)
+{
     return formatTimeWithSettings($seconds);
 }
 
-function formatDate($date) {
-    if (!$date) return 'Not set';
+function formatDate($date)
+{
+    if (!$date) {
+        return 'Not set';
+    }
     $settingsService = SettingsService::getInstance();
+
     return $settingsService->formatDate($date);
 }
 
@@ -88,8 +93,8 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                     </button>
                     <?php
                     $statusInfo = getTaskStatusInfo($task->status_id);
-                    echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
-                    ?>
+echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
+?>
                     <span class="ml-2 px-3 py-1 text-sm rounded-full <?= getPriorityClass($task->priority) ?>">
                         <?= ucfirst(htmlspecialchars($task->priority)) ?> Priority
                     </span>
@@ -136,7 +141,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                 <?php endif; ?>
 
                 <!-- Mark Complete Button -->
-                <?php if ($task->status_id != 6 && $task->status_id != 5): // Not completed or closed ?>
+                <?php if ($task->status_id != 6 && $task->status_id != 5): // Not completed or closed?>
                     <a href="/tasks/edit/<?= $task->id ?>?mark_complete=1" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -176,9 +181,9 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                     </div>
                     <div class="p-4">
                         <?php
-                        $timeProgress = min(100, ($task->time_spent / $task->estimated_time) * 100);
-                        $progressColor = $timeProgress > 100 ? 'bg-red-600' : 'bg-blue-600';
-                        ?>
+    $timeProgress = min(100, ($task->time_spent / $task->estimated_time) * 100);
+                    $progressColor = $timeProgress > 100 ? 'bg-red-600' : 'bg-blue-600';
+                    ?>
                         <div class="flex justify-between text-xs mb-1">
                             <span class="text-gray-500 dark:text-gray-400">Progress</span>
                             <span class="text-gray-500 dark:text-gray-400"><?= round($timeProgress) ?>%</span>
@@ -205,21 +210,21 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Task Type:</div>
                             <div class="text-gray-900 dark:text-white">
                                 <?php
-                                $taskTypeLabels = [
-                                    'task' => 'Task',
-                                    'story' => 'User Story',
-                                    'bug' => 'Bug',
-                                    'epic' => 'Epic'
-                                ];
+                            $taskTypeLabels = [
+                                'task' => 'Task',
+                                'story' => 'User Story',
+                                'bug' => 'Bug',
+                                'epic' => 'Epic',
+                            ];
 
-                                // If it's a subtask, show "Subtask" instead of "Task"
-                                $displayType = $task->task_type ?? 'task';
-                                if ($task->is_subtask && $displayType === 'task') {
-                                    echo 'Subtask';
-                                } else {
-                                    echo htmlspecialchars($taskTypeLabels[$displayType] ?? 'Task');
-                                }
-                                ?>
+// If it's a subtask, show "Subtask" instead of "Task"
+$displayType = $task->task_type ?? 'task';
+if ($task->is_subtask && $displayType === 'task') {
+    echo 'Subtask';
+} else {
+    echo htmlspecialchars($taskTypeLabels[$displayType] ?? 'Task');
+}
+?>
                             </div>
 
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Assignee:</div>
@@ -324,7 +329,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                             <div class="text-gray-500 dark:text-gray-400 font-medium">Billable amount:</div>
                             <div class="text-green-600 dark:text-green-400 font-medium">
                                 <?php
-                                $billableSeconds = $task->billable_time ?? 0;
+$billableSeconds = $task->billable_time ?? 0;
                                 $billableHours = $billableSeconds / 3600;
                                 $billableAmount = $billableHours * ($task->hourly_rate ?? 0);
                                 echo '$' . number_format($billableAmount, 2);
@@ -353,9 +358,15 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                 <?php
                                 $milestoneStatusClass = '';
                                 switch ($milestone->status_id) {
-                                    case 1: $milestoneStatusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
-                                    case 2: $milestoneStatusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'; break;
-                                    case 3: $milestoneStatusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'; break;
+                                    case 1: $milestoneStatusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
+                                        break;
+                                    case 2: $milestoneStatusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+
+                                        break;
+                                    case 3: $milestoneStatusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
+                                        break;
                                     default: $milestoneStatusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
                                 }
                                 ?>
@@ -441,7 +452,7 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                     <li class="py-3">
                                         <div class="flex items-start">
                                             <div class="flex-shrink-0 mt-0.5">
-                                                <?php if ($subtask->status_id == 6): // Completed ?>
+                                                <?php if ($subtask->status_id == 6): // Completed?>
                                                     <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                                     </svg>
@@ -460,8 +471,8 @@ $pageTitle = htmlspecialchars($task->title) . ' - Task Details';
                                                     </p>
                                                     <?php
                                                     $subtaskStatusInfo = getTaskStatusInfo($subtask->status_id);
-                                                    echo renderStatusPill($subtaskStatusInfo['label'], $subtaskStatusInfo['color'], 'sm');
-                                                    ?>
+                                    echo renderStatusPill($subtaskStatusInfo['label'], $subtaskStatusInfo['color'], 'sm');
+                                    ?>
                                                 </div>
                                                 <?php if (hasUserPermission('view_time_tracking') && !empty($subtask->estimated_time)): ?>
                                                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">

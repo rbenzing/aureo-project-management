@@ -112,11 +112,11 @@ $pageTitle = 'Settings';
                                                 '10' => '10',
                                                 '25' => '25',
                                                 '50' => '50',
-                                                '100' => '100'
+                                                '100' => '100',
                                             ],
                                             'help_text' => 'Number of items to display per page in lists',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />',
-                                            'error' => $errors['general.results_per_page'] ?? ''
+                                            'error' => $errors['general.results_per_page'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -131,11 +131,11 @@ $pageTitle = 'Settings';
                                                 'm/d/Y' => date('m/d/Y') . ' (MM/DD/YYYY)',
                                                 'd/m/Y' => date('d/m/Y') . ' (DD/MM/YYYY)',
                                                 'M j, Y' => date('M j, Y') . ' (Mon DD, YYYY)',
-                                                'F j, Y' => date('F j, Y') . ' (Month DD, YYYY)'
+                                                'F j, Y' => date('F j, Y') . ' (Month DD, YYYY)',
                                             ],
                                             'help_text' => 'Default date format for display throughout the application',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                            'error' => $errors['general.date_format'] ?? ''
+                                            'error' => $errors['general.date_format'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -154,11 +154,11 @@ $pageTitle = 'Settings';
                                                 'Europe/London' => 'London (GMT)',
                                                 'Europe/Paris' => 'Paris (CET)',
                                                 'Asia/Tokyo' => 'Tokyo (JST)',
-                                                'Australia/Sydney' => 'Sydney (AEST)'
+                                                'Australia/Sydney' => 'Sydney (AEST)',
                                             ],
                                             'help_text' => 'Default timezone for new users and date/time display',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                            'error' => $errors['general.default_timezone'] ?? ''
+                                            'error' => $errors['general.default_timezone'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -174,12 +174,12 @@ $pageTitle = 'Settings';
                                                 '30' => '30 seconds',
                                                 '60' => '1 minute',
                                                 '120' => '2 minutes',
-                                                '300' => '5 minutes'
+                                                '300' => '5 minutes',
                                             ],
                                             'help_text' => 'Automatically save form data at specified intervals (Feature coming soon)',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />',
                                             'error' => $errors['general.autosave_interval'] ?? '',
-                                            'disabled' => true
+                                            'disabled' => true,
                                         ]) ?>
                                     </div>
 
@@ -195,11 +195,11 @@ $pageTitle = 'Settings';
                                                 '7200' => '2 hours',
                                                 '14400' => '4 hours',
                                                 '28800' => '8 hours',
-                                                '86400' => '24 hours'
+                                                '86400' => '24 hours',
                                             ],
                                             'help_text' => 'Automatically log out users after period of inactivity',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />',
-                                            'error' => $errors['general.session_timeout'] ?? ''
+                                            'error' => $errors['general.session_timeout'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -213,11 +213,11 @@ $pageTitle = 'Settings';
                                                 'seconds' => 'Seconds',
                                                 'minutes' => 'Minutes',
                                                 'hours' => 'Hours',
-                                                'days' => 'Days'
+                                                'days' => 'Days',
                                             ],
                                             'help_text' => 'Default unit for time tracking and display',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                            'error' => $errors['general.time_unit'] ?? ''
+                                            'error' => $errors['general.time_unit'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -232,7 +232,7 @@ $pageTitle = 'Settings';
                                             'max' => '60',
                                             'help_text' => 'Increment/precision for time inputs (e.g., 15 for 15-minute intervals)',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
-                                            'error' => $errors['general.time_precision'] ?? ''
+                                            'error' => $errors['general.time_precision'] ?? '',
                                         ]) ?>
                                     </div>
                                 </div>
@@ -259,11 +259,11 @@ $pageTitle = 'Settings';
                                                 'options' => [
                                                     'Strict' => 'Strict (Maximum security)',
                                                     'Lax' => 'Lax (Balanced security)',
-                                                    'None' => 'None (Least secure)'
+                                                    'None' => 'None (Least secure)',
                                                 ],
                                                 'help_text' => 'Controls when cookies are sent with cross-site requests. Strict provides maximum CSRF protection.',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />',
-                                                'error' => $errors['security.session_samesite'] ?? ''
+                                                'error' => $errors['security.session_samesite'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -274,7 +274,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Validate session domain',
                                                 'checked' => ($settings['security']['validate_session_domain'] ?? '1') === '1',
                                                 'help_text' => 'Validate session domain against allowed hosts to prevent session fixation attacks',
-                                                'error' => $errors['security.validate_session_domain'] ?? ''
+                                                'error' => $errors['security.validate_session_domain'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -285,7 +285,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Regenerate session on authentication',
                                                 'checked' => ($settings['security']['regenerate_session_on_auth'] ?? '1') === '1',
                                                 'help_text' => 'Regenerate session ID on login/logout to prevent session fixation',
-                                                'error' => $errors['security.regenerate_session_on_auth'] ?? ''
+                                                'error' => $errors['security.regenerate_session_on_auth'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -301,7 +301,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable CSRF protection',
                                                 'checked' => ($settings['security']['csrf_protection_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Protect against Cross-Site Request Forgery attacks',
-                                                'error' => $errors['security.csrf_protection_enabled'] ?? ''
+                                                'error' => $errors['security.csrf_protection_enabled'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -312,7 +312,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'CSRF protection for AJAX requests',
                                                 'checked' => ($settings['security']['csrf_ajax_protection'] ?? '1') === '1',
                                                 'help_text' => 'Require CSRF tokens for AJAX/fetch requests',
-                                                'error' => $errors['security.csrf_ajax_protection'] ?? ''
+                                                'error' => $errors['security.csrf_ajax_protection'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -326,11 +326,11 @@ $pageTitle = 'Settings';
                                                     '1800' => '30 minutes',
                                                     '3600' => '1 hour',
                                                     '7200' => '2 hours',
-                                                    '14400' => '4 hours'
+                                                    '14400' => '4 hours',
                                                 ],
                                                 'help_text' => 'How long CSRF tokens remain valid',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                                'error' => $errors['security.csrf_token_lifetime'] ?? ''
+                                                'error' => $errors['security.csrf_token_lifetime'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -350,11 +350,11 @@ $pageTitle = 'Settings';
                                                     '524288' => '512 KB',
                                                     '1048576' => '1 MB',
                                                     '2097152' => '2 MB',
-                                                    '5242880' => '5 MB'
+                                                    '5242880' => '5 MB',
                                                 ],
                                                 'help_text' => 'Maximum size for JSON/POST input to prevent DoS attacks',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />',
-                                                'error' => $errors['security.max_input_size'] ?? ''
+                                                'error' => $errors['security.max_input_size'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -365,7 +365,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Strict input validation',
                                                 'checked' => ($settings['security']['strict_input_validation'] ?? '1') === '1',
                                                 'help_text' => 'Apply strict validation rules to all user inputs',
-                                                'error' => $errors['security.strict_input_validation'] ?? ''
+                                                'error' => $errors['security.strict_input_validation'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -376,7 +376,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'HTML sanitization',
                                                 'checked' => ($settings['security']['html_sanitization'] ?? '1') === '1',
                                                 'help_text' => 'Sanitize HTML content to prevent XSS attacks',
-                                                'error' => $errors['security.html_sanitization'] ?? ''
+                                                'error' => $errors['security.html_sanitization'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -392,7 +392,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Validate redirect URLs',
                                                 'checked' => ($settings['security']['validate_redirects'] ?? '1') === '1',
                                                 'help_text' => 'Validate redirect URLs to prevent open redirect attacks',
-                                                'error' => $errors['security.validate_redirects'] ?? ''
+                                                'error' => $errors['security.validate_redirects'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -406,7 +406,7 @@ $pageTitle = 'Settings';
                                                 'rows' => 4,
                                                 'help_text' => 'One domain per line. Leave empty to allow only same-domain redirects.',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />',
-                                                'error' => $errors['security.allowed_redirect_domains'] ?? ''
+                                                'error' => $errors['security.allowed_redirect_domains'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -422,7 +422,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable Content Security Policy',
                                                 'checked' => ($settings['security']['enable_csp'] ?? '1') === '1',
                                                 'help_text' => 'Add CSP headers to prevent XSS and data injection attacks',
-                                                'error' => $errors['security.enable_csp'] ?? ''
+                                                'error' => $errors['security.enable_csp'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -435,11 +435,11 @@ $pageTitle = 'Settings';
                                                 'options' => [
                                                     'strict' => 'Strict (Maximum security)',
                                                     'moderate' => 'Moderate (Balanced)',
-                                                    'permissive' => 'Permissive (Development)'
+                                                    'permissive' => 'Permissive (Development)',
                                                 ],
                                                 'help_text' => 'Content Security Policy strictness level',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />',
-                                                'error' => $errors['security.csp_policy'] ?? ''
+                                                'error' => $errors['security.csp_policy'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -450,7 +450,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Additional security headers',
                                                 'checked' => ($settings['security']['additional_headers'] ?? '1') === '1',
                                                 'help_text' => 'Include HSTS, Referrer-Policy, and other security headers',
-                                                'error' => $errors['security.additional_headers'] ?? ''
+                                                'error' => $errors['security.additional_headers'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -466,7 +466,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Hide error details in production',
                                                 'checked' => ($settings['security']['hide_error_details'] ?? '1') === '1',
                                                 'help_text' => 'Hide detailed error messages from users to prevent information disclosure',
-                                                'error' => $errors['security.hide_error_details'] ?? ''
+                                                'error' => $errors['security.hide_error_details'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -477,7 +477,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Log security events',
                                                 'checked' => ($settings['security']['log_security_events'] ?? '1') === '1',
                                                 'help_text' => 'Log failed login attempts, CSRF violations, and other security events',
-                                                'error' => $errors['security.log_security_events'] ?? ''
+                                                'error' => $errors['security.log_security_events'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -491,11 +491,11 @@ $pageTitle = 'Settings';
                                                     '30' => '30 (Strict)',
                                                     '60' => '60 (Moderate)',
                                                     '120' => '120 (Permissive)',
-                                                    '0' => 'Disabled'
+                                                    '0' => 'Disabled',
                                                 ],
                                                 'help_text' => 'Maximum requests per minute per IP address',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                                'error' => $errors['security.rate_limit_attempts'] ?? ''
+                                                'error' => $errors['security.rate_limit_attempts'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -516,11 +516,11 @@ $pageTitle = 'Settings';
                                                 'task' => 'Task',
                                                 'story' => 'User Story',
                                                 'bug' => 'Bug',
-                                                'epic' => 'Epic'
+                                                'epic' => 'Epic',
                                             ],
                                             'help_text' => 'Default task type when creating new tasks',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />',
-                                            'error' => $errors['projects.default_task_type'] ?? ''
+                                            'error' => $errors['projects.default_task_type'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -531,7 +531,7 @@ $pageTitle = 'Settings';
                                             'label' => 'Auto-assign task creator',
                                             'checked' => ($settings['projects']['auto_assign_creator'] ?? '1') === '1',
                                             'help_text' => 'Automatically assign the task creator as the assignee',
-                                            'error' => $errors['projects.auto_assign_creator'] ?? ''
+                                            'error' => $errors['projects.auto_assign_creator'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -542,7 +542,7 @@ $pageTitle = 'Settings';
                                             'label' => 'Require project for tasks',
                                             'checked' => ($settings['projects']['require_project_for_tasks'] ?? '0') === '1',
                                             'help_text' => 'Make project selection mandatory when creating tasks',
-                                            'error' => $errors['projects.require_project_for_tasks'] ?? ''
+                                            'error' => $errors['projects.require_project_for_tasks'] ?? '',
                                         ]) ?>
                                     </div>
                                 </div>
@@ -562,11 +562,11 @@ $pageTitle = 'Settings';
                                                 'none' => 'None',
                                                 'low' => 'Low',
                                                 'medium' => 'Medium',
-                                                'high' => 'High'
+                                                'high' => 'High',
                                             ],
                                             'help_text' => 'Default priority level for new tasks',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
-                                            'error' => $errors['tasks.default_priority'] ?? ''
+                                            'error' => $errors['tasks.default_priority'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -577,7 +577,7 @@ $pageTitle = 'Settings';
                                             'label' => 'Enable automatic time estimation',
                                             'checked' => ($settings['tasks']['auto_estimate_enabled'] ?? '0') === '1',
                                             'help_text' => 'Automatically suggest time estimates based on similar completed tasks',
-                                            'error' => $errors['tasks.auto_estimate_enabled'] ?? ''
+                                            'error' => $errors['tasks.auto_estimate_enabled'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -588,7 +588,7 @@ $pageTitle = 'Settings';
                                             'label' => 'Enable story points',
                                             'checked' => ($settings['tasks']['story_points_enabled'] ?? '1') === '1',
                                             'help_text' => 'Enable Fibonacci-based story points for agile estimation',
-                                            'error' => $errors['tasks.story_points_enabled'] ?? ''
+                                            'error' => $errors['tasks.story_points_enabled'] ?? '',
                                         ]) ?>
                                     </div>
                                 </div>
@@ -605,7 +605,7 @@ $pageTitle = 'Settings';
                                             'label' => 'Auto-create milestones from sprints',
                                             'checked' => ($settings['milestones']['auto_create_from_sprints'] ?? '0') === '1',
                                             'help_text' => 'Automatically create milestones when sprints are completed',
-                                            'error' => $errors['milestones.auto_create_from_sprints'] ?? ''
+                                            'error' => $errors['milestones.auto_create_from_sprints'] ?? '',
                                         ]) ?>
                                     </div>
 
@@ -620,7 +620,7 @@ $pageTitle = 'Settings';
                                             'max' => '30',
                                             'help_text' => 'Days before milestone due date to send notifications',
                                             'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 19h6v-2H4v2zM16 3H4v2h12V3zM4 7h12v2H4V7zM4 11h12v2H4v-2z" />',
-                                            'error' => $errors['milestones.milestone_notification_days'] ?? ''
+                                            'error' => $errors['milestones.milestone_notification_days'] ?? '',
                                         ]) ?>
                                     </div>
                                 </div>
@@ -649,7 +649,7 @@ $pageTitle = 'Settings';
                                                 'max' => '30',
                                                 'help_text' => 'Default length for new sprints (1-4 weeks recommended)',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                                'error' => $errors['sprints.default_sprint_length'] ?? ''
+                                                'error' => $errors['sprints.default_sprint_length'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -661,11 +661,11 @@ $pageTitle = 'Settings';
                                                 'value' => $settings['sprints']['estimation_method'] ?? 'hours',
                                                 'options' => [
                                                     'hours' => 'Hours (Time-based)',
-                                                    'story_points' => 'Story Points (Fibonacci)'
+                                                    'story_points' => 'Story Points (Fibonacci)',
                                                 ],
                                                 'help_text' => 'Default estimation method for sprint planning and capacity',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />',
-                                                'error' => $errors['sprints.estimation_method'] ?? ''
+                                                'error' => $errors['sprints.estimation_method'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -677,7 +677,7 @@ $pageTitle = 'Settings';
                                                 'value' => $settings['sprints']['working_days'] ?? 'monday,tuesday,wednesday,thursday,friday',
                                                 'help_text' => 'Comma-separated list of working days (e.g., monday,tuesday,wednesday,thursday,friday)',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />',
-                                                'error' => $errors['sprints.working_days'] ?? ''
+                                                'error' => $errors['sprints.working_days'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -697,7 +697,7 @@ $pageTitle = 'Settings';
                                                 'max' => '200',
                                                 'help_text' => 'Default team capacity in hours per sprint',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-                                                'error' => $errors['sprints.team_capacity_hours'] ?? ''
+                                                'error' => $errors['sprints.team_capacity_hours'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -712,7 +712,7 @@ $pageTitle = 'Settings';
                                                 'max' => '100',
                                                 'help_text' => 'Default team capacity in story points per sprint',
                                                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />',
-                                                'error' => $errors['sprints.team_capacity_story_points'] ?? ''
+                                                'error' => $errors['sprints.team_capacity_story_points'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -728,7 +728,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable sprint planning',
                                                 'checked' => ($settings['sprints']['sprint_planning_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Enable sprint planning features and workflows',
-                                                'error' => $errors['sprints.sprint_planning_enabled'] ?? ''
+                                                'error' => $errors['sprints.sprint_planning_enabled'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -739,7 +739,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Auto-start next sprint',
                                                 'checked' => ($settings['sprints']['auto_start_next_sprint'] ?? '0') === '1',
                                                 'help_text' => 'Automatically start the next sprint when current sprint ends',
-                                                'error' => $errors['sprints.auto_start_next_sprint'] ?? ''
+                                                'error' => $errors['sprints.auto_start_next_sprint'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -750,7 +750,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Auto-move incomplete tasks',
                                                 'checked' => ($settings['sprints']['auto_move_incomplete_tasks'] ?? '1') === '1',
                                                 'help_text' => 'Automatically move incomplete tasks to next sprint',
-                                                'error' => $errors['sprints.auto_move_incomplete_tasks'] ?? ''
+                                                'error' => $errors['sprints.auto_move_incomplete_tasks'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -761,7 +761,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Sprint notifications',
                                                 'checked' => ($settings['sprints']['sprint_notifications_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Send notifications for sprint events (start, end, delays)',
-                                                'error' => $errors['sprints.sprint_notifications_enabled'] ?? ''
+                                                'error' => $errors['sprints.sprint_notifications_enabled'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -777,7 +777,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable velocity tracking',
                                                 'checked' => ($settings['sprints']['velocity_tracking_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Track team velocity across sprints for better planning',
-                                                'error' => $errors['sprints.velocity_tracking_enabled'] ?? ''
+                                                'error' => $errors['sprints.velocity_tracking_enabled'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -788,7 +788,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable burndown charts',
                                                 'checked' => ($settings['sprints']['burndown_charts_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Generate burndown charts for sprint progress visualization',
-                                                'error' => $errors['sprints.burndown_charts_enabled'] ?? ''
+                                                'error' => $errors['sprints.burndown_charts_enabled'] ?? '',
                                             ]) ?>
                                         </div>
 
@@ -799,7 +799,7 @@ $pageTitle = 'Settings';
                                                 'label' => 'Enable retrospectives',
                                                 'checked' => ($settings['sprints']['retrospective_enabled'] ?? '1') === '1',
                                                 'help_text' => 'Enable sprint retrospective features for continuous improvement',
-                                                'error' => $errors['sprints.retrospective_enabled'] ?? ''
+                                                'error' => $errors['sprints.retrospective_enabled'] ?? '',
                                             ]) ?>
                                         </div>
                                     </div>
@@ -824,7 +824,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show quick templates',
                                                     'checked' => ($settings['templates']['project_show_quick_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show pre-built quick templates for projects',
-                                                    'error' => $errors['templates.project_show_quick_templates'] ?? ''
+                                                    'error' => $errors['templates.project_show_quick_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                             <div>
@@ -833,7 +833,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show custom templates',
                                                     'checked' => ($settings['templates']['project_show_custom_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show user-created custom templates for projects',
-                                                    'error' => $errors['templates.project_show_custom_templates'] ?? ''
+                                                    'error' => $errors['templates.project_show_custom_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                         </div>
@@ -849,7 +849,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show quick templates',
                                                     'checked' => ($settings['templates']['task_show_quick_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show pre-built quick templates for tasks',
-                                                    'error' => $errors['templates.task_show_quick_templates'] ?? ''
+                                                    'error' => $errors['templates.task_show_quick_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                             <div>
@@ -858,7 +858,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show custom templates',
                                                     'checked' => ($settings['templates']['task_show_custom_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show user-created custom templates for tasks',
-                                                    'error' => $errors['templates.task_show_custom_templates'] ?? ''
+                                                    'error' => $errors['templates.task_show_custom_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                         </div>
@@ -874,7 +874,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show quick templates',
                                                     'checked' => ($settings['templates']['milestone_show_quick_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show pre-built quick templates for milestones',
-                                                    'error' => $errors['templates.milestone_show_quick_templates'] ?? ''
+                                                    'error' => $errors['templates.milestone_show_quick_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                             <div>
@@ -883,7 +883,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show custom templates',
                                                     'checked' => ($settings['templates']['milestone_show_custom_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show user-created custom templates for milestones',
-                                                    'error' => $errors['templates.milestone_show_custom_templates'] ?? ''
+                                                    'error' => $errors['templates.milestone_show_custom_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                         </div>
@@ -899,7 +899,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show quick templates',
                                                     'checked' => ($settings['templates']['sprint_show_quick_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show pre-built quick templates for sprints',
-                                                    'error' => $errors['templates.sprint_show_quick_templates'] ?? ''
+                                                    'error' => $errors['templates.sprint_show_quick_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                             <div>
@@ -908,7 +908,7 @@ $pageTitle = 'Settings';
                                                     'label' => 'Show custom templates',
                                                     'checked' => ($settings['templates']['sprint_show_custom_templates'] ?? '1') === '1',
                                                     'help_text' => 'Show user-created custom templates for sprints',
-                                                    'error' => $errors['templates.sprint_show_custom_templates'] ?? ''
+                                                    'error' => $errors['templates.sprint_show_custom_templates'] ?? '',
                                                 ]) ?>
                                             </div>
                                         </div>

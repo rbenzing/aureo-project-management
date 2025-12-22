@@ -1,17 +1,17 @@
 <?php
+
 // file: Controllers/TemplateController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Models\Template;
 use App\Models\Company;
-use App\Utils\Validator;
-use RuntimeException;
-use InvalidArgumentException;
+use App\Models\Template;
 use App\Services\SecurityService;
+use App\Utils\Validator;
+use InvalidArgumentException;
+use RuntimeException;
 
 class TemplateController
 {
@@ -40,7 +40,7 @@ class TemplateController
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
             $limit = $settingsService->getResultsPerPage();
-            
+
             // Get filter parameters
             $templateType = isset($_GET['type']) ? $_GET['type'] : '';
             $filters = [];
@@ -56,6 +56,7 @@ class TemplateController
                 error_log("TemplateController: Successfully got templates, count: " . count($templates));
             } catch (\Exception $e) {
                 error_log("TemplateController: Error getting templates: " . $e->getMessage());
+
                 throw $e;
             }
 
@@ -66,6 +67,7 @@ class TemplateController
                 error_log("TemplateController: Successfully got count: " . $totalTemplates);
             } catch (\Exception $e) {
                 error_log("TemplateController: Error getting count: " . $e->getMessage());
+
                 throw $e;
             }
 
@@ -116,7 +118,7 @@ class TemplateController
 
     /**
      * Display template creation form
-     * 
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -125,9 +127,9 @@ class TemplateController
     {
         try {
             $this->authMiddleware->hasPermission('create_templates');
-            
+
             $companies = $this->companyModel->getAllCompanies();
-            
+
             include BASE_PATH . '/../Views/Templates/create.php';
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::createForm: " . $e->getMessage());
@@ -139,7 +141,7 @@ class TemplateController
 
     /**
      * Handle template creation
-     * 
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -159,7 +161,7 @@ class TemplateController
                 'description' => 'required|string',
                 'template_type' => 'required|in:project,task,milestone,sprint',
                 'company_id' => 'nullable|integer|exists:companies,id',
-                'is_default' => 'boolean'
+                'is_default' => 'boolean',
             ]);
 
             if ($validator->fails()) {
@@ -170,9 +172,9 @@ class TemplateController
                 'name' => htmlspecialchars($data['name']),
                 'description' => $data['description'],
                 'template_type' => $data['template_type'],
-                'company_id' => !empty($data['company_id']) ? 
+                'company_id' => !empty($data['company_id']) ?
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
-                'is_default' => isset($data['is_default']) ? true : false
+                'is_default' => isset($data['is_default']) ? true : false,
             ];
 
             // Begin transaction for setting default template
@@ -180,19 +182,20 @@ class TemplateController
 
             try {
                 $templateId = $this->templateModel->create($templateData);
-                
+
                 // If this is set as default, update other templates of the same type
                 if ($templateData['is_default']) {
                     $this->templateModel->setDefaultTemplate($templateId, $templateData['template_type'], $templateData['company_id']);
                 }
-                
+
                 $this->templateModel->commit();
-                
+
                 $_SESSION['success'] = 'Template created successfully.';
                 header('Location: /templates');
                 exit;
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
+
                 throw $e;
             }
         } catch (InvalidArgumentException $e) {
@@ -211,7 +214,7 @@ class TemplateController
 
     /**
      * Display template edit form
-     * 
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -248,7 +251,7 @@ class TemplateController
 
     /**
      * Handle template update
-     * 
+     *
      * @param string $requestMethod
      * @param array $data
      * @throws RuntimeException
@@ -273,7 +276,7 @@ class TemplateController
                 'description' => 'required|string',
                 'template_type' => 'required|in:project,task,milestone,sprint',
                 'company_id' => 'nullable|integer|exists:companies,id',
-                'is_default' => 'boolean'
+                'is_default' => 'boolean',
             ]);
 
             if ($validator->fails()) {
@@ -284,9 +287,9 @@ class TemplateController
                 'name' => htmlspecialchars($data['name']),
                 'description' => $data['description'],
                 'template_type' => $data['template_type'],
-                'company_id' => !empty($data['company_id']) ? 
+                'company_id' => !empty($data['company_id']) ?
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
-                'is_default' => isset($data['is_default']) ? true : false
+                'is_default' => isset($data['is_default']) ? true : false,
             ];
 
             // Begin transaction for setting default template
@@ -294,19 +297,20 @@ class TemplateController
 
             try {
                 $this->templateModel->update($id, $templateData);
-                
+
                 // If this is set as default, update other templates of the same type
                 if ($templateData['is_default']) {
                     $this->templateModel->setDefaultTemplate($id, $templateData['template_type'], $templateData['company_id']);
                 }
-                
+
                 $this->templateModel->commit();
-                
+
                 $_SESSION['success'] = 'Template updated successfully.';
                 header('Location: /templates');
                 exit;
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
+
                 throw $e;
             }
         } catch (InvalidArgumentException $e) {
@@ -393,15 +397,15 @@ class TemplateController
                 'template' => [
                     'name' => $template->name,
                     'description' => $template->description,
-                    'template_type' => $template->template_type
-                ]
+                    'template_type' => $template->template_type,
+                ],
             ]);
             exit;
         } catch (InvalidArgumentException $e) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
             exit;
         } catch (\Exception $e) {
@@ -409,7 +413,7 @@ class TemplateController
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'message' => 'An error occurred while fetching the template.'
+                'message' => 'An error occurred while fetching the template.',
             ]);
             exit;
         }

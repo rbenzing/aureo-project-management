@@ -8,7 +8,6 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use App\Utils\Time;
 use App\Utils\Sort;
 
 // Include helper functions for consistent styling
@@ -27,27 +26,28 @@ $taskStatusMap = [
     4 => ['label' => 'IN REVIEW', 'color' => 'bg-indigo-500'],
     5 => ['label' => 'CLOSED', 'color' => 'bg-gray-500'],
     6 => ['label' => 'COMPLETED', 'color' => 'bg-green-500'],
-    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500']
+    7 => ['label' => 'CANCELLED', 'color' => 'bg-red-500'],
 ];
 
 // Function to render a task row
-function renderSprintTaskRow($task, $taskStatusMap, $indentLevel = 0) {
+function renderSprintTaskRow($task, $taskStatusMap, $indentLevel = 0)
+{
     $priorityLevel = isset($task->priority) ? $task->priority : 'none';
     $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'UNKNOWN', 'color' => 'bg-gray-500'];
     $indentClass = $indentLevel > 0 ? 'pl-' . ($indentLevel * 6) : '';
-    
+
     echo '<tr class="hover:bg-gray-50 dark:hover:bg-gray-700">';
     echo '<td class="px-6 py-4 whitespace-nowrap ' . $indentClass . '">';
     echo '<a href="/tasks/view/' . $task->id . '" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium">';
     echo htmlspecialchars($task->title);
     echo '</a>';
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     $taskStatusInfo = getTaskStatusInfo($task->status_id ?? 1);
     echo renderStatusPill($taskStatusInfo['label'], $taskStatusInfo['color'], 'sm');
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     if (!empty($task->first_name) && !empty($task->last_name)) {
         echo '<div class="flex items-center">';
@@ -66,7 +66,7 @@ function renderSprintTaskRow($task, $taskStatusMap, $indentLevel = 0) {
         echo '<span class="text-gray-500 dark:text-gray-400">Unassigned</span>';
     }
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     if (!empty($task->due_date)) {
         $dueDate = new DateTime($task->due_date);
@@ -79,13 +79,13 @@ function renderSprintTaskRow($task, $taskStatusMap, $indentLevel = 0) {
         echo '<span class="text-gray-500 dark:text-gray-400 whitespace-nowrap">No due date</span>';
     }
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap">';
     echo '<span class="' . getSprintPriorityClass($task->priority ?? 'none') . '">';
     echo ucfirst($task->priority ?? 'None');
     echo '</span>';
     echo '</td>';
-    
+
     echo '<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">';
     echo '<a href="/tasks/view/' . $task->id . '" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">';
     echo 'View';
@@ -94,16 +94,17 @@ function renderSprintTaskRow($task, $taskStatusMap, $indentLevel = 0) {
     echo 'Edit';
     echo '</a>';
     echo '</td>';
-    
+
     echo '</tr>';
 }
 
 // Function to render milestone/epic header
-function renderSprintMilestoneHeader($item, $type) {
+function renderSprintMilestoneHeader($item, $type)
+{
     $bgColor = $type === 'epic' ? 'bg-purple-50 dark:bg-purple-900' : 'bg-blue-50 dark:bg-blue-900';
     $textColor = $type === 'epic' ? 'text-purple-800 dark:text-purple-200' : 'text-blue-800 dark:text-blue-200';
     $icon = $type === 'epic' ? '🎯' : '🏁';
-    
+
     echo '<tr class="' . $bgColor . '">';
     echo '<td colspan="6" class="px-6 py-3 ' . $textColor . ' font-semibold">';
     echo '<div class="flex items-center">';
@@ -211,7 +212,7 @@ function renderSprintMilestoneHeader($item, $type) {
                 <tr>
                     <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                         No tasks have been added to this sprint yet.
-                        <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active ?>
+                        <?php if (isset($sprint->status_id) && in_array($sprint->status_id, [1, 2])): // Planning or Active?>
                             <a href="/tasks/create?sprint_id=<?= $sprint->id ?? 0 ?>&project_id=<?= $project->id ?? 0 ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 Add your first task
                             </a>

@@ -1,4 +1,5 @@
 <?php
+
 //file: Models/Setting.php
 declare(strict_types=1);
 
@@ -47,6 +48,7 @@ class Setting
         $stmt = $this->db->executeQuery($sql, [':category' => $category, ':key' => $key]);
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $result ? $result['setting_value'] : $default;
     }
 
@@ -62,10 +64,12 @@ class Setting
         if ($stmt->fetch()) {
             // Update existing setting
             $sql = "UPDATE settings SET setting_value = :value, updated_at = NOW() WHERE category = :category AND setting_key = :key";
+
             return $this->db->executeInsertUpdate($sql, [':value' => $value, ':category' => $category, ':key' => $key]);
         } else {
             // Create new setting
             $sql = "INSERT INTO settings (category, setting_key, setting_value, created_at, updated_at) VALUES (:category, :key, :value, NOW(), NOW())";
+
             return $this->db->executeInsertUpdate($sql, [':category' => $category, ':key' => $key, ':value' => $value]);
         }
     }
@@ -92,6 +96,7 @@ class Setting
     public function deleteSetting(string $category, string $key): bool
     {
         $sql = "DELETE FROM settings WHERE category = :category AND setting_key = :key";
+
         return $this->db->executeInsertUpdate($sql, [':category' => $category, ':key' => $key]);
     }
 
@@ -105,6 +110,7 @@ class Setting
         if (empty($timeUnit)) {
             $timeUnit = $this->getSetting('time_intervals', 'time_unit', 'minutes');
         }
+
         return $timeUnit;
     }
 
@@ -118,6 +124,7 @@ class Setting
         if (empty($timePrecision)) {
             $timePrecision = $this->getSetting('time_intervals', 'time_precision', '15');
         }
+
         return (int)$timePrecision;
     }
 
@@ -128,7 +135,7 @@ class Setting
     {
         return [
             'time_unit' => $this->getTimeUnit(),
-            'time_precision' => $this->getTimePrecision()
+            'time_precision' => $this->getTimePrecision(),
         ];
     }
 
@@ -162,6 +169,7 @@ class Setting
     public function getSettingBool(string $category, string $key, bool $default = false): bool
     {
         $value = $this->getSetting($category, $key, $default ? '1' : '0');
+
         return $value === '1' || $value === 'true';
     }
 
@@ -171,6 +179,7 @@ class Setting
     public function getSettingInt(string $category, string $key, int $default = 0): int
     {
         $value = $this->getSetting($category, $key, (string)$default);
+
         return (int)$value;
     }
 }

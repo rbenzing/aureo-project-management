@@ -71,7 +71,7 @@ if (!defined('BASE_PATH')) {
                                     'high' => 'text-red-600 dark:text-red-400',
                                     'medium' => 'text-yellow-600 dark:text-yellow-400',
                                     'low' => 'text-blue-600 dark:text-blue-400',
-                                    'none' => 'text-gray-600 dark:text-gray-400'
+                                    'none' => 'text-gray-600 dark:text-gray-400',
                                 ];
                                 $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
 
@@ -81,7 +81,7 @@ if (!defined('BASE_PATH')) {
                                     3 => ['label' => 'On Hold', 'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
                                     4 => ['label' => 'In Review', 'class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'],
                                     5 => ['label' => 'Closed', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'],
-                                    6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200']
+                                    6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
                                 ];
                                 $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'];
                                 ?>

@@ -1,12 +1,13 @@
 <?php
+
 // file: Middleware/SessionMiddleware.php
 declare(strict_types=1);
 
 namespace App\Middleware;
 
 use App\Core\Database;
-use App\Services\SettingsService;
 use App\Services\SecurityService;
+use App\Services\SettingsService;
 
 class SessionMiddleware
 {
@@ -18,7 +19,8 @@ class SessionMiddleware
         self::$db = Database::getInstance();
     }
 
-    private static function startSecureSession() {
+    private static function startSecureSession()
+    {
         // Get security service for configuration
         $securityService = SecurityService::getInstance();
         $settingsService = SettingsService::getInstance();
@@ -52,7 +54,7 @@ class SessionMiddleware
             'domain' => $domain,
             'secure' => $sessionConfig['cookie_secure'],
             'httponly' => $sessionConfig['cookie_httponly'],
-            'samesite' => $sessionConfig['cookie_samesite']
+            'samesite' => $sessionConfig['cookie_samesite'],
         ]);
 
         session_start();
@@ -80,7 +82,7 @@ class SessionMiddleware
             [':id' => $sessionId]
         );
         $session = $stmt->fetch(\PDO::FETCH_OBJ);
-        
+
         if ($session) {
             // Deserialize session data
             $_SESSION = json_decode($session->data, true);
@@ -132,10 +134,10 @@ class SessionMiddleware
         $settingsService = SettingsService::getInstance();
         $sessionTimeout = $settingsService->getSessionTimeout();
         $expiresAt = date('Y-m-d H:i:s', time() + $sessionTimeout);
-        
+
         // Serialize session data
         $serializedData = json_encode($data);
-        
+
         $_SESSION['user'] = $data;
         $_SESSION['last_activity'] = time();
 
@@ -165,7 +167,7 @@ class SessionMiddleware
             "UPDATE csrf_tokens SET session_id = :id WHERE session_id = :prev_id",
             [
                 ':id' => $sessionId,
-                ':prev_id' => $prevSessionId
+                ':prev_id' => $prevSessionId,
             ]
         );
     }
@@ -218,7 +220,7 @@ class SessionMiddleware
             "UPDATE sessions SET id = :new_id WHERE id = :old_id",
             [
                 ':new_id' => $newSessionId,
-                ':old_id' => $oldSessionId
+                ':old_id' => $oldSessionId,
             ]
         );
 
@@ -230,7 +232,7 @@ class SessionMiddleware
                 "INSERT INTO sessions (id, data, expires_at) VALUES (:id, '{}', :expires_at)",
                 [
                     ':id' => $newSessionId,
-                    ':expires_at' => date('Y-m-d H:i:s', time() + $sessionTimeout)
+                    ':expires_at' => date('Y-m-d H:i:s', time() + $sessionTimeout),
                 ]
             );
         }

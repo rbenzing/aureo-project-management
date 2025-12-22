@@ -1,4 +1,5 @@
 <?php
+
 //file: Services/SecurityService.php
 declare(strict_types=1);
 
@@ -23,20 +24,29 @@ class SecurityService
     private Database $db;
     private static ?SecurityService $instance = null;
 
-    public function __construct()
+    /**
+     * Constructor - Now supports dependency injection
+     *
+     * @param SettingsService|null $settingsService Optional SettingsService instance
+     * @param Database|null $db Optional Database instance
+     */
+    public function __construct(?SettingsService $settingsService = null, ?Database $db = null)
     {
-        $this->settingsService = SettingsService::getInstance();
-        $this->db = Database::getInstance();
+        $this->settingsService = $settingsService ?? SettingsService::getInstance();
+        $this->db = $db ?? Database::getInstance();
     }
 
     /**
-     * Get singleton instance
+     * Get singleton instance (for backward compatibility)
+     * @return self
+     * @deprecated Use dependency injection instead
      */
     public static function getInstance(): SecurityService
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 
@@ -62,10 +72,11 @@ class SecurityService
 
         // Get allowed domains
         $allowedDomains = $this->settingsService->getAllowedRedirectDomains();
-        
+
         // If no allowed domains specified, only allow same domain
         if (empty($allowedDomains)) {
             $currentHost = $_SERVER['HTTP_HOST'] ?? '';
+
             return $parsedUrl['host'] === $currentHost;
         }
 
@@ -81,6 +92,7 @@ class SecurityService
         if ($this->validateRedirectUrl($url)) {
             return $url;
         }
+
         return $fallback;
     }
 
@@ -90,6 +102,7 @@ class SecurityService
     public function validateInputSize(string $input): bool
     {
         $maxSize = $this->settingsService->getSecuritySetting('max_input_size', 1048576);
+
         return strlen($input) <= $maxSize;
     }
 
@@ -117,6 +130,7 @@ class SecurityService
 
         // Allow basic formatting but remove dangerous elements
         $allowedTags = '<p><br><strong><em><ul><ol><li><h1><h2><h3><h4><h5><h6><blockquote><code>';
+
         return strip_tags($content, $allowedTags);
     }
 
@@ -130,7 +144,7 @@ class SecurityService
         }
 
         $currentHost = $_SERVER['HTTP_HOST'] ?? '';
-        
+
         // Basic domain validation
         if ($domain === $currentHost) {
             return true;
@@ -166,7 +180,7 @@ class SecurityService
             $headers['X-XSS-Protection'] = '1; mode=block';
             $headers['Referrer-Policy'] = 'strict-origin-when-cross-origin';
             $headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()';
-            
+
             // HSTS for HTTPS
             if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
                 $headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
@@ -182,7 +196,7 @@ class SecurityService
     public function applySecurityHeaders(): void
     {
         $headers = $this->getSecurityHeaders();
-        
+
         foreach ($headers as $name => $value) {
             header("$name: $value");
         }
@@ -203,7 +217,7 @@ class SecurityService
             'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
             'user_id' => $_SESSION['user']['id'] ?? null,
-            'context' => $context
+            'context' => $context,
         ];
 
         error_log('SECURITY_EVENT: ' . json_encode($logData));
@@ -237,7 +251,7 @@ class SecurityService
                      AND expires_at > NOW()";
             $stmt = $this->db->executeQuery($query, [
                 ':identifier' => $identifier,
-                ':action' => $action
+                ':action' => $action,
             ]);
             $record = $stmt->fetch();
 
@@ -250,7 +264,7 @@ class SecurityService
                 $this->db->executeQuery($updateQuery, [
                     ':attempts' => $newAttempts,
                     ':identifier' => $identifier,
-                    ':action' => $action
+                    ':action' => $action,
                 ]);
 
                 if ($newAttempts > $maxAttempts) {
@@ -258,8 +272,9 @@ class SecurityService
                         'identifier' => $identifier,
                         'action' => $action,
                         'attempts' => $newAttempts,
-                        'limit' => $maxAttempts
+                        'limit' => $maxAttempts,
                     ]);
+
                     return false;
                 }
             } else {
@@ -270,7 +285,7 @@ class SecurityService
                 $this->db->executeQuery($insertQuery, [
                     ':identifier' => $identifier,
                     ':action' => $action,
-                    ':window' => $windowSeconds
+                    ':window' => $windowSeconds,
                 ]);
             }
 
@@ -278,6 +293,7 @@ class SecurityService
         } catch (\Exception $e) {
             // If database fails, log error but don't block the request
             error_log("Rate limiting database error: " . $e->getMessage());
+
             return true;
         }
     }
@@ -310,7 +326,7 @@ class SecurityService
             'cookie_httponly' => true,
             'use_only_cookies' => true,
             'cookie_secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-            'cookie_samesite' => $this->settingsService->getSecuritySetting('session_samesite', 'Lax')
+            'cookie_samesite' => $this->settingsService->getSecuritySetting('session_samesite', 'Lax'),
         ];
     }
 
@@ -330,6 +346,7 @@ class SecurityService
         if ($this->shouldHideErrorDetails()) {
             return $fallbackMessage;
         }
+
         return $originalMessage;
     }
 
@@ -346,7 +363,7 @@ class SecurityService
             'context' => $context,
             'error' => $e->getMessage(),
             'file' => $e->getFile(),
-            'line' => $e->getLine()
+            'line' => $e->getLine(),
         ]);
 
         // Return safe message based on settings

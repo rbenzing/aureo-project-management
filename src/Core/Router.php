@@ -1,4 +1,5 @@
 <?php
+
 // file: Core/Router.php
 declare(strict_types=1);
 
@@ -10,7 +11,7 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-class Router 
+class Router
 {
     /**
      * Store routes by HTTP method
@@ -20,7 +21,7 @@ class Router
         'GET' => [],
         'POST' => [],
         'PUT' => [],
-        'DELETE' => []
+        'DELETE' => [],
     ];
 
     /**
@@ -34,8 +35,24 @@ class Router
         ':project_id' => '([0-9]+)',
         ':slug' => '([a-zA-Z0-9-]+)',
         ':page' => '([0-9]+)',
-        ':any' => '(.*)'
+        ':any' => '(.*)',
     ];
+
+    /**
+     * Dependency Injection Container
+     * @var \Psr\Container\ContainerInterface|null
+     */
+    private ?\Psr\Container\ContainerInterface $container = null;
+
+    /**
+     * Constructor - Now supports dependency injection
+     *
+     * @param \Psr\Container\ContainerInterface|null $container Optional DI container
+     */
+    public function __construct(?\Psr\Container\ContainerInterface $container = null)
+    {
+        $this->container = $container;
+    }
 
     /**
      * Add a route
@@ -43,7 +60,7 @@ class Router
      * @param string $route Route pattern
      * @param array $params Route parameters
      */
-    public function addRoute(string $method, string $route, array $params): void 
+    public function addRoute(string $method, string $route, array $params): void
     {
         // Normalize route
         $route = trim($route, '/');
@@ -53,7 +70,7 @@ class Router
 
         // Convert route patterns to regex
         $route = $this->convertRouteToRegex($route);
-        
+
         // Store route
         $this->routes[strtoupper($method)][$route] = $params;
     }
@@ -63,13 +80,14 @@ class Router
      * @param string $route
      * @return string
      */
-    private function convertRouteToRegex(string $route): string 
+    private function convertRouteToRegex(string $route): string
     {
         if (strpos($route, ':') !== false) {
             foreach ($this->patterns as $pattern => $replacement) {
                 $route = str_replace($pattern, $replacement, $route);
             }
         }
+
         return $route;
     }
 
@@ -79,17 +97,18 @@ class Router
      * @param string $uri Current URI
      * @return array|false
      */
-    private function matchRoute(string $method, string $uri): array|false 
+    private function matchRoute(string $method, string $uri): array|false
     {
         $uri = trim($uri, '/');
         if (empty($uri)) {
             $uri = 'dashboard';
         }
-        
+
 
         foreach ($this->routes[$method] as $route => $params) {
             if (preg_match('#^' . $route . '$#', $uri, $matches)) {
                 array_shift($matches); // Remove full match
+
                 return ['params' => $params, 'matches' => $matches];
             }
         }
@@ -103,11 +122,11 @@ class Router
      * @param array $urlSegments URL segments
      * @throws \Exception
      */
-    public function dispatch(string $requestMethod, array $urlSegments): void 
+    public function dispatch(string $requestMethod, array $urlSegments): void
     {
         // Build URI from segments
         $uri = implode('/', $urlSegments);
-        
+
         // Match route
         $match = $this->matchRoute($requestMethod, $uri);
 
@@ -118,24 +137,28 @@ class Router
         // Extract controller and action
         $params = $match['params'];
         $matches = $match['matches'];
-        
+
         $controllerName = ucfirst($params['controller']) . 'Controller';
         $actionName = $params['action'] ?? 'index';
-        
+
         // Build controller class name
         $controllerClass = '\\App\\Controllers\\' . $controllerName;
-        
+
         if (!class_exists($controllerClass)) {
             throw new \Exception('Controller not found', 404);
         }
 
-        // Create controller instance
-        $controller = new $controllerClass();
-        
+        // Create controller instance - use DI container if available
+        if ($this->container && $this->container->has($controllerClass)) {
+            $controller = $this->container->get($controllerClass);
+        } else {
+            $controller = new $controllerClass();
+        }
+
         if (!method_exists($controller, $actionName)) {
             throw new \Exception('Action not found', 404);
         }
-        
+
         // Build request data
         $requestData = [];
 
@@ -167,22 +190,22 @@ class Router
     /**
      * Quick methods to add routes
      */
-    public function get(string $route, array $params): void 
+    public function get(string $route, array $params): void
     {
         $this->addRoute('GET', $route, $params);
     }
 
-    public function post(string $route, array $params): void 
+    public function post(string $route, array $params): void
     {
         $this->addRoute('POST', $route, $params);
     }
 
-    public function put(string $route, array $params): void 
+    public function put(string $route, array $params): void
     {
         $this->addRoute('PUT', $route, $params);
     }
 
-    public function delete(string $route, array $params): void 
+    public function delete(string $route, array $params): void
     {
         $this->addRoute('DELETE', $route, $params);
     }

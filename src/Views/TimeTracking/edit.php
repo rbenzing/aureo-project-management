@@ -62,7 +62,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'options' => array_column($tasks ?? [], 'title', 'id'),
                             'empty_option' => 'Select a task...',
                             'required' => true,
-                            'error' => $errors['task_id'] ?? ''
+                            'error' => $errors['task_id'] ?? '',
                         ]) ?>
                     </div>
 
@@ -74,7 +74,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'Start Date',
                             'value' => isset($timeEntry->start_time) ? date('Y-m-d', strtotime($timeEntry->start_time)) : '',
                             'required' => true,
-                            'error' => $errors['start_date'] ?? ''
+                            'error' => $errors['start_date'] ?? '',
                         ]) ?>
                     </div>
 
@@ -85,7 +85,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'Start Time',
                             'value' => isset($timeEntry->start_time) ? date('H:i', strtotime($timeEntry->start_time)) : '',
                             'required' => true,
-                            'error' => $errors['start_time'] ?? ''
+                            'error' => $errors['start_time'] ?? '',
                         ]) ?>
                     </div>
 
@@ -97,7 +97,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'End Date',
                             'value' => isset($timeEntry->end_time) ? date('Y-m-d', strtotime($timeEntry->end_time)) : '',
                             'required' => true,
-                            'error' => $errors['end_date'] ?? ''
+                            'error' => $errors['end_date'] ?? '',
                         ]) ?>
                     </div>
 
@@ -108,7 +108,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'label' => 'End Time',
                             'value' => isset($timeEntry->end_time) ? date('H:i', strtotime($timeEntry->end_time)) : '',
                             'required' => true,
-                            'error' => $errors['end_time'] ?? ''
+                            'error' => $errors['end_time'] ?? '',
                         ]) ?>
                     </div>
 
@@ -135,7 +135,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'value' => $timeEntry->notes ?? '',
                             'placeholder' => 'Add any notes about this time entry...',
                             'rows' => 3,
-                            'error' => $errors['notes'] ?? ''
+                            'error' => $errors['notes'] ?? '',
                         ]) ?>
                     </div>
 
@@ -145,7 +145,7 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'name' => 'is_billable',
                             'label' => 'This time is billable',
                             'checked' => !empty($timeEntry->is_billable),
-                            'help_text' => 'Check this if the time should be billed to the client.'
+                            'help_text' => 'Check this if the time should be billed to the client.',
                         ]) ?>
                     </div>
                 </div>
@@ -159,9 +159,9 @@ include BASE_PATH . '/../src/Views/Layouts/FormComponents.php';
                             'type' => 'button',
                             'text' => 'Delete Entry',
                             'class' => 'bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md',
-                            'onclick' => 'deleteTimeEntry(' . ($timeEntry->id ?? 0) . ')'
-                        ]
-                    ]
+                            'onclick' => 'deleteTimeEntry(' . ($timeEntry->id ?? 0) . ')',
+                        ],
+                    ],
                 ]) ?>
             </form>
         </div>

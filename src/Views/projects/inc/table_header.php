@@ -23,7 +23,7 @@ $statusOptions = [
     3 => 'Completed',
     4 => 'On Hold',
     6 => 'Delayed',
-    7 => 'Cancelled'
+    7 => 'Cancelled',
 ];
 ?>
 
@@ -87,25 +87,35 @@ $statusOptions = [
                     'projects' => 'Project Overview',
                     'tasks' => 'Tasks',
                     'milestones' => 'Milestones',
-                    'sprints' => 'Sprints'
+                    'sprints' => 'Sprints',
                 ];
-                
-                foreach ($viewOptions as $value => $label):
-                    $isActive = $currentView === $value;
-                    $baseUrl = "/projects?view=table&by=" . $value;
-                    $queryParams = [];
-                    
-                    if ($currentSearch) $queryParams[] = "search=" . urlencode($currentSearch);
-                    if ($currentStatus) $queryParams[] = "status_id=" . $currentStatus;
-                    if ($currentCompany) $queryParams[] = "company_id=" . $currentCompany;
-                    if ($currentSort) $queryParams[] = "sort=" . $currentSort;
-                    if ($currentDir) $queryParams[] = "dir=" . $currentDir;
-                    
-                    $fullUrl = $baseUrl;
-                    if (!empty($queryParams)) {
-                        $fullUrl .= "&" . implode("&", $queryParams);
-                    }
-                ?>
+
+foreach ($viewOptions as $value => $label):
+    $isActive = $currentView === $value;
+    $baseUrl = "/projects?view=table&by=" . $value;
+    $queryParams = [];
+
+    if ($currentSearch) {
+        $queryParams[] = "search=" . urlencode($currentSearch);
+    }
+    if ($currentStatus) {
+        $queryParams[] = "status_id=" . $currentStatus;
+    }
+    if ($currentCompany) {
+        $queryParams[] = "company_id=" . $currentCompany;
+    }
+    if ($currentSort) {
+        $queryParams[] = "sort=" . $currentSort;
+    }
+    if ($currentDir) {
+        $queryParams[] = "dir=" . $currentDir;
+    }
+
+    $fullUrl = $baseUrl;
+    if (!empty($queryParams)) {
+        $fullUrl .= "&" . implode("&", $queryParams);
+    }
+    ?>
                     <a href="<?= $fullUrl ?>" class="block px-4 py-2 text-sm <?= $isActive ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' ?>">
                         <?= $label ?>
                     </a>
@@ -166,12 +176,12 @@ $statusOptions = [
                     <label for="company_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company</label>
                     <select id="company_id" name="company_id" class="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">All Companies</option>
-                        <?php if (isset($companies) && is_array($companies)): 
+                        <?php if (isset($companies) && is_array($companies)):
                             foreach ($companies as $company): ?>
                                 <option value="<?= $company->id ?>" <?= $currentCompany == $company->id ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($company->name) ?>
                                 </option>
-                        <?php endforeach; 
+                        <?php endforeach;
                         endif; ?>
                     </select>
                 </div>
@@ -213,24 +223,32 @@ $statusOptions = [
                     ['field' => 'end_date', 'dir' => 'asc', 'label' => 'Due Date (Soonest)'],
                     ['field' => 'end_date', 'dir' => 'desc', 'label' => 'Due Date (Latest)'],
                     ['field' => 'status_id', 'dir' => 'asc', 'label' => 'Status (A-Z)'],
-                    ['field' => 'company_id', 'dir' => 'asc', 'label' => 'Company (A-Z)']
+                    ['field' => 'company_id', 'dir' => 'asc', 'label' => 'Company (A-Z)'],
                 ];
-                
-                foreach ($sortOptions as $option):
-                    $isActive = $currentSort === $option['field'] && $currentDir === $option['dir'];
-                    $baseUrl = "/projects?view=table&sort=" . $option['field'] . "&dir=" . $option['dir'];
-                    $queryParams = [];
-                    
-                    if ($currentSearch) $queryParams[] = "search=" . urlencode($currentSearch);
-                    if ($currentStatus) $queryParams[] = "status_id=" . $currentStatus;
-                    if ($currentCompany) $queryParams[] = "company_id=" . $currentCompany;
-                    if ($currentView) $queryParams[] = "by=" . $currentView;
-                    
-                    $fullUrl = $baseUrl;
-                    if (!empty($queryParams)) {
-                        $fullUrl .= "&" . implode("&", $queryParams);
-                    }
-                ?>
+
+foreach ($sortOptions as $option):
+    $isActive = $currentSort === $option['field'] && $currentDir === $option['dir'];
+    $baseUrl = "/projects?view=table&sort=" . $option['field'] . "&dir=" . $option['dir'];
+    $queryParams = [];
+
+    if ($currentSearch) {
+        $queryParams[] = "search=" . urlencode($currentSearch);
+    }
+    if ($currentStatus) {
+        $queryParams[] = "status_id=" . $currentStatus;
+    }
+    if ($currentCompany) {
+        $queryParams[] = "company_id=" . $currentCompany;
+    }
+    if ($currentView) {
+        $queryParams[] = "by=" . $currentView;
+    }
+
+    $fullUrl = $baseUrl;
+    if (!empty($queryParams)) {
+        $fullUrl .= "&" . implode("&", $queryParams);
+    }
+    ?>
                     <a href="<?= $fullUrl ?>" class="block px-4 py-2 text-sm <?= $isActive ? 'bg-gray-100 dark:bg-gray-700 text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' ?>">
                         <?= $option['label'] ?>
                     </a>

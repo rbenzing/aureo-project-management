@@ -1,18 +1,18 @@
 <?php
+
 // file: Controllers/SprintController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Models\Sprint;
 use App\Models\Project;
+use App\Models\Sprint;
 use App\Models\Task;
 use App\Models\Template;
 use App\Utils\Validator;
-use RuntimeException;
 use InvalidArgumentException;
+use RuntimeException;
 
 class SprintController
 {
@@ -70,7 +70,7 @@ class SprintController
                             'active' => 0,
                             'completed' => 0,
                             'planning' => 0,
-                            'total' => 0
+                            'total' => 0,
                         ];
 
                         foreach ($projectSprints as $sprint) {
@@ -78,12 +78,15 @@ class SprintController
                             switch ($sprint->status_id) {
                                 case 1: // Planning
                                     $counts['planning']++;
+
                                     break;
                                 case 2: // Active
                                     $counts['active']++;
+
                                     break;
                                 case 4: // Completed
                                     $counts['completed']++;
+
                                     break;
                             }
                         }
@@ -190,7 +193,7 @@ class SprintController
             $sprintDetails = [];
             foreach ($allActiveSprints as $sprint) {
                 $tasks = $this->sprintModel->getSprintTasks($sprint->id);
-                $userTasks = array_filter($tasks, function($task) use ($userId) {
+                $userTasks = array_filter($tasks, function ($task) use ($userId) {
                     return $task->assigned_to == $userId;
                 });
 
@@ -200,7 +203,7 @@ class SprintController
                     'user_tasks' => $userTasks,
                     'progress' => $this->calculateSprintProgress($tasks),
                     'burndown_data' => $this->getBurndownData($sprint->id),
-                    'project' => $this->projectModel->find($sprint->project_id)
+                    'project' => $this->projectModel->find($sprint->project_id),
                 ];
             }
 
@@ -254,7 +257,7 @@ class SprintController
             foreach ($taskStatuses as $status) {
                 $tasksByStatus[$status->id] = [
                     'status' => $status,
-                    'tasks' => []
+                    'tasks' => [],
                 ];
             }
 
@@ -312,7 +315,7 @@ class SprintController
 
                     // Get active sprints for this project
                     $activeSprints = $this->sprintModel->getByProjectId($selectedProjectId);
-                    $activeSprints = array_filter($activeSprints, function($sprint) {
+                    $activeSprints = array_filter($activeSprints, function ($sprint) {
                         return $sprint->status_id == 2; // Active status
                     });
 
@@ -323,7 +326,7 @@ class SprintController
                         'hours' => $sprintSettings['team_capacity_hours'],
                         'story_points' => $sprintSettings['team_capacity_story_points'],
                         'estimation_method' => $sprintSettings['estimation_method'],
-                        'team_size' => $sprintSettings['team_size'] ?? 5
+                        'team_size' => $sprintSettings['team_size'] ?? 5,
                     ];
                 }
             }
@@ -398,6 +401,7 @@ class SprintController
             if (empty($data['name']) || empty($data['project_id'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Sprint name and project are required']);
+
                 return;
             }
 
@@ -405,6 +409,7 @@ class SprintController
             if (!$projectId) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid project ID']);
+
                 return;
             }
 
@@ -413,6 +418,7 @@ class SprintController
             if (!$project || $project->is_deleted) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Project not found']);
+
                 return;
             }
 
@@ -433,7 +439,7 @@ class SprintController
                 'start_date' => $startDate->format('Y-m-d'),
                 'end_date' => $endDate->format('Y-m-d'),
                 'status_id' => 1, // Planning status
-                'sprint_goal' => trim($data['goal'] ?? '')
+                'sprint_goal' => trim($data['goal'] ?? ''),
             ];
 
             $sprintId = $this->sprintModel->create($sprintData);
@@ -441,6 +447,7 @@ class SprintController
             if (!$sprintId) {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Failed to create sprint']);
+
                 return;
             }
 
@@ -455,7 +462,7 @@ class SprintController
             echo json_encode([
                 'success' => true,
                 'message' => 'Sprint created successfully',
-                'sprint_id' => $sprintId
+                'sprint_id' => $sprintId,
             ]);
 
         } catch (\Exception $e) {
@@ -475,6 +482,7 @@ class SprintController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -489,7 +497,7 @@ class SprintController
                 'end_date' => 'required|date|after:start_date',
                 'status_id' => 'required|integer|exists:statuses_sprint,id',
                 'sprint_type' => 'required|in:project,milestone',
-                'milestone_ids' => 'nullable|array'
+                'milestone_ids' => 'nullable|array',
             ]);
 
             if ($validator->fails()) {
@@ -503,7 +511,7 @@ class SprintController
                 'project_id' => filter_var($data['project_id'], FILTER_VALIDATE_INT),
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT)
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
             ];
 
             $sprintType = $data['sprint_type'] ?? 'project';
@@ -607,6 +615,7 @@ class SprintController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -623,7 +632,7 @@ class SprintController
                 'description' => 'nullable|string',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
-                'status_id' => 'required|integer|exists:statuses_sprint,id'
+                'status_id' => 'required|integer|exists:statuses_sprint,id',
             ]);
 
             if ($validator->fails()) {
@@ -643,7 +652,7 @@ class SprintController
                 'project_id' => $sprint->project_id, // Preserve project_id
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT)
+                'status_id' => filter_var($data['status_id'], FILTER_VALIDATE_INT),
             ];
 
             $this->sprintModel->update($id, $sprintData);
@@ -782,6 +791,7 @@ class SprintController
         if ($requestMethod !== 'POST') {
             http_response_code(405);
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+
             return;
         }
 
@@ -794,6 +804,7 @@ class SprintController
             if (!isset($input['task_id']) || !isset($input['sprint_id'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Missing task_id or sprint_id']);
+
                 return;
             }
 
@@ -806,6 +817,7 @@ class SprintController
             if (!$task) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Task not found']);
+
                 return;
             }
 
@@ -814,6 +826,7 @@ class SprintController
             if (!$sprint) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Sprint not found']);
+
                 return;
             }
 
@@ -821,6 +834,7 @@ class SprintController
             $existingAssignment = $this->sprintModel->getTaskSprint($taskId);
             if ($existingAssignment) {
                 echo json_encode(['success' => false, 'message' => 'Task is already assigned to an active sprint']);
+
                 return;
             }
 
@@ -873,7 +887,7 @@ class SprintController
                 'completed_tasks' => 0,
                 'in_progress_tasks' => 0,
                 'not_started_tasks' => 0,
-                'completion_percentage' => 0
+                'completion_percentage' => 0,
             ];
         }
 
@@ -885,13 +899,16 @@ class SprintController
             switch ($task->status_id) {
                 case 6: // Completed
                     $completed++;
+
                     break;
                 case 3: // In Progress
                 case 4: // Under Review
                     $inProgress++;
+
                     break;
                 default: // Not Started, Blocked, etc.
                     $notStarted++;
+
                     break;
             }
         }
@@ -901,7 +918,7 @@ class SprintController
             'completed_tasks' => $completed,
             'in_progress_tasks' => $inProgress,
             'not_started_tasks' => $notStarted,
-            'completion_percentage' => round(($completed / $totalTasks) * 100, 1)
+            'completion_percentage' => round(($completed / $totalTasks) * 100, 1),
         ];
     }
 
@@ -917,7 +934,7 @@ class SprintController
         return [
             'ideal_line' => [],
             'actual_line' => [],
-            'dates' => []
+            'dates' => [],
         ];
     }
 
@@ -957,9 +974,11 @@ class SprintController
             $params = array_merge([$userId], $sprintIds);
             $db = \App\Core\Database::getInstance();
             $stmt = $db->executeQuery($sql, $params);
+
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             error_log("Error getting today's focus items: " . $e->getMessage());
+
             return [];
         }
     }
@@ -980,7 +999,7 @@ class SprintController
             'total_story_points' => 0,
             'completed_story_points' => 0,
             'total_estimated_hours' => 0,
-            'completed_estimated_hours' => 0
+            'completed_estimated_hours' => 0,
         ];
 
         foreach ($tasks as $task) {
@@ -1003,16 +1022,20 @@ class SprintController
             switch ($task->status_id) {
                 case 6: // Completed
                     $stats['completed_tasks']++;
+
                     break;
                 case 3: // In Progress
                 case 4: // Under Review
                     $stats['in_progress_tasks']++;
+
                     break;
                 case 5: // Blocked
                     $stats['blocked_tasks']++;
+
                     break;
                 default: // Not Started, etc.
                     $stats['not_started_tasks']++;
+
                     break;
             }
         }
@@ -1062,7 +1085,7 @@ class SprintController
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'milestone_ids' => 'nullable|array',
-                'task_ids' => 'nullable|array'
+                'task_ids' => 'nullable|array',
             ]);
 
             if ($validator->fails()) {
@@ -1077,7 +1100,7 @@ class SprintController
                 'project_id' => $data['project_id'],
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'status_id' => 1 // Planning status
+                'status_id' => 1, // Planning status
             ];
 
             $milestoneIds = $data['milestone_ids'] ?? [];
@@ -1091,8 +1114,9 @@ class SprintController
                 echo json_encode([
                     'success' => true,
                     'message' => 'Sprint created successfully',
-                    'sprint_id' => $sprintId
+                    'sprint_id' => $sprintId,
                 ]);
+
                 return;
             }
 
@@ -1106,6 +1130,7 @@ class SprintController
             if (!empty($input)) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => $errorMessage]);
+
                 return;
             }
 
@@ -1119,6 +1144,7 @@ class SprintController
             if (!empty($input)) {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => $errorMessage]);
+
                 return;
             }
 
@@ -1142,6 +1168,7 @@ class SprintController
             if (!$projectId) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid project ID']);
+
                 return;
             }
 
@@ -1152,7 +1179,7 @@ class SprintController
 
             echo json_encode([
                 'success' => true,
-                'milestones' => $milestones
+                'milestones' => $milestones,
             ]);
 
         } catch (\Exception $e) {
@@ -1178,6 +1205,7 @@ class SprintController
 
             if (empty($milestoneIds)) {
                 echo json_encode(['success' => true, 'tasks' => []]);
+
                 return;
             }
 
@@ -1185,7 +1213,7 @@ class SprintController
 
             echo json_encode([
                 'success' => true,
-                'tasks' => $tasks
+                'tasks' => $tasks,
             ]);
 
         } catch (\Exception $e) {
@@ -1216,14 +1244,14 @@ class SprintController
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
-                'sprints' => $sprints
+                'sprints' => $sprints,
             ]);
         } catch (\Exception $e) {
             header('Content-Type: application/json');
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
         }
     }

@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -141,9 +142,9 @@ use App\Core\Config;
                             <select id="role_id" name="role_id" required
                                 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
                                 <option value="">Select a role</option>
-                                <?php 
+                                <?php
                                 $selectedRoleId = $_SESSION['form_data']['role_id'] ?? '';
-                                foreach ($roles['records'] as $role): ?>
+foreach ($roles['records'] as $role): ?>
                                     <option value="<?= htmlspecialchars((string)$role->id); ?>" <?= $selectedRoleId == $role->id ? 'selected' : ''; ?>>
                                         <?= htmlspecialchars($role->name); ?> <?= $role->description ? '- ' . htmlspecialchars($role->description) : ''; ?>
                                     </option>
@@ -161,9 +162,9 @@ use App\Core\Config;
                             <select id="company_id" name="company_id"
                                 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full px-3 py-2 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
                                 <option value="">No Company</option>
-                                <?php 
-                                $selectedCompanyId = $_SESSION['form_data']['company_id'] ?? '';
-                                foreach ($companies['records'] as $company): ?>
+                                <?php
+$selectedCompanyId = $_SESSION['form_data']['company_id'] ?? '';
+foreach ($companies['records'] as $company): ?>
                                     <option value="<?= htmlspecialchars((string)$company->id); ?>" <?= $selectedCompanyId == $company->id ? 'selected' : ''; ?>>
                                         <?= htmlspecialchars($company->name); ?>
                                     </option>

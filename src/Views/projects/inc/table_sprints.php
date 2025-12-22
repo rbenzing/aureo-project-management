@@ -36,18 +36,23 @@ if (!defined('BASE_PATH')) {
         switch ($statusId) {
             case 1:
                 $statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+
                 break; // Planning
             case 2:
                 $statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+
                 break; // Active
             case 3:
                 $statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+
                 break; // Completed
             case 4:
                 $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+
                 break; // Cancelled
             case 5:
                 $statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
                 break; // Delayed
             default:
                 $statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
@@ -110,7 +115,7 @@ if (!defined('BASE_PATH')) {
                                     'high' => 'text-red-600 dark:text-red-400',
                                     'medium' => 'text-yellow-600 dark:text-yellow-400',
                                     'low' => 'text-blue-600 dark:text-blue-400',
-                                    'none' => 'text-gray-600 dark:text-gray-400'
+                                    'none' => 'text-gray-600 dark:text-gray-400',
                                 ];
                                 $priorityClass = $priorityClasses[$priorityLevel] ?? 'text-gray-600 dark:text-gray-400';
 
@@ -120,7 +125,7 @@ if (!defined('BASE_PATH')) {
                                     3 => ['label' => 'On Hold', 'class' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
                                     4 => ['label' => 'In Review', 'class' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'],
                                     5 => ['label' => 'Closed', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'],
-                                    6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200']
+                                    6 => ['label' => 'Completed', 'class' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'],
                                 ];
                                 $taskStatus = $taskStatusMap[$task->status_id] ?? ['label' => 'Unknown', 'class' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'];
                                 ?>
@@ -186,8 +191,8 @@ if (!defined('BASE_PATH')) {
             <?php endif; ?>
 
             <!-- Sprint Actions (only shown for active sprints) -->
-            <?php if ($statusId == 2): // Active sprint 
-            ?>
+            <?php if ($statusId == 2): // Active sprint
+                ?>
                 <div class="p-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex justify-end space-x-3">
                     <a href="/sprints/view/<?= $sprint->id ?>" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                         View Details

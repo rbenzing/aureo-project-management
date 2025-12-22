@@ -25,21 +25,21 @@ if (!defined('BASE_PATH')) {
                             <?php
                             // Get sprint counts for this project
                             $activeSprintCount = 0;
-                            $completedSprintCount = 0;
-                            
-                            if (!empty($projectSprintCounts) && isset($projectSprintCounts[$proj->id])) {
-                                $activeSprintCount = $projectSprintCounts[$proj->id]['active'] ?? 0;
-                                $completedSprintCount = $projectSprintCounts[$proj->id]['completed'] ?? 0;
-                            }
-                            
-                            echo $activeSprintCount > 0 ? 
-                                "<span class='text-indigo-600 dark:text-indigo-400'>{$activeSprintCount} active</span>" : 
-                                "No active sprints";
-                            
-                            if ($completedSprintCount > 0) {
-                                echo ", {$completedSprintCount} completed";
-                            }
-                            ?>
+                $completedSprintCount = 0;
+
+                if (!empty($projectSprintCounts) && isset($projectSprintCounts[$proj->id])) {
+                    $activeSprintCount = $projectSprintCounts[$proj->id]['active'] ?? 0;
+                    $completedSprintCount = $projectSprintCounts[$proj->id]['completed'] ?? 0;
+                }
+
+                echo $activeSprintCount > 0 ?
+                    "<span class='text-indigo-600 dark:text-indigo-400'>{$activeSprintCount} active</span>" :
+                    "No active sprints";
+
+                if ($completedSprintCount > 0) {
+                    echo ", {$completedSprintCount} completed";
+                }
+                ?>
                         </div>
                     </div>
                 </a>

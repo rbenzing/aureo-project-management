@@ -8,7 +8,8 @@ if (!defined('BASE_PATH')) {
     exit;
 }
 
-use \App\Core\Config;
+use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>

@@ -1,18 +1,18 @@
 <?php
+
 // file: Models/Task.php
 declare(strict_types=1);
 
 namespace App\Models;
 
-use PDO;
-use App\Utils\Time;
-use RuntimeException;
-use InvalidArgumentException;
 use App\Services\SecurityService;
+use App\Utils\Time;
+use PDO;
+use RuntimeException;
 
 /**
  * Task Model
- * 
+ *
  * Handles all task-related database operations
  */
 class Task extends BaseModel
@@ -74,7 +74,7 @@ class Task extends BaseModel
         'acceptance_criteria',
         'task_type',
         'backlog_priority',
-        'is_ready_for_sprint'
+        'is_ready_for_sprint',
     ];
 
     /**
@@ -83,7 +83,7 @@ class Task extends BaseModel
     protected array $searchable = [
         'title',
         'description',
-        'acceptance_criteria'
+        'acceptance_criteria',
     ];
 
     /**
@@ -97,7 +97,7 @@ class Task extends BaseModel
         'acceptance_criteria' => ['nullable', 'string'],
         'task_type' => ['required', 'in:story,bug,task,epic'],
         'backlog_priority' => ['nullable', 'integer', 'min:1'],
-        'is_ready_for_sprint' => ['boolean']
+        'is_ready_for_sprint' => ['boolean'],
     ];
 
     /**
@@ -166,7 +166,7 @@ class Task extends BaseModel
             'due_date' => 't.due_date',
             'time_spent' => 't.time_spent',
             'created_at' => 't.created_at',
-            'updated_at' => 't.updated_at'
+            'updated_at' => 't.updated_at',
         ];
 
         // Use mapped field or default to due_date
@@ -315,7 +315,7 @@ class Task extends BaseModel
             $stmt = $this->db->executeQuery($sql, [
                 ':user_id' => $userId,
                 ':limit' => $limit,
-                ':offset' => $offset
+                ':offset' => $offset,
             ]);
             $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -364,7 +364,7 @@ class Task extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':limit' => $limit,
-                ':offset' => $offset
+                ':offset' => $offset,
             ]);
             $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -424,7 +424,7 @@ class Task extends BaseModel
 
     /**
      * Get task subtasks
-     * 
+     *
      * @param int $taskId
      * @return array
      */
@@ -474,16 +474,18 @@ class Task extends BaseModel
                     AND is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             error_log("Error getting subtask count: " . $e->getMessage());
+
             return 0;
         }
     }
 
     /**
      * Get task statuses
-     * 
+     *
      * @return array
      */
     public function getTaskStatuses(): array
@@ -491,6 +493,7 @@ class Task extends BaseModel
         try {
             $sql = "SELECT * FROM statuses_task WHERE is_deleted = 0";
             $stmt = $this->db->executeQuery($sql);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching task statuses: " . $e->getMessage());
@@ -520,7 +523,7 @@ class Task extends BaseModel
 
             $stmt = $this->db->executeQuery($sql, [
                 ':user_id' => $userId,
-                ':limit' => $limit
+                ':limit' => $limit,
             ]);
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -583,6 +586,7 @@ class Task extends BaseModel
             LIMIT :limit OFFSET :offset";
 
             $stmt = $this->db->executeQuery($sql, $params);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching product backlog: " . $e->getMessage());
@@ -618,6 +622,7 @@ class Task extends BaseModel
                     {$whereClause}";
 
             $stmt = $this->db->executeQuery($sql, $params);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting product backlog: " . $e->getMessage());
@@ -639,6 +644,7 @@ class Task extends BaseModel
                     AND t.is_deleted = 0 AND p.is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting unassigned tasks: " . $e->getMessage());
@@ -675,6 +681,7 @@ class Task extends BaseModel
                 t.priority DESC";
 
             $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching tasks available for sprint: " . $e->getMessage());
@@ -683,7 +690,7 @@ class Task extends BaseModel
 
     /**
      * Get task time entries
-     * 
+     *
      * @param int $taskId
      * @return array
      */
@@ -714,7 +721,7 @@ class Task extends BaseModel
 
     /**
      * Create a time entry
-     * 
+     *
      * @param array $data
      * @return int The new time entry ID
      */
@@ -722,7 +729,7 @@ class Task extends BaseModel
     {
         try {
             $fields = array_keys($data);
-            $placeholders = array_map(fn($field) => ":$field", $fields);
+            $placeholders = array_map(fn ($field) => ":$field", $fields);
 
             $sql = sprintf(
                 "INSERT INTO time_entries (%s) VALUES (%s)",
@@ -743,6 +750,7 @@ class Task extends BaseModel
             try {
                 $securityService = SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Error creating time entry");
+
                 throw new RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new RuntimeException("Error creating time entry");
@@ -752,7 +760,7 @@ class Task extends BaseModel
 
     /**
      * Get task comments
-     * 
+     *
      * @param int $taskId
      * @return array
      */
@@ -769,6 +777,7 @@ class Task extends BaseModel
                 ORDER BY tc.created_at DESC";
 
             $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching task comments: " . $e->getMessage());
@@ -777,7 +786,7 @@ class Task extends BaseModel
 
     /**
      * Add a comment to a task
-     * 
+     *
      * @param int $taskId
      * @param int $userId
      * @param string $content
@@ -792,7 +801,7 @@ class Task extends BaseModel
             $success = $this->db->executeInsertUpdate($sql, [
                 ':task_id' => $taskId,
                 ':user_id' => $userId,
-                ':content' => $content
+                ':content' => $content,
             ]);
 
             if (!$success) {
@@ -807,7 +816,7 @@ class Task extends BaseModel
 
     /**
      * Add a history entry
-     * 
+     *
      * @param int $taskId
      * @param int $userId
      * @param string $action
@@ -834,7 +843,7 @@ class Task extends BaseModel
                 ':action' => $action,
                 ':field_changed' => $fieldChanged,
                 ':old_value' => $oldValue,
-                ':new_value' => $newValue
+                ':new_value' => $newValue,
             ]);
 
             if (!$success) {
@@ -865,6 +874,7 @@ class Task extends BaseModel
                 ORDER BY th.created_at DESC";
 
             $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching task history: " . $e->getMessage());
@@ -932,7 +942,7 @@ class Task extends BaseModel
             'acceptance_criteria' => 'Acceptance Criteria',
             'task_type' => 'Task Type',
             'backlog_priority' => 'Backlog Priority',
-            'is_ready_for_sprint' => 'Ready for Sprint'
+            'is_ready_for_sprint' => 'Ready for Sprint',
         ];
 
         foreach ($newData as $field => $newValue) {
@@ -1004,6 +1014,7 @@ class Task extends BaseModel
             // Use centralized status helper for consistent formatting
             require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
             $statusInfo = getTaskStatusInfo($statusId);
+
             return $statusInfo['label'];
         } catch (\Exception $e) {
             return 'Unknown Status';
@@ -1018,6 +1029,7 @@ class Task extends BaseModel
         try {
             $sql = "SELECT name FROM projects WHERE id = :id";
             $stmt = $this->db->executeQuery($sql, [':id' => $projectId]);
+
             return $stmt->fetchColumn() ?: 'Unknown Project';
         } catch (\Exception $e) {
             return 'Unknown Project';
@@ -1032,6 +1044,7 @@ class Task extends BaseModel
         try {
             $sql = "SELECT CONCAT(first_name, ' ', last_name) as name FROM users WHERE id = :id";
             $stmt = $this->db->executeQuery($sql, [':id' => $userId]);
+
             return $stmt->fetchColumn() ?: 'Unknown User';
         } catch (\Exception $e) {
             return 'Unknown User';
@@ -1046,6 +1059,7 @@ class Task extends BaseModel
         try {
             $sql = "SELECT title FROM tasks WHERE id = :id";
             $stmt = $this->db->executeQuery($sql, [':id' => $taskId]);
+
             return $stmt->fetchColumn() ?: 'Unknown Task';
         } catch (\Exception $e) {
             return 'Unknown Task';
@@ -1129,7 +1143,7 @@ class Task extends BaseModel
 
     /**
      * Get task milestones
-     * 
+     *
      * @param int $taskId
      * @return array
      */
@@ -1145,6 +1159,7 @@ class Task extends BaseModel
                 AND m.is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':task_id' => $taskId]);
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (\Exception $e) {
             throw new RuntimeException("Error fetching task milestones: " . $e->getMessage());
@@ -1153,7 +1168,7 @@ class Task extends BaseModel
 
     /**
      * Get total time spent for a user
-     * 
+     *
      * @param int $userId
      * @return int Total time spent in seconds
      */
@@ -1166,6 +1181,7 @@ class Task extends BaseModel
                     AND is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating total time spent: " . $e->getMessage());
@@ -1174,7 +1190,7 @@ class Task extends BaseModel
 
     /**
      * Get total billable time for a user
-     * 
+     *
      * @param int $userId
      * @return int Total billable time in seconds
      */
@@ -1188,6 +1204,7 @@ class Task extends BaseModel
                     AND is_deleted = 0";
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating total billable time: " . $e->getMessage());
@@ -1196,7 +1213,7 @@ class Task extends BaseModel
 
     /**
      * Get time spent this week for a user
-     * 
+     *
      * @param int $userId
      * @return int Time spent this week in seconds
      */
@@ -1211,6 +1228,7 @@ class Task extends BaseModel
                         AND DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)";
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating weekly time spent: " . $e->getMessage());
@@ -1219,7 +1237,7 @@ class Task extends BaseModel
 
     /**
      * Get time spent this month for a user
-     * 
+     *
      * @param int $userId
      * @return int Time spent this month in seconds
      */
@@ -1234,6 +1252,7 @@ class Task extends BaseModel
                         AND LAST_DAY(CURDATE())";
 
             $stmt = $this->db->executeQuery($sql, [':user_id' => $userId]);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error calculating monthly time spent: " . $e->getMessage());
@@ -1242,7 +1261,7 @@ class Task extends BaseModel
 
     /**
      * Organize tasks by status
-     * 
+     *
      * @param array $tasks
      * @return array
      */
@@ -1264,9 +1283,15 @@ class Task extends BaseModel
             }
 
             // Default fallbacks in case statuses are missing
-            if (!isset($organized['open'])) $organized['open'] = [];
-            if (!isset($organized['in_progress'])) $organized['in_progress'] = [];
-            if (!isset($organized['completed'])) $organized['completed'] = [];
+            if (!isset($organized['open'])) {
+                $organized['open'] = [];
+            }
+            if (!isset($organized['in_progress'])) {
+                $organized['in_progress'] = [];
+            }
+            if (!isset($organized['completed'])) {
+                $organized['completed'] = [];
+            }
 
             foreach ($tasks as $task) {
                 $statusKey = $statusMap[$task->status_id] ?? 'other';
@@ -1284,7 +1309,7 @@ class Task extends BaseModel
 
     /**
      * Calculate task metrics
-     * 
+     *
      * @param object $task
      * @return array
      */
@@ -1317,13 +1342,13 @@ class Task extends BaseModel
             'is_overdue' => $isOverdue,
             'days_until_due' => $daysUntilDue,
             'days_in_progress' => $daysInProgress,
-            'complexity' => $this->calculateTaskComplexity($task)
+            'complexity' => $this->calculateTaskComplexity($task),
         ];
     }
 
     /**
      * Calculate task complexity
-     * 
+     *
      * @param object $task
      * @return string
      */

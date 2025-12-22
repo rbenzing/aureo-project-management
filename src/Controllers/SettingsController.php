@@ -1,4 +1,5 @@
 <?php
+
 //file: Controllers/SettingsController.php
 declare(strict_types=1);
 
@@ -34,13 +35,13 @@ class SettingsController
         $this->authMiddleware->hasAnyPermission([
             'view_settings', 'edit_settings', 'edit_security_settings',
             'manage_sprint_settings', 'manage_task_settings',
-            'manage_milestone_settings', 'manage_project_settings'
+            'manage_milestone_settings', 'manage_project_settings',
         ]);
 
         try {
             // Get all settings grouped by category
             $settings = $this->settingModel->getAllGrouped();
-            
+
             // Set default values if settings don't exist
             $defaultSettings = [
                 'general' => [
@@ -50,21 +51,21 @@ class SettingsController
                     'autosave_interval' => '0',
                     'session_timeout' => '3600',
                     'time_unit' => 'minutes',
-                    'time_precision' => '15'
+                    'time_precision' => '15',
                 ],
                 'projects' => [
                     'default_task_type' => 'task',
                     'auto_assign_creator' => '1',
-                    'require_project_for_tasks' => '0'
+                    'require_project_for_tasks' => '0',
                 ],
                 'tasks' => [
                     'default_priority' => 'medium',
                     'auto_estimate_enabled' => '0',
-                    'story_points_enabled' => '1'
+                    'story_points_enabled' => '1',
                 ],
                 'milestones' => [
                     'auto_create_from_sprints' => '0',
-                    'milestone_notification_days' => '7'
+                    'milestone_notification_days' => '7',
                 ],
                 'sprints' => [
                     'default_sprint_length' => '14',
@@ -78,7 +79,7 @@ class SettingsController
                     'auto_move_incomplete_tasks' => '1',
                     'sprint_notifications_enabled' => '1',
                     'working_days' => 'monday,tuesday,wednesday,thursday,friday',
-                    'retrospective_enabled' => '1'
+                    'retrospective_enabled' => '1',
                 ],
                 'templates' => [
                     'project_show_quick_templates' => '1',
@@ -88,7 +89,7 @@ class SettingsController
                     'milestone_show_quick_templates' => '1',
                     'milestone_show_custom_templates' => '1',
                     'sprint_show_quick_templates' => '1',
-                    'sprint_show_custom_templates' => '1'
+                    'sprint_show_custom_templates' => '1',
                 ],
                 'security' => [
                     'session_samesite' => 'Lax',
@@ -107,8 +108,8 @@ class SettingsController
                     'additional_headers' => '1',
                     'hide_error_details' => '1',
                     'log_security_events' => '1',
-                    'rate_limit_attempts' => '60'
-                ]
+                    'rate_limit_attempts' => '60',
+                ],
             ];
 
             // Merge with existing settings
@@ -143,7 +144,7 @@ class SettingsController
         $this->authMiddleware->hasAnyPermission([
             'edit_settings', 'edit_security_settings',
             'manage_sprint_settings', 'manage_task_settings',
-            'manage_milestone_settings', 'manage_project_settings'
+            'manage_milestone_settings', 'manage_project_settings',
         ]);
 
         // Validate CSRF token
@@ -162,7 +163,7 @@ class SettingsController
                 'tasks' => 'manage_task_settings',
                 'milestones' => 'manage_milestone_settings',
                 'sprints' => 'manage_sprint_settings',
-                'templates' => 'edit_settings'
+                'templates' => 'edit_settings',
             ];
 
             foreach ($categoryPermissions as $category => $permission) {
@@ -210,17 +211,18 @@ class SettingsController
         switch ($key) {
             case 'time_unit':
                 return in_array($value, ['minutes', 'seconds', 'hours', 'days']) ? $value : 'minutes';
-            
+
             case 'time_precision':
                 $precision = (int)$value;
+
                 return (string)max(1, min(60, $precision)); // Between 1 and 60
-            
+
             case 'default_task_type':
                 return in_array($value, ['task', 'story', 'bug', 'epic']) ? $value : 'task';
-            
+
             case 'default_priority':
                 return in_array($value, ['none', 'low', 'medium', 'high']) ? $value : 'medium';
-            
+
             case 'auto_assign_creator':
             case 'require_project_for_tasks':
             case 'auto_estimate_enabled':
@@ -241,7 +243,7 @@ class SettingsController
             case 'milestone_show_custom_templates':
             case 'sprint_show_quick_templates':
             case 'sprint_show_custom_templates':
-            // Security boolean settings
+                // Security boolean settings
             case 'validate_session_domain':
             case 'regenerate_session_on_auth':
             case 'csrf_protection_enabled':
@@ -257,10 +259,12 @@ class SettingsController
 
             case 'milestone_notification_days':
                 $days = (int)$value;
+
                 return (string)max(1, min(30, $days)); // Between 1 and 30 days
 
             case 'default_sprint_length':
                 $length = (int)$value;
+
                 return (string)max(1, min(30, $length)); // Between 1 and 30 days
 
             case 'estimation_method':
@@ -268,36 +272,42 @@ class SettingsController
 
             case 'team_capacity_hours':
                 $capacity = (int)$value;
+
                 return (string)max(1, min(200, $capacity)); // Between 1 and 200 hours
 
             case 'team_capacity_story_points':
                 $capacity = (int)$value;
+
                 return (string)max(1, min(100, $capacity)); // Between 1 and 100 story points
 
             case 'working_days':
                 $validDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                 $selectedDays = array_filter(
                     explode(',', strtolower($value)),
-                    function($day) use ($validDays) {
+                    function ($day) use ($validDays) {
                         return in_array(trim($day), $validDays);
                     }
                 );
+
                 return implode(',', $selectedDays) ?: 'monday,tuesday,wednesday,thursday,friday';
 
-            // Security numeric settings
+                // Security numeric settings
             case 'csrf_token_lifetime':
                 $lifetime = (int)$value;
+
                 return (string)max(1800, min(86400, $lifetime)); // Between 30 minutes and 24 hours
 
             case 'max_input_size':
                 $size = (int)$value;
+
                 return (string)max(262144, min(10485760, $size)); // Between 256KB and 10MB
 
             case 'rate_limit_attempts':
                 $attempts = (int)$value;
+
                 return (string)max(0, min(1000, $attempts)); // Between 0 and 1000
 
-            // Security string settings
+                // Security string settings
             case 'session_samesite':
                 return in_array($value, ['Strict', 'Lax', 'None']) ? $value : 'Lax';
 
@@ -308,12 +318,13 @@ class SettingsController
                 // Validate and sanitize domain list
                 $domains = array_filter(
                     array_map('trim', explode("\n", $value)),
-                    function($domain) {
+                    function ($domain) {
                         return !empty($domain) &&
                                preg_match('/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/', $domain) &&
                                filter_var('http://' . $domain, FILTER_VALIDATE_URL);
                     }
                 );
+
                 return implode("\n", $domains);
 
             default:

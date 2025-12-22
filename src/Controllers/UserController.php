@@ -1,4 +1,5 @@
 <?php
+
 // file: Controllers/UserController.php
 declare(strict_types=1);
 
@@ -6,14 +7,13 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Middleware\AuthMiddleware;
-use App\Models\User;
 use App\Models\Company;
 use App\Models\Role;
+use App\Models\User;
 use App\Utils\Email;
 use App\Utils\Validator;
-use RuntimeException;
 use InvalidArgumentException;
-use App\Services\SecurityService;
+use RuntimeException;
 
 class UserController
 {
@@ -21,7 +21,7 @@ class UserController
     private User $userModel;
     private Company $companyModel;
     private Role $roleModel;
-    
+
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
@@ -40,16 +40,16 @@ class UserController
     {
         try {
             $this->authMiddleware->hasPermission('view_users');
-            
+
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
             $limit = $settingsService->getResultsPerPage();
-            
+
             $results = $this->userModel->getAll(['is_deleted' => 0], $page, $limit);
             $users = $results['records'];
             $totalUsers = $results['total'];
             $totalPages = ceil($totalUsers / $limit);
-            
+
             include BASE_PATH . '/../Views/Users/index.php';
         } catch (\Exception $e) {
             error_log("Exception in UserController::index: " . $e->getMessage());
@@ -150,12 +150,12 @@ class UserController
     {
         try {
             $this->authMiddleware->hasPermission('create_users');
-            
+
             $companiesResult = $this->companyModel->getAll(['is_deleted' => 0], 1, 1000);
             $companies = $companiesResult['records'];
             $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
             $roles = $rolesResult['records'];
-            
+
             include BASE_PATH . '/../Views/Users/create.php';
         } catch (\Exception $e) {
             error_log("Exception in UserController::createForm: " . $e->getMessage());
@@ -175,6 +175,7 @@ class UserController
     {
         if ($requestMethod !== 'POST') {
             $this->createForm($requestMethod, $data);
+
             return;
         }
 
@@ -186,7 +187,7 @@ class UserController
                 'last_name' => 'required|string|max:100',
                 'email' => 'required|email|unique:users,email',
                 'role_id' => 'required|integer|exists:roles,id',
-                'company_id' => 'nullable|integer|exists:companies,id'
+                'company_id' => 'nullable|integer|exists:companies,id',
             ]);
 
             if ($validator->fails()) {
@@ -198,15 +199,15 @@ class UserController
                 'last_name' => htmlspecialchars($data['last_name']),
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
                 'role_id' => filter_var($data['role_id'], FILTER_VALIDATE_INT),
-                'company_id' => !empty($data['company_id']) ? 
+                'company_id' => !empty($data['company_id']) ?
                     filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
                 'password_hash' => password_hash(bin2hex(random_bytes(8)), PASSWORD_ARGON2ID),
-                'is_active' => false
+                'is_active' => false,
             ];
 
             $userId = $this->userModel->create($userData);
             $activationToken = $this->userModel->generateActivationToken($userId);
-            
+
             // Send activation email
             Email::sendActivationEmail($userData['email'], $activationToken);
 
@@ -283,6 +284,7 @@ class UserController
     {
         if ($requestMethod !== 'POST') {
             $this->editForm($requestMethod, $data);
+
             return;
         }
 
@@ -299,7 +301,7 @@ class UserController
                 'last_name' => 'required|string|max:100',
                 'email' => "required|email|unique:users,email,{$id}",
                 'role_id' => 'required|integer|exists:roles,id',
-                'company_id' => 'nullable|integer|exists:companies,id'
+                'company_id' => 'nullable|integer|exists:companies,id',
             ]);
 
             if ($validator->fails()) {
@@ -311,8 +313,8 @@ class UserController
                 'last_name' => htmlspecialchars($data['last_name']),
                 'email' => filter_var($data['email'], FILTER_SANITIZE_EMAIL),
                 'role_id' => filter_var($data['role_id'], FILTER_VALIDATE_INT),
-                'company_id' => !empty($data['company_id']) ? 
-                    filter_var($data['company_id'], FILTER_VALIDATE_INT) : null
+                'company_id' => !empty($data['company_id']) ?
+                    filter_var($data['company_id'], FILTER_VALIDATE_INT) : null,
             ];
 
             $this->userModel->update($id, $userData);

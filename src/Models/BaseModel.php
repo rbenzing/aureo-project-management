@@ -1,14 +1,15 @@
 <?php
+
 // file: Models/BaseModel.php
 declare(strict_types=1);
 
 namespace App\Models;
 
 use App\Core\Database;
+use App\Services\SecurityService;
+use InvalidArgumentException;
 use PDO;
 use RuntimeException;
-use InvalidArgumentException;
-use App\Services\SecurityService;
 
 abstract class BaseModel
 {
@@ -59,10 +60,12 @@ abstract class BaseModel
                     case '>':
                         $whereClauses[] = "{$column} > :$column";
                         $params[":$column"] = $comparisonValue;
+
                         break;
                     case '<':
                         $whereClauses[] = "{$column} < :$column";
                         $params[":$column"] = $comparisonValue;
+
                         break;
                     case 'NOT IN':
                         // Ensure all values are validated
@@ -78,6 +81,7 @@ abstract class BaseModel
                         }
 
                         $whereClauses[] = "{$column} NOT IN (" . implode(', ', $inPlaceholders) . ")";
+
                         break;
                     case 'IS':
                         if ($comparisonValue === null) {
@@ -86,6 +90,7 @@ abstract class BaseModel
                             $whereClauses[] = "{$column} = :$column";
                             $params[":$column"] = $comparisonValue;
                         }
+
                         break;
                     case 'IS NOT':
                         if ($comparisonValue === null) {
@@ -94,6 +99,7 @@ abstract class BaseModel
                             $whereClauses[] = "{$column} != :$column";
                             $params[":$column"] = $comparisonValue;
                         }
+
                         break;
                     default:
                         // Fallback to equality
@@ -120,6 +126,7 @@ abstract class BaseModel
 
         try {
             $stmt = $this->db->executeQuery($sql, $params);
+
             return (int) $stmt->fetchColumn();
         } catch (\Exception $e) {
             throw new RuntimeException("Error counting records: " . $e->getMessage());
@@ -128,7 +135,7 @@ abstract class BaseModel
 
     /**
      * Create a new record
-     * 
+     *
      * @param array $data Record data
      * @return int|false The new record ID or false on failure
      * @throws RuntimeException
@@ -139,7 +146,7 @@ abstract class BaseModel
             $data = $this->prepareSaveData($data);
 
             $fields = array_keys($data);
-            $placeholders = array_map(fn($field) => ":$field", $fields);
+            $placeholders = array_map(fn ($field) => ":$field", $fields);
 
             $sql = sprintf(
                 "INSERT INTO %s (%s) VALUES (%s)",
@@ -157,6 +164,7 @@ abstract class BaseModel
             try {
                 $securityService = SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to create {$this->table} record");
+
                 throw new RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new RuntimeException("Failed to create {$this->table} record");
@@ -166,7 +174,7 @@ abstract class BaseModel
 
     /**
      * Update an existing record
-     * 
+     *
      * @param int $id Record ID
      * @param array $data Updated record data
      * @return bool Success status
@@ -174,14 +182,14 @@ abstract class BaseModel
      */
     public function update(int $id, array $data): bool
     {
-        try {            
+        try {
             $data = $this->prepareSaveData($data);
 
             if (empty($data)) {
                 return true; // Nothing to update
             }
 
-            $updates = array_map(fn($field) => "$field = :$field", array_keys($data));
+            $updates = array_map(fn ($field) => "$field = :$field", array_keys($data));
             $sql = sprintf(
                 "UPDATE %s SET %s WHERE %s = :id%s",
                 $this->table,
@@ -193,7 +201,7 @@ abstract class BaseModel
 
 
             $params = array_combine(
-                array_map(fn($field) => ":$field", array_keys($data)),
+                array_map(fn ($field) => ":$field", array_keys($data)),
                 array_values($data)
             );
             $params[':id'] = $id;
@@ -203,6 +211,7 @@ abstract class BaseModel
             try {
                 $securityService = SecurityService::getInstance();
                 $safeMessage = $securityService->getSafeErrorMessage($e->getMessage(), "Failed to update {$this->table} record");
+
                 throw new RuntimeException($safeMessage);
             } catch (\Exception $securityException) {
                 throw new RuntimeException("Failed to update {$this->table} record");
@@ -212,7 +221,7 @@ abstract class BaseModel
 
     /**
      * Find a record by ID
-     * 
+     *
      * @param int $id Record ID
      * @return object|false Record data or false if not found
      */
@@ -233,7 +242,7 @@ abstract class BaseModel
 
     /**
      * Get records with optional filtering and pagination
-     * 
+     *
      * @param array $filters Optional filters
      * @param int $page Page number
      * @param int $limit Items per page
@@ -293,7 +302,7 @@ abstract class BaseModel
         // Search in searchable fields if defined
         if (!empty($filters['search']) && !empty($this->searchable)) {
             $searchConditions = array_map(
-                fn($field) => "$field LIKE :{$field}_search",
+                fn ($field) => "$field LIKE :{$field}_search",
                 $this->searchable
             );
             $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
@@ -326,19 +335,19 @@ abstract class BaseModel
         $stmt = $this->db->executeQuery($sql, $params);
 
         $records = array_map(
-            fn($record) => $this->hideAttributes($record),
+            fn ($record) => $this->hideAttributes($record),
             $stmt->fetchAll(PDO::FETCH_OBJ)
         );
 
         return [
             'total' => $total,
-            'records' => $records
+            'records' => $records,
         ];
     }
 
     /**
      * Soft or hard delete a record
-     * 
+     *
      * @param int $id Record ID
      * @return bool Success status
      */
@@ -355,7 +364,7 @@ abstract class BaseModel
 
     /**
      * Prepare data for saving by filtering out guarded fields
-     * 
+     *
      * @param array $data Input data
      * @return array Filtered data
      */
@@ -369,7 +378,7 @@ abstract class BaseModel
 
     /**
      * Hide specified attributes from the record
-     * 
+     *
      * @param object $record Record object
      * @return object Modified record
      */
@@ -378,6 +387,7 @@ abstract class BaseModel
         foreach ($this->hidden as $attribute) {
             unset($record->$attribute);
         }
+
         return $record;
     }
 
@@ -423,7 +433,7 @@ abstract class BaseModel
             'tooth' => 'teeth',
             'foot' => 'feet',
             'mouse' => 'mice',
-            'goose' => 'geese'
+            'goose' => 'geese',
         ];
 
         if (isset($irregulars[$word])) {

@@ -21,8 +21,10 @@ foreach ($filters as $key => $value) {
     }
 }
 
-function buildPaginationUrl($page, array $queryParams): string {
+function buildPaginationUrl($page, array $queryParams): string
+{
     $queryParams['page'] = (int)$page;
+
     return '/activity?' . http_build_query($queryParams);
 }
 

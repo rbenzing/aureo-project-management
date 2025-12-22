@@ -1,4 +1,5 @@
 <?php
+
 // file: Core/Config.php
 declare(strict_types=1);
 
@@ -35,46 +36,46 @@ class Config
         'QUICK_PROJECT_TEMPLATES' => [
             'Basic Project' => '# Project Overview\nBrief description of the project goals and objectives.\n\n## Key Deliverables\n- Deliverable 1\n- Deliverable 2\n- Deliverable 3\n\n## Timeline\n- Start Date: [Date]\n- End Date: [Date]',
             'Software Development' => '# Software Project\nDeveloping [Application Name] to solve [Problem Statement].\n\n## Technical Requirements\n- Frontend: [Technology]\n- Backend: [Technology]\n- Database: [Technology]\n\n## Features\n- [ ] Feature 1\n- [ ] Feature 2\n- [ ] Feature 3',
-            'Marketing Campaign' => '# Marketing Campaign\nCampaign to promote [Product/Service] to [Target Audience].\n\n## Campaign Goals\n- Increase brand awareness by [%]\n- Generate [Number] leads\n- Achieve [Metric] conversion rate\n\n## Channels\n- Social Media\n- Email Marketing\n- Content Marketing'
+            'Marketing Campaign' => '# Marketing Campaign\nCampaign to promote [Product/Service] to [Target Audience].\n\n## Campaign Goals\n- Increase brand awareness by [%]\n- Generate [Number] leads\n- Achieve [Metric] conversion rate\n\n## Channels\n- Social Media\n- Email Marketing\n- Content Marketing',
         ],
 
         'QUICK_TASK_TEMPLATES' => [
             'User Story' => '## User Story\nAs a [type of user], I want [goal] so that [reason].\n\n## Acceptance Criteria\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n## Definition of Done\n- [ ] Code complete\n- [ ] Tests written and passing\n- [ ] Code reviewed',
             'Bug Report' => '## Bug Description\nBrief description of the issue.\n\n## Steps to Reproduce\n1. Step 1\n2. Step 2\n3. Step 3\n\n## Expected vs Actual\n**Expected:** What should happen\n**Actual:** What actually happens\n\n## Environment\n- Browser/OS: [Details]\n- Version: [Version]',
-            'Research Task' => '## Research Objective\nWhat needs to be researched and why.\n\n## Research Questions\n- Question 1\n- Question 2\n- Question 3\n\n## Deliverables\n- [ ] Research findings document\n- [ ] Recommendations\n- [ ] Next steps proposal'
+            'Research Task' => '## Research Objective\nWhat needs to be researched and why.\n\n## Research Questions\n- Question 1\n- Question 2\n- Question 3\n\n## Deliverables\n- [ ] Research findings document\n- [ ] Recommendations\n- [ ] Next steps proposal',
         ],
 
         'QUICK_MILESTONE_TEMPLATES' => [
             'Release Milestone' => '# Release [Version]\nMajor release milestone with new features and improvements.\n\n## Release Goals\n- Feature 1 completion\n- Performance improvements\n- Bug fixes\n\n## Success Criteria\n- [ ] All planned features implemented\n- [ ] Performance benchmarks met\n- [ ] Quality assurance passed',
             'Project Phase' => '# [Phase Name] Completion\nCompletion of a major project phase.\n\n## Phase Objectives\n- Objective 1\n- Objective 2\n- Objective 3\n\n## Deliverables\n- [ ] Deliverable 1\n- [ ] Deliverable 2\n- [ ] Phase review completed',
-            'Compliance Checkpoint' => '# Compliance Review\nEnsuring project meets regulatory and compliance requirements.\n\n## Compliance Areas\n- Security standards\n- Data protection\n- Industry regulations\n\n## Review Items\n- [ ] Security audit completed\n- [ ] Documentation updated\n- [ ] Compliance certification obtained'
+            'Compliance Checkpoint' => '# Compliance Review\nEnsuring project meets regulatory and compliance requirements.\n\n## Compliance Areas\n- Security standards\n- Data protection\n- Industry regulations\n\n## Review Items\n- [ ] Security audit completed\n- [ ] Documentation updated\n- [ ] Compliance certification obtained',
         ],
 
         'QUICK_SPRINT_TEMPLATES' => [
             'Development Sprint' => '# Development Sprint [Number]\nFocus on implementing core features and functionality.\n\n## Sprint Goal\nComplete [specific feature/functionality]\n\n## Capacity\n- Team size: [Number] developers\n- Sprint duration: [Duration]\n- Estimated velocity: [Points]\n\n## Focus Areas\n- Feature development\n- Code quality\n- Testing',
             'Bug Fix Sprint' => '# Bug Fix Sprint\nDedicated sprint to address technical debt and critical bugs.\n\n## Sprint Goal\nResolve high-priority bugs and improve system stability\n\n## Targets\n- [ ] Critical bugs: [Number]\n- [ ] High priority bugs: [Number]\n- [ ] Technical debt items: [Number]\n\n## Success Metrics\n- Bug count reduction\n- System stability improvement',
-            'Research Sprint' => '# Research & Discovery Sprint\nExploring new technologies and approaches.\n\n## Sprint Goal\nInvestigate [technology/approach] for [purpose]\n\n## Research Areas\n- Technology evaluation\n- Proof of concept development\n- Feasibility assessment\n\n## Deliverables\n- [ ] Research findings\n- [ ] Prototype/POC\n- [ ] Recommendations'
+            'Research Sprint' => '# Research & Discovery Sprint\nExploring new technologies and approaches.\n\n## Sprint Goal\nInvestigate [technology/approach] for [purpose]\n\n## Research Areas\n- Technology evaluation\n- Proof of concept development\n- Feasibility assessment\n\n## Deliverables\n- [ ] Research findings\n- [ ] Prototype/POC\n- [ ] Recommendations',
         ],
 
         // Template visibility settings (default: quick templates enabled, custom templates enabled)
         'TEMPLATE_SETTINGS' => [
             'project' => [
                 'show_quick_templates' => true,
-                'show_custom_templates' => true
+                'show_custom_templates' => true,
             ],
             'task' => [
                 'show_quick_templates' => true,
-                'show_custom_templates' => true
+                'show_custom_templates' => true,
             ],
             'milestone' => [
                 'show_quick_templates' => true,
-                'show_custom_templates' => true
+                'show_custom_templates' => true,
             ],
             'sprint' => [
                 'show_quick_templates' => true,
-                'show_custom_templates' => true
-            ]
-        ]
+                'show_custom_templates' => true,
+            ],
+        ],
     ];
 
     /**
@@ -85,7 +86,7 @@ class Config
         'DB_HOST',
         'DB_NAME',
         'DB_USERNAME',
-        'DB_PASSWORD'
+        'DB_PASSWORD',
     ];
 
     /**
@@ -113,7 +114,7 @@ class Config
         self::loadEnvironment();
         self::validateEnvironment();
         self::initializeSettings();
-        
+
         self::$isInitialized = true;
     }
 
@@ -179,6 +180,7 @@ class Config
 
         // Get pagination limit from settings if available, otherwise use environment
         $maxPages = (int) self::get('PAGE_LIMIT', self::DEFAULTS['PAGE_LIMIT']);
+
         try {
             if (class_exists('\App\Services\SettingsService')) {
                 $settingsService = \App\Services\SettingsService::getInstance();
@@ -202,7 +204,7 @@ class Config
                 '%s://%s',
                 self::get('SCHEME', self::DEFAULTS['SCHEME']),
                 self::get('DOMAIN', self::DEFAULTS['DOMAIN'])
-            )
+            ),
         ];
     }
 
@@ -249,6 +251,7 @@ class Config
         if (is_string($value)) {
             return in_array(strtolower($value), ['true', '1', 'yes', 'on'], true);
         }
+
         return (bool) $value;
     }
 

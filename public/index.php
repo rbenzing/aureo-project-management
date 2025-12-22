@@ -1,4 +1,5 @@
 <?php
+
 // file: public/index.php
 declare(strict_types=1);
 
@@ -24,9 +25,15 @@ header($cspHeader);
 // Include Composer's autoloader
 require_once BASE_PATH . '/../vendor/autoload.php';
 
+// Load the dependency injection container
+$container = require_once BASE_PATH . '/../config/container.php';
+
+// Get services from container
+$securityService = $container->get(\App\Services\SecurityService::class);
+$logger = $container->get(\App\Services\LoggerService::class);
+
 // Apply security headers based on settings
 try {
-    $securityService = \App\Services\SecurityService::getInstance();
     $securityService->applySecurityHeaders();
 } catch (\Exception $e) {
     // Fallback to basic security headers if settings not available
@@ -37,16 +44,10 @@ try {
     header("Permissions-Policy: geolocation=(), microphone=()");
 }
 
-// Initialize logging service first
-$logger = \App\Services\LoggerService::getInstance();
-
 // Error handling
 try {
     // Load configuration
     \App\Core\Config::init();
-
-    // Security checks
-    $securityService = \App\Services\SecurityService::getInstance();
 
     // Rate limiting check
     if (!$securityService->checkRateLimit()) {
@@ -66,11 +67,11 @@ try {
     }
 
     // Initialize middleware stack
-    (new \App\Middleware\CsrfMiddleware())->handleToken();
-    (new \App\Middleware\ActivityMiddleware())->handle();
+    $container->get(\App\Middleware\CsrfMiddleware::class)->handleToken();
+    $container->get(\App\Middleware\ActivityMiddleware::class)->handle();
 
-    // Create Router Instance
-    $router = new \App\Core\Router();
+    // Create Router Instance with DI container
+    $router = new \App\Core\Router($container);
 
     // Define Routes
     // Auth Routes

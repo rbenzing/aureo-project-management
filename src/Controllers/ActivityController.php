@@ -1,17 +1,15 @@
 <?php
+
 // file: Controllers/ActivityController.php
 declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Core\Config;
 use App\Core\Database;
 use App\Middleware\AuthMiddleware;
 use App\Models\User;
-use App\Utils\Validator;
-use App\Services\SecurityService;
-use RuntimeException;
 use PDO;
+use RuntimeException;
 
 class ActivityController
 {
@@ -22,7 +20,7 @@ class ActivityController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
-        
+
         // Check authentication first
         if (!$this->authMiddleware->isAuthenticated()) {
             header('Location: /login');
@@ -65,7 +63,7 @@ class ActivityController
             // Get activity logs with filters
             $activities = $this->getActivities($filters, $limit, $offset);
             $totalActivities = $this->getTotalActivities($filters);
-            
+
             // Get activity statistics
             $stats = $this->getActivityStats($filters);
 
@@ -85,7 +83,7 @@ class ActivityController
                 'has_prev' => $page > 1,
                 'has_next' => $page < $totalPages,
                 'prev_page' => max(1, $page - 1),
-                'next_page' => min($totalPages, $page + 1)
+                'next_page' => min($totalPages, $page + 1),
             ];
 
             // Render the view
@@ -178,22 +176,23 @@ class ActivityController
             // Add LIMIT and OFFSET to params
             $params[':limit'] = $limit;
             $params[':offset'] = $offset;
-            
+
             // Use the Database class executeQuery method
             $stmt = $this->db->executeQuery($query, $params);
-            
+
             // Bind integer parameters for LIMIT and OFFSET
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            
+
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_OBJ);
-            
+
         } catch (\Exception $e) {
             error_log("Activity query error: " . $e->getMessage());
             error_log("Query: " . $query);
             error_log("Params: " . json_encode($params));
+
             throw new RuntimeException("Database query failed: " . $e->getMessage());
         }
     }
@@ -206,6 +205,7 @@ class ActivityController
         try {
             $query = "SHOW COLUMNS FROM activity_logs LIKE 'entity_type'";
             $result = $this->db->executeQuery($query, []);
+
             return $result->rowCount() > 0;
         } catch (\Exception $e) {
             return false;
@@ -218,7 +218,7 @@ class ActivityController
     private function getTotalActivities(array $filters): int
     {
         $hasEnhancedColumns = $this->checkEnhancedColumns();
-        
+
         $query = "SELECT COUNT(*) FROM activity_logs al WHERE 1=1";
         $params = [];
 
@@ -259,9 +259,11 @@ class ActivityController
 
         try {
             $result = $this->db->executeQuery($query, $params);
+
             return (int)$result->fetchColumn();
         } catch (\Exception $e) {
             error_log("Activity count query error: " . $e->getMessage());
+
             return 0;
         }
     }
@@ -272,7 +274,7 @@ class ActivityController
     private function getActivityStats(array $filters): array
     {
         $hasEnhancedColumns = $this->checkEnhancedColumns();
-        
+
         try {
             $baseQuery = "SELECT COUNT(*) FROM activity_logs al WHERE 1=1";
             $params = [];
@@ -327,15 +329,16 @@ class ActivityController
                 'total_activities' => $totalActivities,
                 'today_activities' => $todayActivities,
                 'recent_logins' => $recentLogins,
-                'active_users' => $activeUsers
+                'active_users' => $activeUsers,
             ];
         } catch (\Exception $e) {
             error_log("Activity stats query error: " . $e->getMessage());
+
             return [
                 'total_activities' => 0,
                 'today_activities' => 0,
                 'recent_logins' => 0,
-                'active_users' => 0
+                'active_users' => 0,
             ];
         }
     }
@@ -347,7 +350,7 @@ class ActivityController
     {
         // Set up view data
         $viewTitle = 'Activity Log';
-        
+
         // Event type options for filter
         $eventTypeOptions = [
             '' => 'All Events',
@@ -358,7 +361,7 @@ class ActivityController
             'delete' => 'Delete Actions',
             'list_view' => 'List Views',
             'detail_view' => 'Detail Views',
-            'form_view' => 'Form Views'
+            'form_view' => 'Form Views',
         ];
 
         // Entity type options for filter
@@ -372,7 +375,7 @@ class ActivityController
             'milestone' => 'Milestones',
             'auth' => 'Authentication',
             'dashboard' => 'Dashboard',
-            'system' => 'System'
+            'system' => 'System',
         ];
 
         // Include the view

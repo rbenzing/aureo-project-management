@@ -89,18 +89,19 @@ if ($selectedProject !== null) {
 }
 
 // Helper functions for date calculations
-function getDateRange($timePeriod, $currentYear) {
+function getDateRange($timePeriod, $currentYear)
+{
     $ranges = [];
-    
+
     switch ($timePeriod) {
         case 'year':
             return [
-                ['label' => ($currentYear-1), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
+                ['label' => ($currentYear - 1), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
                 ['label' => $currentYear, 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
-                ['label' => ($currentYear+1), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
-                ['label' => ($currentYear+2), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
+                ['label' => ($currentYear + 1), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
+                ['label' => ($currentYear + 2), 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-12-31"],
             ];
-        
+
         case 'quarter':
             return [
                 ['label' => "Q1 (Jan-Mar) {$currentYear}", 'start' => "{$currentYear}-01-01", 'end' => "{$currentYear}-03-31"],
@@ -108,63 +109,67 @@ function getDateRange($timePeriod, $currentYear) {
                 ['label' => "Q3 (Jul-Sep) {$currentYear}", 'start' => "{$currentYear}-07-01", 'end' => "{$currentYear}-09-30"],
                 ['label' => "Q4 (Oct-Dec) {$currentYear}", 'start' => "{$currentYear}-10-01", 'end' => "{$currentYear}-12-31"],
             ];
-            
+
         case 'month':
             $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
+
             for ($i = 1; $i <= 12; $i++) {
                 $monthNum = str_pad((string)$i, 2, '0', STR_PAD_LEFT);
                 $lastDay = date('t', strtotime("{$currentYear}-{$monthNum}-01"));
                 $ranges[] = [
-                    'label' => "{$months[$i-1]} {$currentYear}", 
-                    'start' => "{$currentYear}-{$monthNum}-01", 
-                    'end' => "{$currentYear}-{$monthNum}-{$lastDay}"
+                    'label' => "{$months[$i - 1]} {$currentYear}",
+                    'start' => "{$currentYear}-{$monthNum}-01",
+                    'end' => "{$currentYear}-{$monthNum}-{$lastDay}",
                 ];
             }
+
             return $ranges;
-            
+
         case 'week':
             $currentMonth = date('n');
             $monthName = date('F');
             $daysInMonth = date('t');
             $weeksInMonth = ceil($daysInMonth / 7);
-            
+
             for ($i = 1; $i <= $weeksInMonth; $i++) {
                 $weekStart = ($i - 1) * 7 + 1;
                 $weekEnd = min($weekStart + 6, $daysInMonth);
                 $monthNum = str_pad((string)$currentMonth, 2, '0', STR_PAD_LEFT);
                 $weekStartPad = str_pad((string)$weekStart, 2, '0', STR_PAD_LEFT);
                 $weekEndPad = str_pad((string)$weekEnd, 2, '0', STR_PAD_LEFT);
-                
+
                 $ranges[] = [
-                    'label' => "{$monthName} {$weekStart}-{$weekEnd}", 
-                    'start' => "{$currentYear}-{$monthNum}-{$weekStartPad}", 
-                    'end' => "{$currentYear}-{$monthNum}-{$weekEndPad}"
+                    'label' => "{$monthName} {$weekStart}-{$weekEnd}",
+                    'start' => "{$currentYear}-{$monthNum}-{$weekStartPad}",
+                    'end' => "{$currentYear}-{$monthNum}-{$weekEndPad}",
                 ];
             }
+
             return $ranges;
-            
+
         default:
             return $ranges;
     }
 }
 
 // Check if a date range overlaps with the given start and end dates
-function isInRange($startDate, $endDate, $rangeStart, $rangeEnd) {
+function isInRange($startDate, $endDate, $rangeStart, $rangeEnd)
+{
     // Convert to timestamps for comparison
     $start = $startDate ? strtotime($startDate) : strtotime(date('Y-01-01'));
     $end = $endDate ? strtotime($endDate) : strtotime(date('Y-12-31'));
     $periodStart = strtotime($rangeStart);
     $periodEnd = strtotime($rangeEnd);
-    
+
     return ($start <= $periodEnd && $end >= $periodStart);
 }
 
 // Get status color for visualization
-function getStatusColor($statusId, $type = 'project') {
+function getStatusColor($statusId, $type = 'project')
+{
     // Convert to integer to ensure proper comparison
     $statusId = (int) $statusId;
-    
+
     if ($type === 'project') {
         switch ($statusId) {
             case 1: // Ready
@@ -226,7 +231,7 @@ function getStatusColor($statusId, $type = 'project') {
                 return 'bg-gray-500';
         }
     }
-    
+
     return 'bg-gray-500';
 }
 
@@ -337,7 +342,7 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                     // Show all projects
                     $projectsToDisplay = $projects ?? [];
                 }
-                ?>
+?>
 
                 <?php if (!empty($projectsToDisplay)): ?>
                     <?php foreach ($projectsToDisplay as $project): ?>
@@ -356,7 +361,7 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                             <?php foreach ($dateRanges as $range):
                                 $inRange = isInRange($project->start_date ?? null, $project->end_date ?? null, $range['start'], $range['end']);
                                 $statusColor = getStatusColor($project->status_id ?? 0, 'project');
-                            ?>
+                                ?>
                                 <div class="flex-1 p-3 border-l border-gray-200 dark:border-gray-700 relative">
                                     <?php if ($inRange): ?>
                                         <a href="/projects/view/<?= $project->id ?>" class="block">
@@ -393,10 +398,10 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                                 </a>
                             </div>
                             
-                            <?php foreach ($dateRanges as $range): 
+                            <?php foreach ($dateRanges as $range):
                                 $inRange = isInRange($task->start_date ?? null, $task->due_date ?? null, $range['start'], $range['end']);
                                 $statusColor = getStatusColor($task->status_id ?? 0, 'task');
-                            ?>
+                                ?>
                                 <div class="flex-1 p-3 border-l border-gray-200 dark:border-gray-700 relative">
                                     <?php if ($inRange): ?>
                                         <a href="/tasks/view/<?= $task->id ?>" class="block">
@@ -429,10 +434,10 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                                 </a>
                             </div>
                             
-                            <?php foreach ($dateRanges as $range): 
+                            <?php foreach ($dateRanges as $range):
                                 $inRange = isInRange($milestone->start_date ?? null, $milestone->due_date ?? null, $range['start'], $range['end']);
                                 $statusColor = getStatusColor($milestone->status_id ?? 0, 'milestone');
-                            ?>
+                                ?>
                                 <div class="flex-1 p-3 border-l border-gray-200 dark:border-gray-700 relative">
                                     <?php if ($inRange): ?>
                                         <a href="/milestones/view/<?= $milestone->id ?>" class="block">
@@ -465,10 +470,10 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                                 </a>
                             </div>
                             
-                            <?php foreach ($dateRanges as $range): 
+                            <?php foreach ($dateRanges as $range):
                                 $inRange = isInRange($sprint->start_date ?? null, $sprint->end_date ?? null, $range['start'], $range['end']);
                                 $statusColor = getStatusColor($sprint->status_id ?? 0, 'sprint');
-                            ?>
+                                ?>
                                 <div class="flex-1 p-3 border-l border-gray-200 dark:border-gray-700 relative">
                                     <?php if ($inRange): ?>
                                         <a href="/sprints/view/<?= $sprint->id ?>" class="block">
@@ -494,10 +499,10 @@ $dateRanges = getDateRange($timePeriod, $currentYear);
                                         </a>
                                     </div>
                                     
-                                    <?php foreach ($dateRanges as $range): 
+                                    <?php foreach ($dateRanges as $range):
                                         $inRange = isInRange($task->start_date ?? null, $task->due_date ?? null, $range['start'], $range['end']);
                                         $statusColor = getStatusColor($task->status_id ?? 0, 'task');
-                                    ?>
+                                        ?>
                                         <div class="flex-1 p-3 border-l border-gray-200 dark:border-gray-700 relative">
                                             <?php if ($inRange): ?>
                                                 <a href="/tasks/view/<?= $task->id ?>" class="block">

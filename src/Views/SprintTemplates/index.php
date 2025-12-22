@@ -9,6 +9,7 @@ if (!defined('BASE_PATH')) {
 }
 
 use App\Core\Config;
+
 ?>
 
 <!DOCTYPE html>
@@ -159,7 +160,7 @@ use App\Core\Config;
                                 } else {
                                     $ceremonies = json_decode($template->ceremony_settings, true);
                                 }
-                                ?>
+                    ?>
                                 <div class="mb-4">
                                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SCRUM Ceremonies</h4>
                                     <div class="flex flex-wrap gap-1">

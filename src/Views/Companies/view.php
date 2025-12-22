@@ -187,7 +187,7 @@ if (!defined('BASE_PATH')) {
                                                 <?= htmlspecialchars($project->name) ?>
                                             </a>
                                             <p class="text-sm text-gray-500 dark:text-gray-400">
-                                                <?php 
+                                                <?php
                                                 // Display date range if available
                                                 if (!empty($project->start_date) && !empty($project->end_date)) {
                                                     echo date('M j, Y', strtotime($project->start_date)) . ' - ' . date('M j, Y', strtotime($project->end_date));
@@ -196,7 +196,7 @@ if (!defined('BASE_PATH')) {
                                                 } elseif (!empty($project->end_date)) {
                                                     echo 'Due ' . date('M j, Y', strtotime($project->end_date));
                                                 }
-                                                ?>
+                                    ?>
                                             </p>
                                         </div>
                                         <?php
@@ -207,10 +207,10 @@ if (!defined('BASE_PATH')) {
                                             'completed' => 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
                                             'delayed' => 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200',
                                             'on_hold' => 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
-                                            'cancelled' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                            'cancelled' => 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
                                         ];
-                                        $statusClass = $statusClasses[$project->status_name ?? 'ready'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
-                                        ?>
+                                    $statusClass = $statusClasses[$project->status_name ?? 'ready'] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+                                    ?>
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
                                             <?= htmlspecialchars($project->status_name ?? 'Unknown') ?>
                                         </span>
