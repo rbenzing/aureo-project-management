@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\MilestoneType;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
@@ -24,7 +25,7 @@ class Milestone extends BaseModel
     public ?int $id = null;
     public string $title;
     public ?string $description = null;
-    public string $milestone_type = 'milestone';
+    public string $milestone_type = MilestoneType::MILESTONE->value;
     public ?string $start_date = null;
     public ?string $due_date = null;
     public ?string $complete_date = null;
@@ -65,6 +66,7 @@ class Milestone extends BaseModel
         'title' => ['required', 'string'],
         'project_id' => ['required'],
         'status_id' => ['required'],
+        'milestone_type' => ['required', 'enum:App\Enums\MilestoneType'],
     ];
 
     // Additional method to ensure status name is always populated

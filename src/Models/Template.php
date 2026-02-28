@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TemplateType;
 use PDO;
 use RuntimeException;
 
@@ -23,7 +24,7 @@ class Template extends BaseModel
     public ?int $id = null;
     public string $name;
     public string $description;
-    public string $template_type = 'project';
+    public string $template_type = TemplateType::PROJECT->value;
     public ?int $company_id = null;
     public bool $is_default = false;
     public bool $is_deleted = false;
@@ -50,7 +51,18 @@ class Template extends BaseModel
     ];
 
     /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'name' => ['required', 'string', 'max:255'],
+        'description' => ['required', 'string'],
+        'template_type' => ['required', 'enum:App\Enums\TemplateType'],
+        'is_default' => ['boolean'],
+    ];
+
+    /**
      * Valid template types
+     * @deprecated Use TemplateType enum instead
      */
     public const TEMPLATE_TYPES = [
         'project' => 'Project',

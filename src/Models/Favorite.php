@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\FavoriteType;
 use PDO;
 use RuntimeException;
 
@@ -42,6 +43,16 @@ class Favorite extends BaseModel
     protected array $fillable = [
         'user_id', 'favorite_type', 'favorite_id', 'page_url',
         'page_title', 'page_icon', 'sort_order',
+    ];
+
+    /**
+     * Define validation rules
+     */
+    protected array $validationRules = [
+        'user_id' => ['required', 'integer'],
+        'favorite_type' => ['required', 'enum:App\Enums\FavoriteType'],
+        'page_title' => ['required', 'string', 'max:255'],
+        'sort_order' => ['integer'],
     ];
 
     /**

@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Priority;
+use App\Enums\TaskType;
 use App\Services\SecurityService;
 use App\Utils\Time;
 use PDO;
@@ -27,7 +29,7 @@ class Task extends BaseModel
     public ?int $assigned_to = null;
     public string $title;
     public ?string $description = null;
-    public string $priority = 'none';
+    public string $priority = Priority::NONE->value;
     public int $status_id;
     public ?int $estimated_time = null;
     public ?int $billable_time = null;
@@ -46,7 +48,7 @@ class Task extends BaseModel
     // New Scrum fields
     public ?int $story_points = null;
     public ?string $acceptance_criteria = null;
-    public string $task_type = 'task';
+    public string $task_type = TaskType::TASK->value;
     public ?int $backlog_priority = null;
     public bool $is_ready_for_sprint = false;
 
@@ -95,7 +97,8 @@ class Task extends BaseModel
         'status_id' => ['required'],
         'story_points' => ['nullable', 'integer', 'min:1', 'max:13'],
         'acceptance_criteria' => ['nullable', 'string'],
-        'task_type' => ['required', 'in:story,bug,task,epic'],
+        'task_type' => ['required', 'enum:App\Enums\TaskType'],
+        'priority' => ['nullable', 'enum:App\Enums\Priority'],
         'backlog_priority' => ['nullable', 'integer', 'min:1'],
         'is_ready_for_sprint' => ['boolean'],
     ];
@@ -176,12 +179,18 @@ class Task extends BaseModel
         $hierarchicalOrder = "COALESCE(t.parent_task_id, t.id), t.is_subtask ASC";
 
         // Special handling for priority (convert to numeric for proper sorting)
+        // Using Priority enum sortOrder() values
         if ($sortField === 'priority') {
+            $high = Priority::HIGH->sortOrder();
+            $medium = Priority::MEDIUM->sortOrder();
+            $low = Priority::LOW->sortOrder();
+            $none = Priority::NONE->sortOrder();
+
             return "ORDER BY {$hierarchicalOrder}, CASE
-                        WHEN t.priority = 'high' THEN 3
-                        WHEN t.priority = 'medium' THEN 2
-                        WHEN t.priority = 'low' THEN 1
-                        ELSE 0
+                        WHEN t.priority = '" . Priority::HIGH->value . "' THEN {$high}
+                        WHEN t.priority = '" . Priority::MEDIUM->value . "' THEN {$medium}
+                        WHEN t.priority = '" . Priority::LOW->value . "' THEN {$low}
+                        ELSE {$none}
                     END {$sortDirection}";
         }
 

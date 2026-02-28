@@ -48,6 +48,7 @@ class Validator
         'exists',
         'after',
         'strong_password',
+        'enum',
     ];
 
     /**
@@ -74,6 +75,7 @@ class Validator
         'exists' => ':field does not exist in the database.',
         'after' => ':field must be a date after :param.',
         'strong_password' => ':field must be at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char.',
+        'enum' => ':field must be a valid value.',
     ];
 
     public function __construct(array $data, array $rules)
@@ -420,6 +422,33 @@ class Validator
             if (!preg_match($pattern, $value)) {
                 $this->addError($field, 'strong_password');
             }
+        }
+    }
+
+    /**
+     * Validate enum value
+     *
+     * Usage: 'field' => ['required', 'enum:App\Enums\TaskType']
+     */
+    private function validateEnum(string $field, $value, array $parameters): void
+    {
+        if (empty($parameters[0])) {
+            throw new InvalidArgumentException("Enum validation requires an enum class name");
+        }
+
+        $enumClass = $parameters[0];
+
+        // Check if class exists and is an enum
+        if (!enum_exists($enumClass)) {
+            throw new InvalidArgumentException("Invalid enum class: {$enumClass}");
+        }
+
+        // Get all valid enum values
+        $validValues = array_column($enumClass::cases(), 'value');
+
+        // Check if the value is valid
+        if (!is_null($value) && !in_array($value, $validValues, true)) {
+            $this->addError($field, 'enum', $validValues);
         }
     }
 }
