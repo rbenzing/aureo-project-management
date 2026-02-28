@@ -17,23 +17,27 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class ProjectController
+class ProjectController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Project $projectModel;
     private Task $taskModel;
     private Company $companyModel;
     private User $userModel;
     private Template $templateModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->projectModel = new Project();
-        $this->taskModel = new Task();
-        $this->userModel = new User();
-        $this->companyModel = new Company();
-        $this->templateModel = new Template();
+    public function __construct(
+        ?Project $projectModel = null,
+        ?Task $taskModel = null,
+        ?Company $companyModel = null,
+        ?User $userModel = null,
+        ?Template $templateModel = null
+    ) {
+        parent::__construct();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->taskModel = $taskModel ?? new Task();
+        $this->companyModel = $companyModel ?? new Company();
+        $this->userModel = $userModel ?? new User();
+        $this->templateModel = $templateModel ?? new Template();
     }
 
     /**
@@ -45,7 +49,7 @@ class ProjectController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
+            $this->requirePermission('view_projects');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
@@ -114,12 +118,10 @@ class ProjectController
 
             $totalPages = ceil($totalProjects / $limit);
 
-            include BASE_PATH . '/../Views/Projects/index.php';
+            $this->render('Projects/index', compact('totalPages', 'projectStats', 'companies'));
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching projects.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching projects.');
         }
     }
 
@@ -132,7 +134,7 @@ class ProjectController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_projects');
+            $this->requirePermission('view_projects');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -155,16 +157,12 @@ class ProjectController
 
             $tasksByStatus = $this->taskModel->getByProjectId($id);
 
-            include BASE_PATH . '/../Views/Projects/view.php';
+            $this->render('Projects/view', compact('tasksByStatus'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching project details.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, 'An error occurred while fetching project details.');
         }
     }
 
@@ -177,7 +175,7 @@ class ProjectController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_projects');
+            $this->requirePermission('create_projects');
 
             $users = $this->userModel->getAllUsers();
             $companies = $this->companyModel->getAllCompanies();
@@ -188,12 +186,10 @@ class ProjectController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
-            include BASE_PATH . '/../Views/Projects/create.php';
+            $this->render('Projects/create', compact('templates', 'companyId', 'statuses', 'companies', 'users'));
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -212,7 +208,7 @@ class ProjectController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_projects');
+            $this->requirePermission('create_projects');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255|min:5',
@@ -259,13 +255,10 @@ class ProjectController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /projects/create');
-            exit;
+            $this->redirect(/projects/create);
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'ProjectController::create', 'An error occurred while creating the project.');
-            header('Location: /projects/create');
-            exit;
+            $this->redirectWithError(/projects/create, $securityService->handleError($e, 'ProjectController::create', 'An error occurred while creating the project.'));
         }
     }
 
@@ -278,7 +271,7 @@ class ProjectController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_projects');
+            $this->requirePermission('edit_projects');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -298,16 +291,12 @@ class ProjectController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('project', $companyId);
 
-            include BASE_PATH . '/../Views/Projects/edit.php';
+            $this->render('Projects/edit', compact('templates', 'companyId', 'statuses', 'companies'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -320,7 +309,7 @@ class ProjectController
     public function update(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_projects');
+            $this->requirePermission('edit_projects');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -389,13 +378,11 @@ class ProjectController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_projects');
+            $this->requirePermission('delete_projects');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -414,18 +401,12 @@ class ProjectController
 
             $this->projectModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'Project deleted successfully.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithSuccess(/projects, 'Project deleted successfully.');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in ProjectController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the project.';
-            header('Location: /projects');
-            exit;
+            $this->redirectWithError(/projects, 'An error occurred while deleting the project.');
         }
     }
 }

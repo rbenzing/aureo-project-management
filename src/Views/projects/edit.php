@@ -58,7 +58,7 @@ unset($_SESSION['form_data']);
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <form id="editProjectForm" method="POST" action="/projects/update" class="space-y-6">
                 <!-- CSRF Token -->
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                 <input type="hidden" name="id" value="<?php echo $project->id; ?>">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,7 +158,7 @@ unset($_SESSION['form_data']);
         </div>
 
         <!-- Danger Zone -->
-        <?php if (isset($_SESSION['user']['permissions']) && in_array('delete_projects', $_SESSION['user']['permissions'])): ?>
+        <?php if (isset($currentUser['permissions']) && in_array('delete_projects', $currentUser['permissions'])): ?>
             <div class="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <h3 class="text-lg font-medium text-red-600 dark:text-red-400">Danger Zone</h3>
                 <div class="mt-4 flex items-center justify-between">
@@ -167,7 +167,7 @@ unset($_SESSION['form_data']);
                         <p class="text-xs text-gray-500 dark:text-gray-400">Once deleted, this project and all its data will be permanently removed.</p>
                     </div>
                     <form method="POST" action="/projects/delete/<?php echo $project->id; ?>" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                         <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                             Delete Project
                         </button>

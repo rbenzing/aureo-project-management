@@ -197,7 +197,7 @@ if (!defined('BASE_PATH')) {
                     <a href="/sprints/view/<?= $sprint->id ?>" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                         View Details
                     </a>
-                    <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_sprints', $_SESSION['user']['permissions'])): ?>
+                    <?php if (isset($currentUser['permissions']) && in_array('edit_sprints', $currentUser['permissions'])): ?>
                         <a href="/sprints/edit/<?= $sprint->id ?>" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Manage Tasks
                         </a>

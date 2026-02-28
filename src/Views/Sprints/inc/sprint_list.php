@@ -169,7 +169,7 @@
                                     onsubmit="return confirm('Are you sure you want to delete this sprint?');"
                                     class="inline"
                                 >
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                     <button
                                         type="submit"
                                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"

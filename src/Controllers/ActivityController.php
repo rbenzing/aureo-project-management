@@ -11,21 +11,21 @@ use App\Models\User;
 use PDO;
 use RuntimeException;
 
-class ActivityController
+class ActivityController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Database $db;
     private User $userModel;
 
-    public function __construct()
+    public function __construct(?User $userModel = null)
     {
-        $this->authMiddleware = new AuthMiddleware();
+        parent::__construct();
 
         // Check authentication first
         if (!$this->authMiddleware->isAuthenticated()) {
-            header('Location: /login');
-            exit;
+            $this->redirect('/login');
         }
+
+        $this->userModel = $userModel ?? new User();
 
         $this->db = Database::getInstance();
         $this->userModel = new User();
@@ -47,12 +47,7 @@ class ActivityController
             }
 
             // Check if user has permission to view activity logs
-            $userPermissions = $_SESSION['user']['permissions'] ?? [];
-            if (!in_array('view_activity', $userPermissions)) {
-                $_SESSION['error'] = 'You do not have permission to view activity logs.';
-                header('Location: /dashboard');
-                exit;
-            }
+            $this->requirePermission('view_activity');
 
             // Get filter parameters
             $filters = $this->getFilters($data);
@@ -378,8 +373,17 @@ class ActivityController
             'system' => 'System',
         ];
 
-        // Include the view
-        include BASE_PATH . '/../src/Views/Activity/index.php';
+        // Render the view
+        $this->render('Activity/index', compact(
+            'activities',
+            'stats',
+            'pagination',
+            'filters',
+            'users',
+            'viewTitle',
+            'eventTypeOptions',
+            'entityTypeOptions'
+        ));
     }
 
     /**
@@ -387,8 +391,6 @@ class ActivityController
      */
     private function handleError(string $message): void
     {
-        $_SESSION['error'] = $message;
-        header('Location: /dashboard');
-        exit;
+        $this->redirectWithError('/dashboard', $message);
     }
 }

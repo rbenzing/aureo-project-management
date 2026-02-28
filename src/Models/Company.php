@@ -55,6 +55,110 @@ class Company extends BaseModel
     ];
 
     /**
+     * Find company with detailed information
+     * Uses selective loading to prevent N+1 queries
+     *
+     * @param int $id
+     * @param array $options Selective loading options:
+     *   - users: bool (default false) - Load company users
+     *   - projects: bool (default false) - Load company projects
+     *   - counts: bool (default false) - Load user and project counts
+     * @return object|null
+     */
+    public function findWithDetails(int $id, array $options = []): ?object
+    {
+        try {
+            // Default options
+            $defaultOptions = [
+                'users' => false,
+                'projects' => false,
+                'counts' => false,
+            ];
+
+            $options = array_merge($defaultOptions, $options);
+
+            // Get basic company info with owner
+            $companies = $this->queryBuilder([
+                'select' => 'c.*, u.first_name as owner_first_name, u.last_name as owner_last_name',
+                'joins' => [
+                    ['type' => 'LEFT', 'table' => 'users u', 'on' => 'c.user_id = u.id'],
+                ],
+                'where' => [
+                    ['column' => 'c.id', 'operator' => '=', 'value' => $id],
+                ],
+                'whereRaw' => [
+                    ['sql' => 'c.is_deleted = 0'],
+                ],
+                'limit' => 1,
+            ]);
+
+            $company = $companies[0] ?? null;
+
+            if ($company) {
+                // Selectively load related data based on options
+                if ($options['users']) {
+                    $company->users = $this->getUsers($id);
+                }
+
+                if ($options['projects']) {
+                    // Temporarily set ID for getProjects() method
+                    $originalId = $this->id;
+                    $this->id = $id;
+                    $company->projects = $this->getProjects();
+                    $this->id = $originalId;
+                }
+
+                if ($options['counts']) {
+                    // Get counts without loading full data
+                    $countSql = "SELECT
+                        (SELECT COUNT(DISTINCT u.id)
+                         FROM users u
+                         WHERE (u.company_id = :company_id OR EXISTS (
+                             SELECT 1 FROM user_companies uc WHERE uc.company_id = :company_id2 AND uc.user_id = u.id
+                         )) AND u.is_deleted = 0
+                        ) as user_count,
+                        (SELECT COUNT(DISTINCT p.id)
+                         FROM projects p
+                         WHERE (p.company_id = :company_id3 OR EXISTS (
+                             SELECT 1 FROM company_projects cp WHERE cp.company_id = :company_id4 AND cp.project_id = p.id
+                         )) AND p.is_deleted = 0
+                        ) as project_count";
+
+                    $stmt = $this->db->executeQuery($countSql, [
+                        ':company_id' => $id,
+                        ':company_id2' => $id,
+                        ':company_id3' => $id,
+                        ':company_id4' => $id,
+                    ]);
+                    $counts = $stmt->fetch(PDO::FETCH_OBJ);
+
+                    $company->user_count = $counts->user_count ?? 0;
+                    $company->project_count = $counts->project_count ?? 0;
+                }
+            }
+
+            return $company;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to find company with details: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Find company with basic information only (no related data)
+     *
+     * @param int $id
+     * @return object|null
+     */
+    public function findBasic(int $id): ?object
+    {
+        return $this->findWithDetails($id, [
+            'users' => false,
+            'projects' => false,
+            'counts' => false,
+        ]);
+    }
+
+    /**
      * Get company users
      *
      * @param int $companyId
@@ -159,15 +263,16 @@ class Company extends BaseModel
     public function getAllCompanies(): array
     {
         try {
-            $sql = "SELECT c.*, u.first_name as owner_first_name, u.last_name as owner_last_name
-                    FROM companies c
-                    LEFT JOIN users u ON c.user_id = u.id
-                    WHERE c.is_deleted = 0
-                    ORDER BY c.name ASC";
-
-            $stmt = $this->db->executeQuery($sql);
-
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $this->queryBuilder([
+                'select' => 'c.*, u.first_name as owner_first_name, u.last_name as owner_last_name',
+                'joins' => [
+                    ['type' => 'LEFT', 'table' => 'users u', 'on' => 'c.user_id = u.id'],
+                ],
+                'whereRaw' => [
+                    ['sql' => 'c.is_deleted = 0'],
+                ],
+                'orderBy' => 'c.name ASC',
+            ]);
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get all companies: " . $e->getMessage());
         }

@@ -16,7 +16,7 @@ function hasHeaderPermission($permission)
     }
 
     // Get user permissions from session
-    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    $userPermissions = $currentUser['permissions'] ?? [];
 
     return in_array($permission, $userPermissions, true);
 }
@@ -47,14 +47,14 @@ function hasHeaderPermission($permission)
         </div>
         <?php endif; ?>
         <nav class="space-x-4 flex flex-row items-center">
-            <?php if (isset($_SESSION['user']['profile']['id'])): ?>
+            <?php if (isset($currentUser['profile']['id'])): ?>
                 <a href="/activity" class="hover:text-indigo-200">📄 Activity</a>
 
                 <!-- User Avatar Dropdown -->
                 <div class="relative dropdown">
                     <button type="button" class="h-11 w-11 rounded-full bg-indigo-100 dark:bg-indigo-900 flex-shrink-0 flex items-center justify-center hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-expanded="false" aria-haspopup="true">
                         <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                            <?= htmlspecialchars(substr($_SESSION['user']['profile']['first_name'], 0, 1) . substr($_SESSION['user']['profile']['last_name'], 0, 1)) ?>
+                            <?= htmlspecialchars(substr($currentUser['profile']['first_name'], 0, 1) . substr($currentUser['profile']['last_name'], 0, 1)) ?>
                         </span>
                     </button>
 
@@ -81,7 +81,7 @@ function hasHeaderPermission($permission)
 
                             <!-- My Tasks - Only show if user can view tasks -->
                             <?php if (hasHeaderPermission('view_tasks')): ?>
-                            <a href="/tasks/assigned/<?= $_SESSION['user']['profile']['id'] ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" role="menuitem">
+                            <a href="/tasks/assigned/<?= $currentUser['profile']['id'] ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" role="menuitem">
                                 <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                                 </svg>
@@ -127,7 +127,7 @@ if (!isset($GLOBALS['favorites_script_added'])) {
     $GLOBALS['favorites_script_added'] = true;
     echo '<script>
         // Add CSRF token to window for favorites.js
-        window.csrfToken = "' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '";
+        window.csrfToken = "' . htmlspecialchars($csrfToken ?? '') . '";
     </script>';
     echo '<script src="/assets/js/favorites.js" defer></script>';
     echo '<script src="/assets/js/favorites-utils.js" defer></script>';

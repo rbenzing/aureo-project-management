@@ -98,7 +98,7 @@ use App\Core\Config;
             <!-- Left Column: Template Details -->
             <div class="lg:col-span-2">
                 <form id="templateForm" action="/sprint-templates/create" method="POST" class="space-y-6">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
 
                     <!-- Basic Information -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

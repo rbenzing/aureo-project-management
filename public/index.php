@@ -134,13 +134,6 @@ try {
     $router->post('api/favorites/update-order', ['controller' => 'Favorites', 'action' => 'updateOrder']);
     $router->get('api/favorites/check', ['controller' => 'Favorites', 'action' => 'check']);
 
-    // Favorites API Routes
-    $router->get('api/favorites', ['controller' => 'Favorites', 'action' => 'index']);
-    $router->post('api/favorites/add', ['controller' => 'Favorites', 'action' => 'add']);
-    $router->post('api/favorites/remove', ['controller' => 'Favorites', 'action' => 'remove']);
-    $router->post('api/favorites/update-order', ['controller' => 'Favorites', 'action' => 'updateOrder']);
-    $router->get('api/favorites/check', ['controller' => 'Favorites', 'action' => 'check']);
-
     // User Routes
     $router->get('users', ['controller' => 'User', 'action' => 'index']);
     $router->get('users/page/:page', ['controller' => 'User', 'action' => 'index', 'params' => ['page']]);

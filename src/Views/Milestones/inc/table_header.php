@@ -28,9 +28,9 @@ if (!empty($milestones)) {
 }
 
 // Permission checks
-$canEditMilestones = isset($_SESSION['user']['permissions']) && in_array('edit_milestones', $_SESSION['user']['permissions']);
-$canDeleteMilestones = isset($_SESSION['user']['permissions']) && in_array('delete_milestones', $_SESSION['user']['permissions']);
-$canCreateMilestones = isset($_SESSION['user']['permissions']) && in_array('create_milestones', $_SESSION['user']['permissions']);
+$canEditMilestones = isset($currentUser['permissions']) && in_array('edit_milestones', $currentUser['permissions']);
+$canDeleteMilestones = isset($currentUser['permissions']) && in_array('delete_milestones', $currentUser['permissions']);
+$canCreateMilestones = isset($currentUser['permissions']) && in_array('create_milestones', $currentUser['permissions']);
 ?>
 
 <!-- Milestone Stats Summary -->

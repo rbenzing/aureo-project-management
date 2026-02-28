@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use App\Enums\TaskStatus;
 use App\Services\SecurityService;
 use DateTime;
 use PDO;
@@ -73,6 +74,74 @@ class User extends BaseModel
     ];
 
     /**
+     * Flexible user query method with various filters
+     * Consolidates multiple similar query methods into one
+     *
+     * @param array $filters Filter conditions:
+     *   - email: string
+     *   - role_id: int
+     *   - company_id: int
+     *   - is_active: bool
+     *   - id: int
+     * @param int $limit Results per page (0 for no limit)
+     * @param int $page Page number
+     * @param string $sortField Field to sort by
+     * @param string $sortDirection Sort direction (asc/desc)
+     * @return array Users array
+     */
+    private function getUsersWithDetails(
+        array $filters = [],
+        int $limit = 0,
+        int $page = 1,
+        string $sortField = 'first_name',
+        string $sortDirection = 'asc'
+    ): array {
+        $where = [];
+        $whereRaw = [
+            ['sql' => 'u.is_deleted = 0']
+        ];
+
+        // Apply filters
+        if (isset($filters['email'])) {
+            $where[] = ['column' => 'u.email', 'operator' => '=', 'value' => $filters['email']];
+        }
+
+        if (isset($filters['id'])) {
+            $where[] = ['column' => 'u.id', 'operator' => '=', 'value' => $filters['id']];
+        }
+
+        if (isset($filters['role_id'])) {
+            $where[] = ['column' => 'u.role_id', 'operator' => '=', 'value' => $filters['role_id']];
+        }
+
+        if (isset($filters['company_id'])) {
+            $where[] = ['column' => 'u.company_id', 'operator' => '=', 'value' => $filters['company_id']];
+        }
+
+        if (isset($filters['is_active'])) {
+            $where[] = ['column' => 'u.is_active', 'operator' => '=', 'value' => $filters['is_active'] ? 1 : 0];
+        }
+
+        $options = [
+            'select' => 'u.*, c.name as company_name, r.name as role_name',
+            'joins' => [
+                ['type' => 'LEFT', 'table' => 'companies c', 'on' => 'u.company_id = c.id'],
+                ['type' => 'LEFT', 'table' => 'roles r', 'on' => 'u.role_id = r.id'],
+            ],
+            'where' => $where,
+            'whereRaw' => $whereRaw,
+            'orderBy' => "u.{$sortField} {$sortDirection}",
+        ];
+
+        if ($limit > 0) {
+            $options['limit'] = $limit;
+            $options['offset'] = ($page - 1) * $limit;
+        }
+
+        return $this->queryBuilder($options);
+    }
+
+    /**
      * Find user by email
      *
      * @param string $email
@@ -81,19 +150,8 @@ class User extends BaseModel
     public function findByEmail(string $email): ?object
     {
         try {
-            $sql = "SELECT u.*, 
-                       c.name as company_name,
-                       r.name as role_name
-                FROM users u
-                LEFT JOIN companies c ON u.company_id = c.id
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.email = :email 
-                AND u.is_deleted = 0";
-
-            $stmt = $this->db->executeQuery($sql, [':email' => $email]);
-            $user = $stmt->fetch(PDO::FETCH_OBJ);
-
-            return $user ?: null;
+            $users = $this->getUsersWithDetails(['email' => $email], 1);
+            return $users[0] ?? null;
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to find user by email: " . $e->getMessage());
         }
@@ -107,18 +165,7 @@ class User extends BaseModel
     public function getAllUsers(): array
     {
         try {
-            $sql = "SELECT u.*, 
-                       c.name as company_name,
-                       r.name as role_name
-                FROM users u
-                LEFT JOIN companies c ON u.company_id = c.id
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.is_deleted = 0
-                ORDER BY u.first_name, u.last_name";
-
-            $stmt = $this->db->executeQuery($sql);
-
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            return $this->getUsersWithDetails([], 0, 1, 'first_name, u.last_name', 'asc');
         } catch (\Exception $e) {
             throw new RuntimeException("Failed to get all users: " . $e->getMessage());
         }
@@ -178,40 +225,50 @@ class User extends BaseModel
      * Find user with detailed information
      *
      * @param int $id
+     * @param array $options Selective loading options:
+     *   - projects: bool (default true)
+     *   - permissions: bool (default true)
+     *   - companies: bool (default true)
+     *   - active_tasks: bool (default true)
      * @return object|null
      */
-    public function findWithDetails(int $id): ?object
+    public function findWithDetails(int $id, array $options = []): ?object
     {
         try {
-            $sql = "SELECT 
-                    u.*,
-                    c.name AS company_name,
-                    r.name AS role_name
-                FROM users u
-                LEFT JOIN companies c ON u.company_id = c.id
-                LEFT JOIN roles r ON u.role_id = r.id
-                WHERE u.id = :user_id 
-                AND u.is_deleted = 0";
+            // Default options - load everything unless specified otherwise
+            $defaultOptions = [
+                'projects' => true,
+                'permissions' => true,
+                'companies' => true,
+                'active_tasks' => true,
+            ];
 
-            $stmt = $this->db->executeQuery($sql, [':user_id' => $id]);
-            $user = $stmt->fetch(PDO::FETCH_OBJ);
+            $options = array_merge($defaultOptions, $options);
+
+            $users = $this->getUsersWithDetails(['id' => $id], 1);
+            $user = $users[0] ?? null;
 
             if ($user) {
-                // Add user's projects
-                $user->projects = $this->getUserProjects($id);
+                // Selectively load related data based on options
+                if ($options['projects']) {
+                    $user->projects = $this->getUserProjects($id);
+                }
 
-                // Add user's permissions
-                $rolesAndPermissions = $this->getRolesAndPermissions($id);
-                $user->permissions = $rolesAndPermissions['permissions'];
+                if ($options['permissions']) {
+                    $rolesAndPermissions = $this->getRolesAndPermissions($id);
+                    $user->permissions = $rolesAndPermissions['permissions'];
+                }
 
-                // Add user's companies (from junction table)
-                $user->companies = $this->getUserCompanies($id);
+                if ($options['companies']) {
+                    $user->companies = $this->getUserCompanies($id);
+                }
 
-                // Add user's tasks
-                $user->active_tasks = $this->getUserActiveTasks($id);
+                if ($options['active_tasks']) {
+                    $user->active_tasks = $this->getUserActiveTasks($id);
+                }
             }
 
-            return $user ?: null;
+            return $user;
         } catch (\Exception $e) {
             try {
                 $securityService = SecurityService::getInstance();
@@ -222,6 +279,22 @@ class User extends BaseModel
                 throw new RuntimeException("Failed to find user with details");
             }
         }
+    }
+
+    /**
+     * Find user with basic information only (no related data)
+     *
+     * @param int $id
+     * @return object|null
+     */
+    public function findBasic(int $id): ?object
+    {
+        return $this->findWithDetails($id, [
+            'projects' => false,
+            'permissions' => false,
+            'companies' => false,
+            'active_tasks' => false,
+        ]);
     }
 
     /**
@@ -319,6 +392,9 @@ class User extends BaseModel
     public function getUserActiveTasks(int $userId, int $limit = 5): array
     {
         try {
+            $closedStatus = TaskStatus::CLOSED->value;
+            $completedStatus = TaskStatus::COMPLETED->value;
+
             $sql = "SELECT t.*,
                         p.name as project_name,
                         ts.name as status_name
@@ -326,10 +402,10 @@ class User extends BaseModel
                     LEFT JOIN projects p ON t.project_id = p.id
                     LEFT JOIN statuses_task ts ON t.status_id = ts.id
                     WHERE t.assigned_to = :user_id
-                    AND t.status_id NOT IN (5, 6) -- Not closed or completed
+                    AND t.status_id NOT IN ({$closedStatus}, {$completedStatus})
                     AND t.is_deleted = 0
-                    ORDER BY 
-                        CASE 
+                    ORDER BY
+                        CASE
                             WHEN t.due_date < CURDATE() THEN 0  -- Overdue
                             WHEN t.due_date = CURDATE() THEN 1  -- Due today
                             ELSE 2                             -- Due later

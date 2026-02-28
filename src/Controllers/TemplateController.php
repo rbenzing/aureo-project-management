@@ -13,17 +13,18 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class TemplateController
+class TemplateController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Template $templateModel;
     private Company $companyModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->templateModel = new Template();
-        $this->companyModel = new Company();
+    public function __construct(
+        ?Template $templateModel = null,
+        ?Company $companyModel = null
+    ) {
+        parent::__construct();
+        $this->templateModel = $templateModel ?? new Template();
+        $this->companyModel = $companyModel ?? new Company();
     }
 
     /**
@@ -35,7 +36,7 @@ class TemplateController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
@@ -73,12 +74,10 @@ class TemplateController
 
             $totalPages = ceil($totalTemplates / $limit);
 
-            include BASE_PATH . '/../Views/Templates/index.php';
+            $this->render('Templates/index', compact('totalPages'));
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'TemplateController::index', 'An error occurred while fetching templates.');
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, $securityService->handleError($e, 'TemplateController::index', 'An error occurred while fetching templates.'));
         }
     }
 
@@ -91,7 +90,7 @@ class TemplateController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -103,16 +102,12 @@ class TemplateController
                 throw new InvalidArgumentException('Template not found');
             }
 
-            include BASE_PATH . '/../Views/Templates/view.php';
+            $this->render('Templates/view', compact('totalPages'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching template details.';
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, 'An error occurred while fetching template details.');
         }
     }
 
@@ -126,16 +121,14 @@ class TemplateController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_templates');
+            $this->requirePermission('create_templates');
 
             $companies = $this->companyModel->getAllCompanies();
 
-            include BASE_PATH . '/../Views/Templates/create.php';
+            $this->render('Templates/create', compact('totalPages'));
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -149,12 +142,11 @@ class TemplateController
     public function create(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            header('Location: /templates/create');
-            exit;
+            $this->redirect(/templates/create);
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_templates');
+            $this->requirePermission('create_templates');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
@@ -190,9 +182,7 @@ class TemplateController
 
                 $this->templateModel->commit();
 
-                $_SESSION['success'] = 'Template created successfully.';
-                header('Location: /templates');
-                exit;
+                $this->redirectWithSuccess(/templates, 'Template created successfully.');
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
 
@@ -201,14 +191,12 @@ class TemplateController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /templates/create');
-            exit;
+            $this->redirect(/templates/create);
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::create: " . $e->getMessage());
             $_SESSION['error'] = 'An error occurred while creating the template.';
             $_SESSION['form_data'] = $data;
-            header('Location: /templates/create');
-            exit;
+            $this->redirect(/templates/create);
         }
     }
 
@@ -222,7 +210,7 @@ class TemplateController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_templates');
+            $this->requirePermission('edit_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -236,16 +224,12 @@ class TemplateController
 
             $companies = $this->companyModel->getAllCompanies();
 
-            include BASE_PATH . '/../Views/Templates/edit.php';
+            $this->render('Templates/edit', compact('companies'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -259,12 +243,11 @@ class TemplateController
     public function update(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            header('Location: /templates');
-            exit;
+            $this->redirect(/templates);
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_templates');
+            $this->requirePermission('edit_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -305,9 +288,7 @@ class TemplateController
 
                 $this->templateModel->commit();
 
-                $_SESSION['success'] = 'Template updated successfully.';
-                header('Location: /templates');
-                exit;
+                $this->redirectWithSuccess(/templates, 'Template updated successfully.');
             } catch (\Exception $e) {
                 $this->templateModel->rollBack();
 
@@ -335,12 +316,11 @@ class TemplateController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            header('Location: /templates');
-            exit;
+            $this->redirect(/templates);
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_templates');
+            $this->requirePermission('delete_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -354,18 +334,12 @@ class TemplateController
 
             $this->templateModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'Template deleted successfully.';
-            header('Location: /templates');
-            exit;
+            $this->redirectWithSuccess(/templates, 'Template deleted successfully.');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in TemplateController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the template.';
-            header('Location: /templates');
-            exit;
+            $this->redirectWithError(/templates, 'An error occurred while deleting the template.');
         }
     }
 
@@ -379,7 +353,7 @@ class TemplateController
     public function getTemplate(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {

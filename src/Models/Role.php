@@ -54,24 +54,87 @@ class Role extends BaseModel
     ];
 
     /**
-     * Find role with permissions
+     * Find role with detailed information
+     * Uses selective loading to prevent N+1 queries
+     *
+     * @param int $id
+     * @param array $options Selective loading options:
+     *   - permissions: bool (default true) - Load role permissions
+     *   - users: bool (default false) - Load users with this role
+     *   - counts: bool (default false) - Load permission and user counts
+     * @return object|null
+     */
+    public function findWithDetails(int $id, array $options = []): ?object
+    {
+        try {
+            // Default options
+            $defaultOptions = [
+                'permissions' => true,
+                'users' => false,
+                'counts' => false,
+            ];
+
+            $options = array_merge($defaultOptions, $options);
+
+            $role = $this->find($id);
+
+            if ($role) {
+                // Selectively load related data based on options
+                if ($options['permissions']) {
+                    $role->permissions = $this->getPermissions($id);
+                }
+
+                if ($options['users']) {
+                    $role->users = $this->getUsers($id);
+                }
+
+                if ($options['counts']) {
+                    // Get counts without loading full data
+                    $countSql = "SELECT
+                        (SELECT COUNT(*) FROM role_permissions rp WHERE rp.role_id = :role_id) as permission_count,
+                        (SELECT COUNT(*) FROM users u WHERE u.role_id = :role_id2 AND u.is_deleted = 0) as user_count";
+
+                    $stmt = $this->db->executeQuery($countSql, [
+                        ':role_id' => $id,
+                        ':role_id2' => $id,
+                    ]);
+                    $counts = $stmt->fetch(PDO::FETCH_OBJ);
+
+                    $role->permission_count = $counts->permission_count ?? 0;
+                    $role->user_count = $counts->user_count ?? 0;
+                }
+            }
+
+            return $role;
+        } catch (\Exception $e) {
+            throw new RuntimeException("Failed to find role with details: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Find role with permissions (backward compatible alias)
      *
      * @param int $id
      * @return object|null
      */
     public function findWithPermissions(int $id): ?object
     {
-        try {
-            $role = $this->find($id);
+        return $this->findWithDetails($id, ['permissions' => true]);
+    }
 
-            if ($role) {
-                $role->permissions = $this->getPermissions($id);
-            }
-
-            return $role;
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to find role with permissions: " . $e->getMessage());
-        }
+    /**
+     * Find role with basic information only (no related data)
+     *
+     * @param int $id
+     * @return object|null
+     */
+    public function findBasic(int $id): ?object
+    {
+        return $this->findWithDetails($id, [
+            'permissions' => false,
+            'users' => false,
+            'counts' => false,
+        ]);
     }
 
     /**

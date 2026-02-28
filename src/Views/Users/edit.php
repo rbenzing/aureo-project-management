@@ -62,7 +62,7 @@ use App\Core\Config;
             <!-- Edit User Form -->
             <form method="POST" action="/users/update" class="p-6 space-y-6">
                 <!-- CSRF Token -->
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)$user->id); ?>">
                 
                 <!-- Form Grid Layout -->
@@ -196,7 +196,7 @@ use App\Core\Config;
                         Send a password reset link to this user's email address.
                     </p>
                     <form action="/users/reset-password" method="POST" class="inline-block">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                         <input type="hidden" name="user_id" value="<?= htmlspecialchars((string)$user->id); ?>">
                         <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             <svg class="mr-2 -ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,7 +221,7 @@ use App\Core\Config;
                                         <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                             <?= htmlspecialchars($company->name) ?>
                                             <form action="/users/remove-company" method="POST" class="inline-block ml-1">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                                                 <input type="hidden" name="user_id" value="<?= htmlspecialchars((string)$user->id); ?>">
                                                 <input type="hidden" name="company_id" value="<?= htmlspecialchars((string)$company->id); ?>">
                                                 <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 ml-1">
@@ -237,7 +237,7 @@ use App\Core\Config;
                         <?php endif; ?>
                         
                         <form action="/users/add-company" method="POST" class="sm:flex sm:items-center">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                             <input type="hidden" name="user_id" value="<?= htmlspecialchars((string)$user->id); ?>">
                             <div class="w-full sm:max-w-xs">
                                 <select name="company_id" id="add_company_id" required

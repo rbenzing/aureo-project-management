@@ -39,7 +39,7 @@ use App\Core\Config;
                 </div>
 
                 <!-- Error and Success Messages -->
-                <?php if (isset($_SESSION['error'])): ?>
+                <?php if (!empty($error)): ?>
                     <div class="mb-4 bg-red-50 dark:bg-red-900/50 border-l-4 border-red-500 p-4 rounded">
                         <div class="flex">
                             <div class="flex-shrink-0">
@@ -49,18 +49,18 @@ use App\Core\Config;
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm text-red-700 dark:text-red-200">
-                                    <?= htmlspecialchars($_SESSION['error']) ?>
+                                    <?= htmlspecialchars($error) ?>
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <?php unset($_SESSION['error']); ?>
+                    <?php unset($error); ?>
                 <?php endif; ?>
 
                 <!-- Reset Password Form -->
                 <form method="POST" action="/reset-password/<?= htmlspecialchars($_GET['token'] ?? '') ?>" class="space-y-6" autocomplete="off">
                     <!-- CSRF Token -->
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     
                     <!-- Hidden Token Input -->
                     <input type="hidden" name="token" value="<?= htmlspecialchars($_GET['token'] ?? '') ?>">

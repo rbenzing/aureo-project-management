@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Enums\SprintStatus;
+use App\Enums\TaskStatus;
 use App\Middleware\AuthMiddleware;
 use App\Models\Project;
 use App\Models\Sprint;
@@ -25,7 +27,7 @@ class SprintController
     public function __construct()
     {
         $this->authMiddleware = new AuthMiddleware();
-        $this->authMiddleware->hasPermission('manage_sprints');
+        $this->requirePermission('manage_sprints');
         $this->sprintModel = new Sprint();
         $this->projectModel = new Project();
         $this->taskModel = new Task();
@@ -41,7 +43,7 @@ class SprintController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
 
@@ -96,16 +98,12 @@ class SprintController
                 }
             }
 
-            include BASE_PATH . '/../Views/Sprints/index.php';
+            $this->render('Sprints/index');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in SprintController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching sprints.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching sprints.');
         }
     }
 
@@ -118,7 +116,7 @@ class SprintController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -136,16 +134,12 @@ class SprintController
             // Add hierarchical task data
             $sprint->hierarchy = $this->sprintModel->getSprintHierarchy($id);
 
-            include BASE_PATH . '/../Views/Sprints/view.php';
+            $this->render('Sprints/view', compact('project', 'tasks'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in SprintController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching sprint details.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching sprint details.');
         }
     }
 
@@ -158,7 +152,7 @@ class SprintController
     public function current(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $userId = $_SESSION['user']['profile']['id'] ?? null;
             if (!$userId) {
@@ -213,9 +207,7 @@ class SprintController
             include BASE_PATH . '/../views/Sprints/current.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintController::current: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching current sprint information.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching current sprint information.');
         }
     }
 
@@ -228,7 +220,7 @@ class SprintController
     public function board(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -272,14 +264,10 @@ class SprintController
 
             include BASE_PATH . '/../views/Sprints/board.php';
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in SprintController::board: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the sprint board.';
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, 'An error occurred while loading the sprint board.');
         }
     }
 
@@ -292,7 +280,7 @@ class SprintController
     public function planning(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $userId = $_SESSION['user']['profile']['id'];
 
@@ -334,9 +322,7 @@ class SprintController
             include BASE_PATH . '/../views/Sprints/planning.php';
         } catch (\Exception $e) {
             error_log("Exception in SprintController::planning: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading sprint planning.';
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, 'An error occurred while loading sprint planning.');
         }
     }
 
@@ -349,7 +335,7 @@ class SprintController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_sprints');
+            $this->requirePermission('create_sprints');
 
             // Get project ID from route parameter or query parameter
             $projectId = filter_var($data['id'] ?? $data['project_id'] ?? null, FILTER_VALIDATE_INT);
@@ -373,16 +359,12 @@ class SprintController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
-            include BASE_PATH . '/../Views/Sprints/create.php';
+            $this->render('Sprints/create', compact('templates', 'companyId', 'sprint_statuses', 'project_tasks'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in SprintController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the sprint creation form.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while loading the sprint creation form.');
         }
     }
 
@@ -395,7 +377,7 @@ class SprintController
     public function createFromPlanning(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_sprints');
+            $this->requirePermission('create_sprints');
 
             // Validate required fields
             if (empty($data['name']) || empty($data['project_id'])) {
@@ -487,7 +469,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_sprints');
+            $this->requirePermission('create_sprints');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
@@ -558,7 +540,7 @@ class SprintController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_sprints');
+            $this->requirePermission('edit_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -592,16 +574,14 @@ class SprintController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('sprint', $companyId);
 
-            include BASE_PATH . '/../Views/Sprints/edit.php';
+            $this->render('Sprints/edit', compact('templates', 'companyId', 'statuses'));
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             header('Location: /sprints/view/' . $id);
             exit;
         } catch (\Exception $e) {
             error_log("Exception in SprintController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -620,7 +600,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_sprints');
+            $this->requirePermission('edit_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -688,13 +668,11 @@ class SprintController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_sprints');
+            $this->requirePermission('delete_sprints');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -712,11 +690,13 @@ class SprintController
             // Get sprint tasks to check for active tasks
             $sprintTasks = $this->sprintModel->getSprintTasks($id);
             $activeTasks = array_filter($sprintTasks, function ($task) {
-                return $task->status_id != 6 && $task->status_id != 7; // Not completed or cancelled
+                // Not completed or closed
+                return $task->status_id != TaskStatus::COMPLETED->value
+                    && $task->status_id != TaskStatus::CLOSED->value;
             });
 
             // Only allow deletion if sprint has no active tasks or is not active
-            if ($sprint->status_id == 2 && !empty($activeTasks)) { // 2 = active status
+            if ($sprint->status_id == SprintStatus::ACTIVE->value && !empty($activeTasks)) {
                 throw new InvalidArgumentException('Cannot delete active sprint with incomplete tasks');
             }
 
@@ -746,13 +726,11 @@ class SprintController
     public function addTasks(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /sprints');
-            exit;
+            $this->redirectWithError(/sprints, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_sprints');
+            $this->requirePermission('edit_sprints');
 
             $sprintId = filter_var($data['sprint_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$sprintId) {
@@ -796,7 +774,7 @@ class SprintController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_sprints');
+            $this->requirePermission('edit_sprints');
 
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
@@ -1065,13 +1043,11 @@ class SprintController
     public function createFromMilestones(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /sprints/planning');
-            exit;
+            $this->redirectWithError(/sprints/planning, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_sprints');
+            $this->requirePermission('create_sprints');
 
             // Get JSON input for AJAX requests
             $input = json_decode(file_get_contents('php://input'), true);
@@ -1134,9 +1110,7 @@ class SprintController
                 return;
             }
 
-            $_SESSION['error'] = $errorMessage;
-            header('Location: /sprints/planning');
-            exit;
+            $this->redirectWithError(/sprints/planning, $errorMessage);
         } catch (\Exception $e) {
             error_log("Exception in SprintController::createFromMilestones: " . $e->getMessage());
             $errorMessage = 'An error occurred while creating the sprint.';
@@ -1148,9 +1122,7 @@ class SprintController
                 return;
             }
 
-            $_SESSION['error'] = $errorMessage;
-            header('Location: /sprints/planning');
-            exit;
+            $this->redirectWithError(/sprints/planning, $errorMessage);
         }
     }
 
@@ -1162,7 +1134,7 @@ class SprintController
     public function getMilestonesForPlanning(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {
@@ -1197,7 +1169,7 @@ class SprintController
     public function getTasksFromMilestones(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_tasks');
+            $this->requirePermission('view_tasks');
 
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
@@ -1231,7 +1203,7 @@ class SprintController
     public function getProjectSprintsApi(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_sprints');
+            $this->requirePermission('view_sprints');
 
             $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {

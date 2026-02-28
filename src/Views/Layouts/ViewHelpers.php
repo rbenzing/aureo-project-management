@@ -454,7 +454,7 @@ function renderActionButtons(string $entityType, int $id, array $permissions = [
  */
 function hasUserPermission(string $permission): bool
 {
-    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    $userPermissions = $currentUser['permissions'] ?? [];
 
     return in_array($permission, $userPermissions, true);
 }
@@ -464,7 +464,7 @@ function hasUserPermission(string $permission): bool
  */
 function hasAnyUserPermission(array $permissions): bool
 {
-    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    $userPermissions = $currentUser['permissions'] ?? [];
     foreach ($permissions as $permission) {
         if (in_array($permission, $userPermissions, true)) {
             return true;
@@ -479,7 +479,7 @@ function hasAnyUserPermission(array $permissions): bool
  */
 function hasAllUserPermissions(array $permissions): bool
 {
-    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    $userPermissions = $currentUser['permissions'] ?? [];
     foreach ($permissions as $permission) {
         if (!in_array($permission, $userPermissions, true)) {
             return false;
@@ -505,7 +505,7 @@ function renderTimerControls(int $taskId): string
 
     if ($isTimerActiveForThisTask) {
         return '<form action="/tasks/stop-timer/' . $taskId . '" method="POST" class="inline">
-                    <input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">
+                    <input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken ?? '') . '">
                     <button type="submit" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -516,7 +516,7 @@ function renderTimerControls(int $taskId): string
                 </form>';
     } elseif (!isset($activeTimer)) { // Only show start timer if no timer is running at all
         return '<form action="/tasks/start-timer/' . $taskId . '" method="POST" class="inline">
-                    <input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">
+                    <input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken ?? '') . '">
                     <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded-md text-sm flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

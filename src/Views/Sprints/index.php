@@ -41,7 +41,7 @@ include_once BASE_PATH . '/inc/helpers.php';
             </div>
 
             <!-- New Sprint Button (only show when project is selected) -->
-            <?php if (!empty($project) && isset($_SESSION['user']['permissions']) && in_array('create_sprints', $_SESSION['user']['permissions'])): ?>
+            <?php if (!empty($project) && isset($currentUser['permissions']) && in_array('create_sprints', $currentUser['permissions'])): ?>
             <div class="flex-shrink-0">
                 <a
                     href="/sprints/create/<?= $project->id ?? 0 ?>"

@@ -113,7 +113,7 @@ $preSelectedProject = $_GET['project_id'] ?? ($duplicateTask->project_id ?? null
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <form id="createTaskForm" method="POST" action="/tasks/create" class="space-y-6">
                         <!-- CSRF Token -->
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                         <?php if ($duplicateTask): ?>
                             <input type="hidden" name="duplicate_from" value="<?= $duplicateTask->id ?>">
                         <?php endif; ?>
@@ -248,8 +248,8 @@ if (!empty($templates)) {
                             <?php
                             // Prepare assignee options
                             $assigneeOptions = ['' => 'Unassigned'];
-                            $currentUserId = $_SESSION['user']['profile']['id'] ?? '';
-                            $currentUserName = $_SESSION['user']['profile']['first_name'] ?? 'Me';
+                            $currentUserId = $currentUser['profile']['id'] ?? '';
+                            $currentUserName = $currentUser['profile']['first_name'] ?? 'Me';
 
                             // Add current user as default selection
                             if ($currentUserId) {

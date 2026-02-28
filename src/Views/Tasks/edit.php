@@ -100,7 +100,7 @@ $pageTitle = $markComplete ? 'Complete Task' : 'Edit Task';
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <form id="task-form" method="POST" action="/tasks/update" class="space-y-6">
                         <!-- CSRF Token -->
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                         <input type="hidden" name="id" value="<?php echo $task->id; ?>">
 
                         <?php if ($markComplete): ?>
@@ -574,7 +574,7 @@ if (isset($availableParentTasks)) {
                     <p class="text-xs text-gray-500 dark:text-gray-400">Once deleted, this task and all its data will be permanently removed.</p>
                 </div>
                 <form method="POST" action="/tasks/delete/<?= $task->id ?>" onsubmit="return confirm('Are you sure you want to delete this task? This action cannot be undone.');">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                         Delete Task
                     </button>

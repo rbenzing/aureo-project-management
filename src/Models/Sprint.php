@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\SprintStatus;
+use App\Enums\TaskStatus;
 use PDO;
 use RuntimeException;
 
@@ -27,7 +29,13 @@ class Sprint extends BaseModel
     public ?string $sprint_goal = null;
     public string $start_date;
     public string $end_date;
-    public int $status_id = 1; // Default: Planning
+    public int $status_id; // Default: Planning
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->status_id = SprintStatus::PLANNING->value;
+    }
     public bool $is_deleted = false;
     public ?string $created_at = null;
     public ?string $updated_at = null;
@@ -82,63 +90,106 @@ class Sprint extends BaseModel
     public function getAllWithTasks(int $limit = 10, int $page = 1): array
     {
         $offset = ($page - 1) * $limit;
+        $completedStatus = TaskStatus::COMPLETED->value;
 
-        $sql = "SELECT s.*, 
-                    p.name as project_name,
-                    ss.name as status_name,
-                    COUNT(st.task_id) as task_count,
-                    (
-                        SELECT COUNT(t.id) 
-                        FROM tasks t 
-                        JOIN sprint_tasks spt ON t.id = spt.task_id 
-                        WHERE spt.sprint_id = s.id 
-                        AND t.status_id = 6 
-                        AND t.is_deleted = 0
-                    ) as completed_tasks
-                FROM sprints s
-                LEFT JOIN projects p ON s.project_id = p.id
-                LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
-                LEFT JOIN sprint_tasks st ON s.id = st.sprint_id
-                WHERE s.is_deleted = 0
-                GROUP BY s.id
-                ORDER BY s.start_date DESC
-                LIMIT :limit OFFSET :offset";
-
-        $stmt = $this->db->executeQuery($sql, [
-            ':limit' => $limit,
-            ':offset' => $offset,
+        return $this->queryBuilder([
+            'select' => "s.*, p.name as project_name, ss.name as status_name,
+                COUNT(st.task_id) as task_count,
+                (SELECT COUNT(t.id) FROM tasks t
+                 JOIN sprint_tasks spt ON t.id = spt.task_id
+                 WHERE spt.sprint_id = s.id
+                 AND t.status_id = {$completedStatus}
+                 AND t.is_deleted = 0) as completed_tasks",
+            'joins' => [
+                ['type' => 'LEFT', 'table' => 'projects p', 'on' => 's.project_id = p.id'],
+                ['type' => 'LEFT', 'table' => 'statuses_sprint ss', 'on' => 's.status_id = ss.id'],
+                ['type' => 'LEFT', 'table' => 'sprint_tasks st', 'on' => 's.id = st.sprint_id'],
+            ],
+            'whereRaw' => [
+                ['sql' => 'GROUP BY s.id'],
+            ],
+            'orderBy' => 's.start_date DESC',
+            'limit' => $limit,
+            'offset' => $offset,
         ]);
-
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
      * Find sprint with details including tasks
      *
      * @param int $id
+     * @param array $options Load options to control what gets fetched:
+     *   - tasks: bool (default: true)
+     *   - velocity: bool (default: true)
+     *   - relationships: bool (default: true)
+     *   - milestones: bool (default: true)
      * @return object|null
      */
-    public function findWithDetails(int $id): ?object
+    public function findWithDetails(int $id, array $options = []): ?object
     {
-        $sql = "SELECT s.*, 
-                    p.name as project_name,
-                    ss.name as status_name
-                FROM sprints s
-                LEFT JOIN projects p ON s.project_id = p.id
-                LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
-                WHERE s.id = :id AND s.is_deleted = 0";
+        // Default options
+        $defaultOptions = [
+            'tasks' => true,
+            'velocity' => true,
+            'relationships' => true,
+            'milestones' => true,
+        ];
 
-        $stmt = $this->db->executeQuery($sql, [':id' => $id]);
-        $sprint = $stmt->fetch(PDO::FETCH_OBJ);
+        $options = array_merge($defaultOptions, $options);
 
-        if ($sprint) {
+        $sprints = $this->queryBuilder([
+            'select' => 's.*, p.name as project_name, ss.name as status_name',
+            'joins' => [
+                ['type' => 'LEFT', 'table' => 'projects p', 'on' => 's.project_id = p.id'],
+                ['type' => 'LEFT', 'table' => 'statuses_sprint ss', 'on' => 's.status_id = ss.id'],
+            ],
+            'where' => [
+                ['column' => 's.id', 'operator' => '=', 'value' => $id],
+            ],
+            'limit' => 1,
+        ]);
+
+        if (empty($sprints)) {
+            return null;
+        }
+
+        $sprint = $sprints[0];
+
+        // Conditionally load related data based on options
+        if ($options['tasks']) {
             $sprint->tasks = $this->getSprintTasks($id);
+        }
+
+        if ($options['velocity']) {
             $sprint->velocity = $this->getSprintVelocity($id);
+        }
+
+        if ($options['relationships']) {
             $sprint->relationships = $this->getSprintRelationships($id);
+        }
+
+        if ($options['milestones']) {
             $sprint->milestones = $this->getSprintMilestones($id);
         }
 
-        return $sprint ?: null;
+        return $sprint;
+    }
+
+    /**
+     * Get sprint basic details without expensive related data
+     * Optimized for list views where full details are not needed
+     *
+     * @param int $id
+     * @return object|null
+     */
+    public function findBasic(int $id): ?object
+    {
+        return $this->findWithDetails($id, [
+            'tasks' => false,
+            'velocity' => false,
+            'relationships' => false,
+            'milestones' => false,
+        ]);
     }
 
     /**
@@ -571,7 +622,7 @@ class Sprint extends BaseModel
                 FROM sprints s
                 LEFT JOIN statuses_sprint ss ON s.status_id = ss.id
                 WHERE s.project_id = :project_id 
-                AND s.status_id = 2 -- Active status
+                AND s.status_id = " . SprintStatus::ACTIVE->value . " -- Active status
                 AND s.is_deleted = 0
                 LIMIT 1";
 
@@ -598,7 +649,7 @@ class Sprint extends BaseModel
                             FROM tasks t
                             JOIN sprint_tasks spt ON t.id = spt.task_id
                             WHERE spt.sprint_id = s.id
-                            AND t.status_id = 6
+                            AND t.status_id = " . TaskStatus::COMPLETED->value . "
                             AND t.is_deleted = 0
                         ) as completed_tasks
                     FROM sprints s
@@ -642,7 +693,7 @@ class Sprint extends BaseModel
                    FROM tasks t 
                    JOIN sprint_tasks st ON t.id = st.task_id 
                    WHERE st.sprint_id = s.id 
-                   AND t.status_id = 6 
+                   AND t.status_id = " . TaskStatus::COMPLETED->value . " 
                    AND t.is_deleted = 0
                ) as completed_tasks
         FROM sprints s
@@ -678,7 +729,7 @@ class Sprint extends BaseModel
     {
         $sql = "SELECT 
                     COUNT(t.id) as total_tasks,
-                    SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) as completed_tasks
+                    SUM(CASE WHEN t.status_id = " . TaskStatus::COMPLETED->value . " THEN 1 ELSE 0 END) as completed_tasks
                 FROM tasks t
                 JOIN sprint_tasks st ON t.id = st.task_id
                 WHERE st.sprint_id = :sprint_id AND t.is_deleted = 0";
@@ -1006,7 +1057,7 @@ class Sprint extends BaseModel
                     JOIN sprint_tasks st ON s.id = st.sprint_id
                     JOIN tasks t ON st.task_id = t.id
                     WHERE t.assigned_to = :user_id
-                    AND s.status_id = 2 -- Active status
+                    AND s.status_id = " . SprintStatus::ACTIVE->value . " -- Active status
                     AND s.is_deleted = 0
                     AND t.is_deleted = 0
                     ORDER BY s.start_date ASC";
@@ -1038,7 +1089,7 @@ class Sprint extends BaseModel
                     JOIN projects p ON s.project_id = p.id
                     JOIN statuses_sprint ss ON s.status_id = ss.id
                     WHERE p.owner_id = :user_id
-                    AND s.status_id = 2 -- Active status
+                    AND s.status_id = " . SprintStatus::ACTIVE->value . " -- Active status
                     AND s.is_deleted = 0
                     AND p.is_deleted = 0
                     ORDER BY s.start_date ASC";

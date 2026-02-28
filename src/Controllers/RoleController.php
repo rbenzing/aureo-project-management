@@ -13,19 +13,20 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class RoleController
+class RoleController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private CSRFMiddleware $csrfMiddleware;
     private Role $roleModel;
     private Permission $permissionModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
+    public function __construct(
+        ?Role $roleModel = null,
+        ?Permission $permissionModel = null
+    ) {
+        parent::__construct();
         $this->csrfMiddleware = new CSRFMiddleware();
-        $this->roleModel = new Role();
-        $this->permissionModel = new Permission();
+        $this->roleModel = $roleModel ?? new Role();
+        $this->permissionModel = $permissionModel ?? new Permission();
     }
 
     /**
@@ -37,7 +38,7 @@ class RoleController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_roles');
+            $this->requirePermission('view_roles');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
@@ -48,12 +49,10 @@ class RoleController
             $totalRoles = $results['total'];
             $totalPages = ceil($totalRoles / $limit);
 
-            include BASE_PATH . '/../Views/Roles/index.php';
+            $this->render('Roles/index', compact('totalPages', 'totalRoles', 'roles', 'results', 'limit', 'settingsService', 'page'));
         } catch (\Exception $e) {
             error_log("Exception in RoleController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching roles.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching roles.');
         }
     }
 
@@ -66,7 +65,7 @@ class RoleController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_roles');
+            $this->requirePermission('view_roles');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -78,16 +77,12 @@ class RoleController
                 throw new InvalidArgumentException('Role not found');
             }
 
-            include BASE_PATH . '/../Views/Roles/view.php';
+            $this->render('Roles/view', compact('totalPages', 'totalRoles', 'roles', 'results', 'limit', 'settingsService', 'page'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in RoleController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching role details.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, 'An error occurred while fetching role details.');
         }
     }
 
@@ -100,16 +95,14 @@ class RoleController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_roles');
+            $this->requirePermission('create_roles');
 
             $permissions = $this->permissionModel->getOrganizedPermissions();
 
-            include BASE_PATH . '/../Views/Roles/create.php';
+            $this->render('Roles/create', compact('totalPages', 'totalRoles', 'roles', 'results', 'limit', 'settingsService', 'page'));
         } catch (\Exception $e) {
             error_log("Exception in RoleController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -128,7 +121,7 @@ class RoleController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_roles');
+            $this->requirePermission('create_roles');
 
             // Validate CSRF token
             if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
@@ -165,9 +158,7 @@ class RoleController
 
                 $this->roleModel->commit();
 
-                $_SESSION['success'] = 'Role created successfully.';
-                header('Location: /roles');
-                exit;
+                $this->redirectWithSuccess(/roles, 'Role created successfully.');
 
             } catch (\Exception $e) {
                 $this->roleModel->rollBack();
@@ -178,13 +169,10 @@ class RoleController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /roles/create');
-            exit;
+            $this->redirect(/roles/create);
         } catch (\Exception $e) {
             error_log("Exception in RoleController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the role.';
-            header('Location: /roles/create');
-            exit;
+            $this->redirectWithError(/roles/create, 'An error occurred while creating the role.');
         }
     }
 
@@ -197,7 +185,7 @@ class RoleController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_roles');
+            $this->requirePermission('edit_roles');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -211,16 +199,12 @@ class RoleController
 
             $permissions = $this->permissionModel->getOrganizedPermissions();
 
-            include BASE_PATH . '/../Views/Roles/edit.php';
+            $this->render('Roles/edit', compact('permissions'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in RoleController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -239,7 +223,7 @@ class RoleController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_roles');
+            $this->requirePermission('edit_roles');
 
             // Validate CSRF token
             if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
@@ -280,9 +264,7 @@ class RoleController
 
                 $this->roleModel->commit();
 
-                $_SESSION['success'] = 'Role updated successfully.';
-                header('Location: /roles');
-                exit;
+                $this->redirectWithSuccess(/roles, 'Role updated successfully.');
 
             } catch (\Exception $e) {
                 $this->roleModel->rollBack();
@@ -312,13 +294,11 @@ class RoleController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_roles');
+            $this->requirePermission('delete_roles');
 
             // Validate CSRF token
             if (!$this->csrfMiddleware->validateToken($data['csrf_token'] ?? '')) {
@@ -344,19 +324,13 @@ class RoleController
 
             $this->roleModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'Role deleted successfully.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithSuccess(/roles, 'Role deleted successfully.');
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in RoleController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the role.';
-            header('Location: /roles');
-            exit;
+            $this->redirectWithError(/roles, 'An error occurred while deleting the role.');
         }
     }
 }

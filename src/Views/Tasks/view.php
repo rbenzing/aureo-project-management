@@ -118,7 +118,7 @@ echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
                 <?php if (hasUserPermission('view_time_tracking') || hasUserPermission('create_time_tracking')): ?>
                     <?php if ($isTimerActive): ?>
                         <form method="POST" action="/tasks/stop-timer/<?= $activeTimer['task_id'] ?>" class="inline-flex">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -128,7 +128,7 @@ echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
                         </form>
                     <?php else: ?>
                         <form method="POST" action="/tasks/start-timer/<?= $task->id ?>" class="inline-flex">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
@@ -158,7 +158,7 @@ echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'md');
                     Add Subtask
                 </button>
 
-                <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_tasks', $_SESSION['user']['permissions'])): ?>
+                <?php if (isset($currentUser['permissions']) && in_array('edit_tasks', $currentUser['permissions'])): ?>
                     <a href="/tasks/edit/<?= $task->id ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -545,7 +545,7 @@ $billableSeconds = $task->billable_time ?? 0;
                         <!-- Comment Form -->
                         <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
                             <form action="/tasks/add-comment/<?= $task->id ?>" method="POST" class="space-y-4">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                 <div>
                                     <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a comment</label>
                                     <textarea
@@ -645,7 +645,7 @@ $billableSeconds = $task->billable_time ?? 0;
                 </div>
 
                 <form method="POST" action="/tasks/create" class="space-y-4">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="parent_task_id" value="<?= $task->id ?>">
                     <input type="hidden" name="project_id" value="<?= $task->project_id ?>">
                     <input type="hidden" name="is_subtask" value="1">

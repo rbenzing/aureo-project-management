@@ -14,19 +14,21 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class MilestoneController
+class MilestoneController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Milestone $milestoneModel;
     private Project $projectModel;
     private Template $templateModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->milestoneModel = new Milestone();
-        $this->projectModel = new Project();
-        $this->templateModel = new Template();
+    public function __construct(
+        ?Milestone $milestoneModel = null,
+        ?Project $projectModel = null,
+        ?Template $templateModel = null
+    ) {
+        parent::__construct();
+        $this->milestoneModel = $milestoneModel ?? new Milestone();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->templateModel = $templateModel ?? new Template();
     }
 
     /**
@@ -38,7 +40,7 @@ class MilestoneController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_milestones');
+            $this->requirePermission('view_milestones');
 
             $project_id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
@@ -61,16 +63,12 @@ class MilestoneController
             $totalMilestones = $this->milestoneModel->count(['is_deleted' => 0]);
             $totalPages = ceil($totalMilestones / $limit);
 
-            include BASE_PATH . '/../Views/Milestones/index.php';
+            $this->render('Milestones/index', compact('totalPages', 'totalMilestones'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, $e->getMessage());
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'MilestoneController::index', 'An error occurred while fetching milestones.');
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, $securityService->handleError($e, 'MilestoneController::index', 'An error occurred while fetching milestones.'));
         }
     }
 
@@ -83,7 +81,7 @@ class MilestoneController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_milestones');
+            $this->requirePermission('view_milestones');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -124,16 +122,12 @@ class MilestoneController
                 $relatedSprints = []; // Default to empty array if there's an error
             }
 
-            include BASE_PATH . '/../Views/Milestones/view.php';
+            $this->render('Milestones/view');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching milestone details.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, 'An error occurred while fetching milestone details.');
         }
     }
 
@@ -146,7 +140,7 @@ class MilestoneController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_milestones');
+            $this->requirePermission('create_milestones');
 
             $projectsResult = $this->projectModel->getAll(['is_deleted' => 0], 1, 1000);
             $projects = $projectsResult['records'];
@@ -164,12 +158,10 @@ class MilestoneController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
-            include BASE_PATH . '/../Views/Milestones/create.php';
+            $this->render('Milestones/create', compact('templates', 'companyId', 'selectedEpicId', 'selectedProjectId', 'epics', 'epicId', 'projectId', 'statuses', 'projects', 'projectsResult'));
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -188,7 +180,7 @@ class MilestoneController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_milestones');
+            $this->requirePermission('create_milestones');
 
             $validator = new Validator($data, [
                 'title' => 'required|string|max:255',
@@ -231,13 +223,10 @@ class MilestoneController
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /milestones/create');
-            exit;
+            $this->redirect(/milestones/create);
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the milestone.';
-            header('Location: /milestones/create');
-            exit;
+            $this->redirectWithError(/milestones/create, 'An error occurred while creating the milestone.');
         }
     }
 
@@ -250,7 +239,7 @@ class MilestoneController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_milestones');
+            $this->requirePermission('edit_milestones');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -276,16 +265,12 @@ class MilestoneController
             // Load templates available for this company or global templates
             $templates = $this->templateModel->getAvailableTemplates('milestone', $companyId);
 
-            include BASE_PATH . '/../Views/Milestones/edit.php';
+            $this->render('Milestones/edit', compact('templates'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -304,7 +289,7 @@ class MilestoneController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_milestones');
+            $this->requirePermission('edit_milestones');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -377,13 +362,11 @@ class MilestoneController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_milestones');
+            $this->requirePermission('delete_milestones');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -405,18 +388,12 @@ class MilestoneController
 
             $this->milestoneModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'Milestone deleted successfully.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithSuccess(/milestones, 'Milestone deleted successfully.');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in MilestoneController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the milestone.';
-            header('Location: /milestones');
-            exit;
+            $this->redirectWithError(/milestones, 'An error occurred while deleting the milestone.');
         }
     }
 
@@ -432,7 +409,7 @@ class MilestoneController
             header('Content-Type: application/json');
 
             // Check permissions
-            $this->authMiddleware->hasPermission('view_milestones');
+            $this->requirePermission('view_milestones');
 
             $projectId = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$projectId) {

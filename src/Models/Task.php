@@ -203,47 +203,89 @@ class Task extends BaseModel
     }
 
     /**
+     * Flexible task query method with various filters
+     * Consolidates multiple similar query methods into one
+     *
+     * @param array $filters Filter conditions:
+     *   - project_id: int
+     *   - assigned_to: int
+     *   - unassigned: bool
+     *   - exclude_subtasks: bool
+     *   - status_id: int
+     * @param int $limit Results per page
+     * @param int $page Page number
+     * @param string $sortField Field to sort by
+     * @param string $sortDirection Sort direction (asc/desc)
+     * @return array Tasks array
+     */
+    private function getTasksWithDetails(
+        array $filters = [],
+        int $limit = 10,
+        int $page = 1,
+        string $sortField = 'due_date',
+        string $sortDirection = 'asc'
+    ): array {
+        $offset = ($page - 1) * $limit;
+        $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+
+        $where = [];
+        $whereRaw = [
+            ['sql' => 'p.is_deleted = 0']
+        ];
+
+        // Apply filters
+        if (isset($filters['project_id'])) {
+            $where[] = ['column' => 't.project_id', 'operator' => '=', 'value' => $filters['project_id']];
+        }
+
+        if (isset($filters['assigned_to'])) {
+            $where[] = ['column' => 't.assigned_to', 'operator' => '=', 'value' => $filters['assigned_to']];
+        }
+
+        if (isset($filters['unassigned']) && $filters['unassigned']) {
+            $whereRaw[] = ['sql' => '(t.assigned_to IS NULL OR t.assigned_to = 0)'];
+        }
+
+        if (isset($filters['exclude_subtasks']) && $filters['exclude_subtasks']) {
+            $where[] = ['column' => 't.is_subtask', 'operator' => '=', 'value' => 0];
+        }
+
+        if (isset($filters['status_id'])) {
+            $where[] = ['column' => 't.status_id', 'operator' => '=', 'value' => $filters['status_id']];
+        }
+
+        $tasks = $this->queryBuilder([
+            'select' => 't.*, p.name as project_name, ts.name as status_name, u.first_name, u.last_name',
+            'joins' => [
+                ['type' => 'LEFT', 'table' => 'projects p', 'on' => 't.project_id = p.id'],
+                ['type' => 'LEFT', 'table' => 'statuses_task ts', 'on' => 't.status_id = ts.id'],
+                ['type' => 'LEFT', 'table' => 'users u', 'on' => 't.assigned_to = u.id'],
+            ],
+            'where' => $where,
+            'whereRaw' => $whereRaw,
+            'orderBy' => $orderBy,
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
+
+        // Format times for display
+        foreach ($tasks as $task) {
+            $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
+            $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
+            $task->formatted_billable_time = Time::formatSeconds($task->billable_time ?? 0);
+        }
+
+        return $tasks;
+    }
+
+    /**
      * Get tasks with full details
      * @return ?array
      */
     public function getAllWithDetails(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): ?array
     {
-        try {
-            $offset = ($page - 1) * $limit;
-
-            // Build ORDER BY clause
-            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
-
-            $sql = "SELECT t.*,
-                p.name as project_name,
-                ts.name as status_name,
-                u.first_name,
-                u.last_name
-            FROM tasks t
-            LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN statuses_task ts ON t.status_id = ts.id
-            LEFT JOIN users u ON t.assigned_to = u.id
-            WHERE t.is_deleted = 0 AND p.is_deleted = 0
-            {$orderBy}
-            LIMIT :limit OFFSET :offset";
-
-            $stmt = $this->db->executeQuery($sql, [
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-            // Format times for display
-            foreach ($tasks as $task) {
-                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
-                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
-                $task->formatted_billable_time = Time::formatSeconds($task->billable_time);
-            }
-
-            return $tasks ?: null;
-        } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching tasks details: " . $e->getMessage());
-        }
+        $tasks = $this->getTasksWithDetails([], $limit, $page, $sortField, $sortDirection);
+        return empty($tasks) ? null : $tasks;
     }
 
     /**
@@ -252,41 +294,7 @@ class Task extends BaseModel
      */
     public function getAllWithDetailsNoSubtasks(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): ?array
     {
-        try {
-            $offset = ($page - 1) * $limit;
-
-            // Build ORDER BY clause
-            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
-
-            $sql = "SELECT t.*,
-                p.name as project_name,
-                ts.name as status_name,
-                u.first_name,
-                u.last_name
-            FROM tasks t
-            LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN statuses_task ts ON t.status_id = ts.id
-            LEFT JOIN users u ON t.assigned_to = u.id
-            WHERE t.is_deleted = 0 AND p.is_deleted = 0 AND t.is_subtask = 0
-            {$orderBy}
-            LIMIT :limit OFFSET :offset";
-
-            $stmt = $this->db->executeQuery($sql, [
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-            // Format times for display
-            foreach ($tasks as $task) {
-                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
-                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
-            }
-
-            return $tasks;
-        } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching tasks without subtasks: " . $e->getMessage());
-        }
+        return $this->getTasksWithDetails(['exclude_subtasks' => true], $limit, $page, $sortField, $sortDirection);
     }
 
     /**
@@ -301,43 +309,7 @@ class Task extends BaseModel
      */
     public function getByUserId(int $userId, int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): array
     {
-        try {
-            $offset = ($page - 1) * $limit;
-
-            // Build ORDER BY clause
-            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
-
-            $sql = "SELECT t.*,
-                       p.name as project_name,
-                       ts.name as status_name,
-                       u.first_name,
-                       u.last_name
-                FROM tasks t
-                LEFT JOIN projects p ON t.project_id = p.id
-                LEFT JOIN statuses_task ts ON t.status_id = ts.id
-                LEFT JOIN users u ON t.assigned_to = u.id
-                WHERE t.assigned_to = :user_id
-                AND t.is_deleted = 0
-                {$orderBy}
-                LIMIT :limit OFFSET :offset";
-
-            $stmt = $this->db->executeQuery($sql, [
-                ':user_id' => $userId,
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-            // Format times for display
-            foreach ($tasks as $task) {
-                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
-                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
-            }
-
-            return $tasks;
-        } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching user tasks: " . $e->getMessage());
-        }
+        return $this->getTasksWithDetails(['assigned_to' => $userId], $limit, $page, $sortField, $sortDirection);
     }
 
     /**
@@ -351,42 +323,7 @@ class Task extends BaseModel
      */
     public function getUnassignedTasks(int $limit = 10, int $page = 1, string $sortField = 'due_date', string $sortDirection = 'asc'): array
     {
-        try {
-            $offset = ($page - 1) * $limit;
-
-            // Build ORDER BY clause
-            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
-
-            $sql = "SELECT t.*,
-                       p.name as project_name,
-                       ts.name as status_name,
-                       u.first_name,
-                       u.last_name
-                FROM tasks t
-                LEFT JOIN projects p ON t.project_id = p.id
-                LEFT JOIN statuses_task ts ON t.status_id = ts.id
-                LEFT JOIN users u ON t.assigned_to = u.id
-                WHERE (t.assigned_to IS NULL OR t.assigned_to = 0)
-                AND t.is_deleted = 0 AND p.is_deleted = 0
-                {$orderBy}
-                LIMIT :limit OFFSET :offset";
-
-            $stmt = $this->db->executeQuery($sql, [
-                ':limit' => $limit,
-                ':offset' => $offset,
-            ]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-            // Format times for display
-            foreach ($tasks as $task) {
-                $task->formatted_estimated_time = Time::formatSeconds($task->estimated_time);
-                $task->formatted_time_spent = Time::formatSeconds($task->time_spent);
-            }
-
-            return $tasks;
-        } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching unassigned tasks: " . $e->getMessage());
-        }
+        return $this->getTasksWithDetails(['unassigned' => true], $limit, $page, $sortField, $sortDirection);
     }
 
     /**
@@ -399,36 +336,22 @@ class Task extends BaseModel
      */
     public function getByProjectId(int $projectId, string $sortField = 'due_date', string $sortDirection = 'asc'): array
     {
-        try {
-            // Build ORDER BY clause
-            $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
+        $orderBy = $this->buildOrderByClause($sortField, $sortDirection);
 
-            $sql = "SELECT
-                    t.*,
-                    ts.name AS status_name,
-                    u.first_name,
-                    u.last_name,
-                    p.name as project_name
-                FROM
-                    tasks t
-                LEFT JOIN
-                    statuses_task ts ON t.status_id = ts.id
-                LEFT JOIN
-                    users u ON t.assigned_to = u.id
-                LEFT JOIN
-                    projects p ON t.project_id = p.id
-                WHERE
-                    t.project_id = :project_id
-                    AND t.is_deleted = 0
-                {$orderBy}";
+        $tasks = $this->queryBuilder([
+            'select' => 't.*, ts.name AS status_name, u.first_name, u.last_name, p.name as project_name',
+            'joins' => [
+                ['type' => 'LEFT', 'table' => 'statuses_task ts', 'on' => 't.status_id = ts.id'],
+                ['type' => 'LEFT', 'table' => 'users u', 'on' => 't.assigned_to = u.id'],
+                ['type' => 'LEFT', 'table' => 'projects p', 'on' => 't.project_id = p.id'],
+            ],
+            'where' => [
+                ['column' => 't.project_id', 'operator' => '=', 'value' => $projectId],
+            ],
+            'orderBy' => $orderBy,
+        ]);
 
-            $stmt = $this->db->executeQuery($sql, [':project_id' => $projectId]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-            return $this->organizeTasksByStatus($tasks);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Error fetching project tasks: " . $e->getMessage());
-        }
+        return $this->organizeTasksByStatus($tasks);
     }
 
     /**

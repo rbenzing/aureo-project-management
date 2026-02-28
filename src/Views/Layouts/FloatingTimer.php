@@ -62,7 +62,7 @@ $projectName = $activeTimer['project_name'] ?? 'Unknown Project';
         <!-- Action Buttons -->
         <div class="flex space-x-2">
             <form action="/tasks/stop-timer/<?= $activeTimer['task_id'] ?>" method="POST" class="flex-1">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                 <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-md text-sm font-medium flex items-center justify-center transition-colors">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -6,6 +6,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\MilestoneType;
+use App\Enums\MilestoneStatus;
+use App\Enums\TaskStatus;
 use InvalidArgumentException;
 use PDO;
 use RuntimeException;
@@ -69,11 +71,30 @@ class Milestone extends BaseModel
         'milestone_type' => ['required', 'enum:App\Enums\MilestoneType'],
     ];
 
-    // Additional method to ensure status name is always populated
-    public function findWithDetails(int $id): ?object
+    /**
+     * Find milestone with detailed information
+     * Uses selective loading to prevent N+1 queries
+     *
+     * @param int $id
+     * @param array $options Selective loading options:
+     *   - tasks: bool (default true) - Load milestone tasks
+     *   - related_milestones: bool (default true) - Load related milestones for epics
+     *   - related_sprints: bool (default false) - Load related sprints
+     * @return object|null
+     */
+    public function findWithDetails(int $id, array $options = []): ?object
     {
         try {
-            $sql = "SELECT 
+            // Default options - load common data unless specified otherwise
+            $defaultOptions = [
+                'tasks' => true,
+                'related_milestones' => true,
+                'related_sprints' => false,
+            ];
+
+            $options = array_merge($defaultOptions, $options);
+
+            $sql = "SELECT
             m.*,
             s.name AS status_name,
             p.name AS project_name
@@ -86,12 +107,19 @@ class Milestone extends BaseModel
             $milestone = $stmt->fetch(PDO::FETCH_OBJ);
 
             if ($milestone) {
-                // Fetch tasks
-                $milestone->tasks = $this->getTasks($id);
+                // Selectively load related data based on options
+                if ($options['tasks']) {
+                    $milestone->tasks = $this->getTasks($id);
+                }
 
                 // If epic, get related milestones
-                if ($milestone->milestone_type === 'epic') {
+                if ($options['related_milestones'] && $milestone->milestone_type === 'epic') {
                     $milestone->related_milestones = $this->getEpicMilestones($id);
+                }
+
+                // Optionally load related sprints
+                if ($options['related_sprints']) {
+                    $milestone->related_sprints = $this->getRelatedSprints($id);
                 }
 
                 // Ensure status_name is set
@@ -109,6 +137,21 @@ class Milestone extends BaseModel
                 throw new \RuntimeException("Failed to find milestone details");
             }
         }
+    }
+
+    /**
+     * Find milestone with basic information only (no related data)
+     *
+     * @param int $id
+     * @return object|null
+     */
+    public function findBasic(int $id): ?object
+    {
+        return $this->findWithDetails($id, [
+            'tasks' => false,
+            'related_milestones' => false,
+            'related_sprints' => false,
+        ]);
     }
 
     // Modify the find method similarly
@@ -211,13 +254,13 @@ class Milestone extends BaseModel
                 s.name AS status_name,
                 CASE
                     WHEN m.complete_date IS NOT NULL THEN 100
-                    WHEN m.status_id = 3 THEN 100
+                    WHEN m.status_id = " . MilestoneStatus::COMPLETED->value . " THEN 100
                     ELSE COALESCE(
                         (
                             SELECT
                                 CASE
                                     WHEN COUNT(t.id) = 0 THEN 0
-                                    ELSE ROUND((SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
+                                    ELSE ROUND((SUM(CASE WHEN t.status_id = " . TaskStatus::COMPLETED->value . " THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
                                 END
                             FROM milestone_tasks mt
                             JOIN tasks t ON mt.task_id = t.id
@@ -275,13 +318,13 @@ class Milestone extends BaseModel
                     s.name AS status_name,
                     CASE
                         WHEN m.complete_date IS NOT NULL THEN 100
-                        WHEN m.status_id = 3 THEN 100
+                        WHEN m.status_id = " . MilestoneStatus::COMPLETED->value . " THEN 100
                         ELSE COALESCE(
                             (
                                 SELECT
                                     CASE
                                         WHEN COUNT(t.id) = 0 THEN 0
-                                        ELSE ROUND((SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
+                                        ELSE ROUND((SUM(CASE WHEN t.status_id = " . TaskStatus::COMPLETED->value . " THEN 1 ELSE 0 END) * 100.0) / COUNT(t.id), 1)
                                     END
                                 FROM milestone_tasks mt
                                 JOIN tasks t ON mt.task_id = t.id
@@ -435,7 +478,7 @@ class Milestone extends BaseModel
                         SELECT st.sprint_id, COUNT(DISTINCT t.id) as completed_tasks
                         FROM sprint_tasks st
                         INNER JOIN tasks t ON st.task_id = t.id
-                        WHERE t.status_id = 6 AND t.is_deleted = 0
+                        WHERE t.status_id = " . TaskStatus::COMPLETED->value . " AND t.is_deleted = 0
                         GROUP BY st.sprint_id
                     ) completed_count ON s.id = completed_count.sprint_id
                     WHERE s.is_deleted = 0
@@ -501,7 +544,7 @@ class Milestone extends BaseModel
     {
         $sql = "SELECT 
                     COUNT(t.id) as total_tasks,
-                    SUM(CASE WHEN t.status_id = 6 THEN 1 ELSE 0 END) as completed_tasks
+                    SUM(CASE WHEN t.status_id = " . TaskStatus::COMPLETED->value . " THEN 1 ELSE 0 END) as completed_tasks
                 FROM tasks t
                 JOIN milestone_tasks mt ON t.id = mt.task_id
                 WHERE mt.milestone_id = :milestone_id

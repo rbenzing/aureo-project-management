@@ -67,7 +67,7 @@ $pageTitle = 'Settings';
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <form id="settingsForm" method="POST" action="/settings/update" class="space-y-0">
                         <!-- CSRF Token -->
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
                         <!-- Tab Navigation -->
                         <div class="border-b border-gray-200 dark:border-gray-700">

@@ -15,9 +15,8 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class AuthController
+class AuthController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private User $userModel;
     private SecurityService $securityService;
 
@@ -33,7 +32,7 @@ class AuthController
         ?User $userModel = null,
         ?SecurityService $securityService = null
     ) {
-        $this->authMiddleware = $authMiddleware ?? new AuthMiddleware();
+        parent::__construct($authMiddleware);
         $this->userModel = $userModel ?? new User();
         $this->securityService = $securityService ?? SecurityService::getInstance();
     }
@@ -47,7 +46,7 @@ class AuthController
     {
         $companyName = Config::get('company_name', 'Aureo');
 
-        include BASE_PATH . '/../Views/Auth/login.php';
+        $this->render('Auth/login', compact('companyName'));
     }
 
     /**
@@ -103,17 +102,12 @@ class AuthController
                 'config' => Config::all(),
             ]);
 
-            header('Location: /dashboard');
-            exit;
+            $this->redirect(/dashboard);
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $e->getMessage());
         } catch (\Exception $e) {
-            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::login', 'An error occurred during login.');
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $this->securityService->handleError($e, 'AuthController::login', 'An error occurred during login.'));
         }
     }
 
@@ -126,16 +120,13 @@ class AuthController
     {
         try {
             SessionMiddleware::destroySession();
-            header('Location: /login');
-            exit;
+            $this->redirect(/login);
         } catch (\Exception $e) {
-            $_SESSION['error'] = Config::getErrorMessage(
+            $this->redirectWithError(/dashboard, Config::getErrorMessage(
                 $e,
                 'AuthController::logout',
                 'An error occurred during logout.'
-            );
-            header('Location: /dashboard');
-            exit;
+            ));
         }
     }
 
@@ -146,7 +137,7 @@ class AuthController
      */
     public function registerForm(string $requestMethod, array $data): void
     {
-        include BASE_PATH . '/../Views/Auth/register.php';
+        $this->render('Auth/register');
     }
 
     /**
@@ -190,19 +181,14 @@ class AuthController
             // This needs to be updated in your Email class to match schema
             Email::sendActivationEmail($userData['email'], $activationToken);
 
-            $_SESSION['success'] = 'Registration successful. Please check your email to activate your account.';
-            header('Location: /login');
-            exit;
+            $this->redirectWithSuccess(/login, 'Registration successful. Please check your email to activate your account.');
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /register');
-            exit;
+            $this->redirect(/register);
         } catch (\Exception $e) {
-            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::register', 'An error occurred during registration.');
-            header('Location: /register');
-            exit;
+            $this->redirectWithError(/register, $this->securityService->handleError($e, 'AuthController::register', 'An error occurred during registration.'));
         }
     }
 
@@ -238,21 +224,15 @@ class AuthController
 
                 $this->userModel->clearPasswordResetToken($user->id);
 
-                $_SESSION['success'] = 'Password reset successfully.';
-                header('Location: /login');
-                exit;
+                $this->redirectWithSuccess(/login, 'Password reset successfully.');
             }
 
-            include BASE_PATH . '/../Views/Auth/reset-password.php';
+            $this->render('Auth/reset-password');
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $e->getMessage());
         } catch (\Exception $e) {
-            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::resetPassword', 'An error occurred during password reset.');
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $this->securityService->handleError($e, 'AuthController::resetPassword', 'An error occurred during password reset.'));
         }
     }
 
@@ -300,16 +280,12 @@ class AuthController
                 $_SESSION['success'] = 'Account activated successfully.';
             }
 
-            include BASE_PATH . '/../Views/Auth/login.php';
+            $this->render('Auth/login', compact('companyName'));
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $e->getMessage());
         } catch (\Exception $e) {
-            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::activate', 'An error occurred during account activation.');
-            header('Location: /login');
-            exit;
+            $this->redirectWithError(/login, $this->securityService->handleError($e, 'AuthController::activate', 'An error occurred during account activation.'));
         }
     }
 
@@ -347,16 +323,12 @@ class AuthController
                 $_SESSION['success'] = 'Password reset instructions have been sent to your email.';
             }
 
-            include BASE_PATH . '/../Views/Auth/forgot-password.php';
+            $this->render('Auth/forgot-password');
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /forgot-password');
-            exit;
+            $this->redirectWithError(/forgot-password, $e->getMessage());
         } catch (\Exception $e) {
-            $_SESSION['error'] = $this->securityService->handleError($e, 'AuthController::forgotPassword');
-            header('Location: /forgot-password');
-            exit;
+            $this->redirectWithError(/forgot-password, $this->securityService->handleError($e, 'AuthController::forgotPassword'));
         }
     }
 }

@@ -87,7 +87,7 @@ use App\Services\SettingsService;
         <!-- Create Milestone Form -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
             <form id="createMilestoneForm" action="/milestones/create" method="POST" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
 
                 <!-- Project Selection (Full Width) -->
                 <div>

@@ -11,10 +11,10 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Permission checks
-$canCreateRoles = isset($_SESSION['user']['permissions']) && in_array('create_roles', $_SESSION['user']['permissions']);
-$canEditRoles = isset($_SESSION['user']['permissions']) && in_array('edit_roles', $_SESSION['user']['permissions']);
-$canDeleteRoles = isset($_SESSION['user']['permissions']) && in_array('delete_roles', $_SESSION['user']['permissions']);
-$canViewRoles = isset($_SESSION['user']['permissions']) && in_array('view_roles', $_SESSION['user']['permissions']);
+$canCreateRoles = isset($currentUser['permissions']) && in_array('create_roles', $currentUser['permissions']);
+$canEditRoles = isset($currentUser['permissions']) && in_array('edit_roles', $currentUser['permissions']);
+$canDeleteRoles = isset($currentUser['permissions']) && in_array('delete_roles', $currentUser['permissions']);
+$canViewRoles = isset($currentUser['permissions']) && in_array('view_roles', $currentUser['permissions']);
 
 // Ensure roles array has proper properties
 $roles = array_map(function ($role) {
@@ -256,7 +256,7 @@ echo count($allPermissions);
 
                                         <?php if ($canDeleteRoles): ?>
                                             <form action="/roles/delete/<?= htmlspecialchars((string)$role->id) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this role?');" class="inline">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                 <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
                                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

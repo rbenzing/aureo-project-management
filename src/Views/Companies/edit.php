@@ -62,7 +62,7 @@ if (!defined('BASE_PATH')) {
             <!-- Edit Company Form -->
             <form method="POST" action="/companies/update" class="p-6 space-y-6">
                 <!-- CSRF Token -->
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)$company->id); ?>">
                 
                 <!-- Form Grid Layout -->

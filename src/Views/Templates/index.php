@@ -12,8 +12,8 @@ use App\Core\Config;
 use App\Models\Template;
 
 // Permission checks
-$canEditTemplates = isset($_SESSION['user']['permissions']) && in_array('edit_templates', $_SESSION['user']['permissions']);
-$canDeleteTemplates = isset($_SESSION['user']['permissions']) && in_array('delete_templates', $_SESSION['user']['permissions']);
+$canEditTemplates = isset($currentUser['permissions']) && in_array('edit_templates', $currentUser['permissions']);
+$canDeleteTemplates = isset($currentUser['permissions']) && in_array('delete_templates', $currentUser['permissions']);
 
 // Get current filter
 $currentType = $_GET['type'] ?? '';
@@ -52,7 +52,7 @@ $currentType = $_GET['type'] ?? '';
                     </select>
                 </div>
 
-                <?php if (isset($_SESSION['user']['permissions']) && in_array('create_templates', $_SESSION['user']['permissions'])): ?>
+                <?php if (isset($currentUser['permissions']) && in_array('create_templates', $currentUser['permissions'])): ?>
                 <a href="/templates/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
@@ -135,7 +135,7 @@ $currentType = $_GET['type'] ?? '';
                                         <?php endif; ?>
                                         <?php if ($canDeleteTemplates): ?>
                                         <form action="/templates/delete/<?= htmlspecialchars((string)$template->id) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this template?');" class="inline">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                             <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
                                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

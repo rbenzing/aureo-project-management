@@ -7,6 +7,7 @@ namespace App\Controllers;
 
 use App\Core\Config;
 use App\Core\Database;
+use App\Enums\TaskStatus;
 use App\Middleware\AuthMiddleware;
 use App\Models\Milestone;
 use App\Models\Project;
@@ -15,9 +16,8 @@ use App\Models\Task;
 use App\Models\User;
 use RuntimeException;
 
-class DashboardController
+class DashboardController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private User $userModel;
     private Project $projectModel;
     private Task $taskModel;
@@ -42,7 +42,7 @@ class DashboardController
         ?Milestone $milestoneModel = null,
         ?Sprint $sprintModel = null
     ) {
-        $this->authMiddleware = $authMiddleware ?? new AuthMiddleware();
+        parent::__construct($authMiddleware);
         $this->userModel = $userModel ?? new User();
         $this->projectModel = $projectModel ?? new Project();
         $this->taskModel = $taskModel ?? new Task();
@@ -134,17 +134,15 @@ class DashboardController
                 ];
             }
 
-            include BASE_PATH . '/../Views/Dashboard/index.php';
+            $this->render('Dashboard/index');
 
         } catch (\Exception $e) {
             // Only redirect to login for actual authentication/authorization errors
-            $_SESSION['error'] = Config::getErrorMessage(
+            $this->redirectWithError(/login, Config::getErrorMessage(
                 $e,
                 'DashboardController::index (critical)',
                 'A critical error occurred while loading the dashboard.'
-            );
-            header('Location: /login');
-            exit;
+            ));
         }
     }
 
@@ -360,10 +358,11 @@ class DashboardController
             $weekStart = date('Y-m-d', strtotime('monday this week'));
             $weekEnd = date('Y-m-d', strtotime('sunday this week'));
 
+            $completedStatusId = TaskStatus::COMPLETED->value;
             $sql = "SELECT COALESCE(SUM(story_points), 0) as points_this_week
                     FROM tasks
                     WHERE assigned_to = :user_id
-                    AND status_id = 6
+                    AND status_id = {$completedStatusId}
                     AND complete_date BETWEEN :week_start AND :week_end
                     AND is_deleted = 0";
 
@@ -388,7 +387,7 @@ class DashboardController
             $sql = "SELECT COALESCE(SUM(story_points), 0) as completed_points
                     FROM tasks
                     WHERE assigned_to = :user_id
-                    AND status_id = 6
+                    AND status_id = {$completedStatusId}
                     AND story_points IS NOT NULL
                     AND is_deleted = 0";
 
@@ -507,31 +506,31 @@ class DashboardController
             // Get total tasks
             $total = $this->taskModel->count(['assigned_to' => $userId, 'is_deleted' => 0]);
 
-            // Get completed tasks (status_id = 6)
+            // Get completed tasks
             $completed = $this->taskModel->count([
                 'assigned_to' => $userId,
-                'status_id' => 6,
+                'status_id' => TaskStatus::COMPLETED->value,
                 'is_deleted' => 0,
             ]);
 
-            // Get overdue tasks (due_date < today AND status NOT IN [5,6])
+            // Get overdue tasks (due_date < today AND status NOT IN [closed, completed])
             $overdue = $this->taskModel->count([
                 'assigned_to' => $userId,
                 'due_date' => ['<', $today],
-                'status_id' => ['NOT IN', [5, 6]],
+                'status_id' => ['NOT IN', [TaskStatus::CLOSED->value, TaskStatus::COMPLETED->value]],
                 'is_deleted' => 0,
             ]);
 
-            // Get in progress tasks (status_id = 2) excluding overdue ones
+            // Get in progress tasks excluding overdue ones
             $inProgressTotal = $this->taskModel->count([
                 'assigned_to' => $userId,
-                'status_id' => 2,
+                'status_id' => TaskStatus::IN_PROGRESS->value,
                 'is_deleted' => 0,
             ]);
 
             $inProgressOverdue = $this->taskModel->count([
                 'assigned_to' => $userId,
-                'status_id' => 2,
+                'status_id' => TaskStatus::IN_PROGRESS->value,
                 'due_date' => ['<', $today],
                 'is_deleted' => 0,
             ]);

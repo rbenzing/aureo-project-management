@@ -15,7 +15,7 @@ include BASE_PATH . '/../src/Views/Layouts/ViewHelpers.php';
 
 // Determine the context based on URL and viewType
 $isMyTasksView = isset($userId); // This would be set in the controller when /:user_id is present
-$currentUserId = $_SESSION['user']['profile']['id'] ?? null;
+$currentUserId = $currentUser['profile']['id'] ?? null;
 $viewingOwnTasks = $isMyTasksView && $userId == $currentUserId;
 $isUnassignedView = isset($viewType) && $viewType === 'unassigned_tasks';
 $isBacklogView = isset($viewType) && $viewType === 'backlog';

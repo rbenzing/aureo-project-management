@@ -15,18 +15,24 @@ use InvalidArgumentException;
 use PDO;
 use RuntimeException;
 
-class TimeTrackingController
+class TimeTrackingController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Task $taskModel;
     private Project $projectModel;
     private User $userModel;
     private Database $db;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->authMiddleware->hasPermission('view_time_tracking');
+    public function __construct(
+        ?Task $taskModel = null,
+        ?Project $projectModel = null,
+        ?User $userModel = null
+    ) {
+        parent::__construct();
+        $this->requirePermission('view_time_tracking');
+
+        $this->taskModel = $taskModel ?? new Task();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->userModel = $userModel ?? new User();
 
         $this->taskModel = new Task();
         $this->projectModel = new Project();
@@ -82,13 +88,11 @@ class TimeTrackingController
             ];
 
             // Render the view
-            include BASE_PATH . '/../src/Views/time-tracking/index.php';
+            $this->render('time-tracking/index', compact('pagination', 'totalPages'));
 
         } catch (RuntimeException $e) {
             error_log("Time tracking index error: " . $e->getMessage());
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, $e->getMessage());
         }
     }
 
@@ -332,13 +336,11 @@ class TimeTrackingController
     public function startTimer(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_tasks');
+            $this->requirePermission('edit_tasks');
 
             $taskId = filter_var($data['task_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$taskId) {
@@ -353,7 +355,7 @@ class TimeTrackingController
 
             // Check if user has permission to track time on this task
             $userId = $_SESSION['user']['id'] ?? null;
-            if ($task->assigned_to !== $userId && !$this->authMiddleware->hasPermission('manage_tasks')) {
+            if ($task->assigned_to !== $userId && !$this->requirePermission('manage_tasks')) {
                 throw new InvalidArgumentException('You do not have permission to track time for this task');
             }
 
@@ -371,14 +373,10 @@ class TimeTrackingController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in TimeTrackingController::startTimer: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while starting the timer.';
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, 'An error occurred while starting the timer.');
         }
     }
 
@@ -391,13 +389,11 @@ class TimeTrackingController
     public function stopTimer(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_tasks');
+            $this->requirePermission('edit_tasks');
 
             // Check if there's an active timer
             if (empty($_SESSION['active_timer'])) {
@@ -446,14 +442,10 @@ class TimeTrackingController
             exit;
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in TimeTrackingController::stopTimer: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while stopping the timer.';
-            header('Location: /tasks');
-            exit;
+            $this->redirectWithError(/tasks, 'An error occurred while stopping the timer.');
         }
     }
 

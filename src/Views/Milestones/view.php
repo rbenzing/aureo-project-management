@@ -401,7 +401,7 @@ echo renderStatusPill($statusInfo['label'], $statusInfo['color'], 'sm');
                     <div class="flex justify-end space-x-2 mt-4">
                         <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
                         <form action="/milestones/delete/<?= $milestone->id ?>" method="POST">
-                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?? '' ?>">
                             <button type="submit" class="btn btn-danger">Delete</button>
                         </form>
                     </div>

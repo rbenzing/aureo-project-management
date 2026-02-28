@@ -11,8 +11,8 @@ if (!defined('BASE_PATH')) {
 use App\Core\Config;
 
 // Permission checks
-$canEditRoles = isset($_SESSION['user']['permissions']) && in_array('edit_roles', $_SESSION['user']['permissions']);
-$canDeleteRoles = isset($_SESSION['user']['permissions']) && in_array('delete_roles', $_SESSION['user']['permissions']);
+$canEditRoles = isset($currentUser['permissions']) && in_array('edit_roles', $currentUser['permissions']);
+$canDeleteRoles = isset($currentUser['permissions']) && in_array('delete_roles', $currentUser['permissions']);
 
 // Get users with this role
 $usersWithRole = $this->roleModel->getUsers($role->id);
@@ -72,7 +72,7 @@ foreach ($role->permissions as $permission) {
                 
                 <?php if ($canDeleteRoles): ?>
                 <form action="/roles/delete/<?= htmlspecialchars((string)$role->id) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this role? This action cannot be undone.');" class="inline">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                     <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

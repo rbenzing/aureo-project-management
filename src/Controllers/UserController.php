@@ -15,19 +15,21 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class UserController
+class UserController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private User $userModel;
     private Company $companyModel;
     private Role $roleModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->userModel = new User();
-        $this->companyModel = new Company();
-        $this->roleModel = new Role();
+    public function __construct(
+        ?User $userModel = null,
+        ?Company $companyModel = null,
+        ?Role $roleModel = null
+    ) {
+        parent::__construct();
+        $this->userModel = $userModel ?? new User();
+        $this->companyModel = $companyModel ?? new Company();
+        $this->roleModel = $roleModel ?? new Role();
     }
 
     /**
@@ -39,7 +41,7 @@ class UserController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_users');
+            $this->requirePermission('view_users');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
@@ -50,12 +52,10 @@ class UserController
             $totalUsers = $results['total'];
             $totalPages = ceil($totalUsers / $limit);
 
-            include BASE_PATH . '/../Views/Users/index.php';
+            $this->render('Users/index', compact('totalPages', 'totalUsers', 'users', 'results', 'limit', 'settingsService', 'page'));
         } catch (\Exception $e) {
             error_log("Exception in UserController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching users.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching users.');
         }
     }
 
@@ -68,7 +68,7 @@ class UserController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_users');
+            $this->requirePermission('view_users');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -85,16 +85,12 @@ class UserController
             $user->roles = $userRoleData['roles'];
             $user->permissions = $userRoleData['permissions'];
 
-            include BASE_PATH . '/../Views/Users/view.php';
+            $this->render('Users/view', compact('userRoleData'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in UserController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching user details.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, 'An error occurred while fetching user details.');
         }
     }
 
@@ -109,18 +105,14 @@ class UserController
         try {
             // Check if user is logged in
             if (!isset($_SESSION['user']['profile']['id'])) {
-                $_SESSION['error'] = 'You must be logged in to view your profile.';
-                header('Location: /login');
-                exit;
+                $this->redirectWithError(/login, 'You must be logged in to view your profile.');
             }
 
             $userId = $_SESSION['user']['profile']['id'];
 
             $user = $this->userModel->findWithDetails($userId);
             if (!$user || $user->is_deleted) {
-                $_SESSION['error'] = 'Profile not found.';
-                header('Location: /dashboard');
-                exit;
+                $this->redirectWithError(/dashboard, 'Profile not found.');
             }
 
             // Get user's roles and permissions
@@ -131,12 +123,10 @@ class UserController
             // Pass data for breadcrumb
             $data = [];
 
-            include BASE_PATH . '/../Views/Users/profile.php';
+            $this->render('Users/profile', compact('data', 'userRoleData'));
         } catch (\Exception $e) {
             error_log("Exception in UserController::profile: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching your profile.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while fetching your profile.');
         }
     }
 
@@ -149,19 +139,17 @@ class UserController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_users');
+            $this->requirePermission('create_users');
 
             $companiesResult = $this->companyModel->getAll(['is_deleted' => 0], 1, 1000);
             $companies = $companiesResult['records'];
             $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
             $roles = $rolesResult['records'];
 
-            include BASE_PATH . '/../Views/Users/create.php';
+            $this->render('Users/create', compact('data', 'userRoleData'));
         } catch (\Exception $e) {
             error_log("Exception in UserController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -180,7 +168,7 @@ class UserController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_users');
+            $this->requirePermission('create_users');
 
             $validator = new Validator($data, [
                 'first_name' => 'required|string|max:100',
@@ -211,9 +199,7 @@ class UserController
             // Send activation email
             Email::sendActivationEmail($userData['email'], $activationToken);
 
-            $_SESSION['success'] = 'User created successfully. An activation email has been sent.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithSuccess(/users, 'User created successfully. An activation email has been sent.');
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = Config::getErrorMessage(
@@ -222,16 +208,13 @@ class UserController
                 $e->getMessage()
             );
             $_SESSION['form_data'] = $data;
-            header('Location: /users/create');
-            exit;
+            $this->redirect(/users/create);
         } catch (\Exception $e) {
-            $_SESSION['error'] = Config::getErrorMessage(
+            $this->redirectWithError(/users/create, Config::getErrorMessage(
                 $e,
                 'UserController::create',
                 'An error occurred while creating the user.'
-            );
-            header('Location: /users/create');
-            exit;
+            ));
         }
     }
 
@@ -244,7 +227,7 @@ class UserController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_users');
+            $this->requirePermission('edit_users');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -261,16 +244,12 @@ class UserController
             $rolesResult = $this->roleModel->getAll(['is_deleted' => 0], 1, 1000);
             $roles = $rolesResult['records'];
 
-            include BASE_PATH . '/../Views/Users/edit.php';
+            $this->render('Users/edit', compact('roles', 'rolesResult', 'companies', 'companiesResult'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in UserController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -289,7 +268,7 @@ class UserController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_users');
+            $this->requirePermission('edit_users');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -319,9 +298,7 @@ class UserController
 
             $this->userModel->update($id, $userData);
 
-            $_SESSION['success'] = 'User updated successfully.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithSuccess(/users, 'User updated successfully.');
 
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
@@ -345,13 +322,11 @@ class UserController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_users');
+            $this->requirePermission('delete_users');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -371,19 +346,13 @@ class UserController
 
             $this->userModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'User deleted successfully.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithSuccess(/users, 'User deleted successfully.');
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in UserController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the user.';
-            header('Location: /users');
-            exit;
+            $this->redirectWithError(/users, 'An error occurred while deleting the user.');
         }
     }
 }

@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\Database;
+use App\Exceptions\NotFoundException;
 use App\Services\SecurityService;
 use InvalidArgumentException;
 use PDO;
@@ -241,6 +242,26 @@ abstract class BaseModel
     }
 
     /**
+     * Find a record by ID or throw NotFoundException
+     *
+     * @param int $id Record ID
+     * @return object Record data
+     * @throws NotFoundException If record not found
+     */
+    public function findOrFail(int $id): object
+    {
+        $result = $this->find($id);
+
+        if ($result === false) {
+            // Get model name without namespace
+            $modelName = (new \ReflectionClass($this))->getShortName();
+            throw NotFoundException::forModel($modelName, $id);
+        }
+
+        return $result;
+    }
+
+    /**
      * Get records with optional filtering and pagination
      *
      * @param array $filters Optional filters
@@ -462,5 +483,225 @@ abstract class BaseModel
 
         // Default: just add s
         return $word . 's';
+    }
+
+    /**
+     * Flexible query builder for complex queries with joins
+     * Reduces code duplication across models
+     *
+     * @param array $options Query options:
+     *   - select: string - SELECT clause (default: *)
+     *   - joins: array - JOIN clauses [{type, table, on}, ...]
+     *   - where: array - WHERE conditions [{column, operator, value}, ...]
+     *   - whereRaw: array - Raw WHERE conditions with params [{sql, params}, ...]
+     *   - orderBy: string - ORDER BY clause
+     *   - limit: int - LIMIT value
+     *   - offset: int - OFFSET value
+     *   - params: array - Additional parameter bindings
+     * @return array Query results
+     * @throws RuntimeException
+     */
+    protected function queryBuilder(array $options = []): array
+    {
+        $defaults = [
+            'select' => '*',
+            'joins' => [],
+            'where' => [],
+            'whereRaw' => [],
+            'orderBy' => '',
+            'limit' => null,
+            'offset' => null,
+            'params' => [],
+        ];
+
+        $opts = array_merge($defaults, $options);
+        $params = $opts['params'];
+
+        // Build SELECT clause
+        $sql = "SELECT {$opts['select']} FROM {$this->table} ";
+
+        // Build JOINs
+        foreach ($opts['joins'] as $join) {
+            $type = strtoupper($join['type'] ?? 'LEFT');
+            $table = $join['table'];
+            $on = $join['on'];
+
+            // Validate JOIN type
+            if (!in_array($type, ['INNER', 'LEFT', 'RIGHT', 'CROSS'])) {
+                throw new InvalidArgumentException("Invalid JOIN type: {$type}");
+            }
+
+            // Validate table name
+            if (!preg_match('/^[a-zA-Z0-9_]+(\s+[a-zA-Z0-9_]+)?$/', $table)) {
+                throw new InvalidArgumentException("Invalid table name: {$table}");
+            }
+
+            $sql .= "{$type} JOIN {$table} ON {$on} ";
+        }
+
+        // Build WHERE clause
+        $whereClauses = [];
+
+        // Add soft delete filter if enabled
+        if ($this->usesSoftDeletes && !isset($opts['ignoreSoftDelete'])) {
+            $whereClauses[] = "{$this->table}.is_deleted = 0";
+        }
+
+        // Build WHERE conditions from array
+        foreach ($opts['where'] as $index => $condition) {
+            if (!isset($condition['column'], $condition['value'])) {
+                continue;
+            }
+
+            $column = $condition['column'];
+            $operator = $condition['operator'] ?? '=';
+            $value = $condition['value'];
+
+            // Validate column name
+            if (!preg_match('/^[a-zA-Z0-9_.]+$/', $column)) {
+                throw new InvalidArgumentException("Invalid column name: {$column}");
+            }
+
+            // Validate operator
+            $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL'];
+            if (!in_array(strtoupper($operator), $validOperators)) {
+                throw new InvalidArgumentException("Invalid operator: {$operator}");
+            }
+
+            if (strtoupper($operator) === 'IS NULL') {
+                $whereClauses[] = "{$column} IS NULL";
+            } elseif (strtoupper($operator) === 'IS NOT NULL') {
+                $whereClauses[] = "{$column} IS NOT NULL";
+            } elseif (strtoupper($operator) === 'IN') {
+                if (!is_array($value)) {
+                    throw new InvalidArgumentException("IN operator requires array value");
+                }
+
+                $placeholders = [];
+                foreach ($value as $k => $val) {
+                    $placeholder = ":where_{$index}_{$k}";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = $val;
+                }
+
+                $whereClauses[] = "{$column} IN (" . implode(', ', $placeholders) . ")";
+            } else {
+                $placeholder = ":where_{$index}";
+                $whereClauses[] = "{$column} {$operator} {$placeholder}";
+                $params[$placeholder] = $value;
+            }
+        }
+
+        // Add raw WHERE conditions
+        foreach ($opts['whereRaw'] as $rawWhere) {
+            if (isset($rawWhere['sql'])) {
+                $whereClauses[] = "(" . $rawWhere['sql'] . ")";
+
+                if (isset($rawWhere['params']) && is_array($rawWhere['params'])) {
+                    $params = array_merge($params, $rawWhere['params']);
+                }
+            }
+        }
+
+        if (!empty($whereClauses)) {
+            $sql .= "WHERE " . implode(' AND ', $whereClauses) . " ";
+        }
+
+        // Build ORDER BY clause
+        if (!empty($opts['orderBy'])) {
+            $sql .= "ORDER BY {$opts['orderBy']} ";
+        }
+
+        // Build LIMIT and OFFSET
+        if ($opts['limit'] !== null) {
+            $sql .= "LIMIT :limit ";
+            $params[':limit'] = (int)$opts['limit'];
+
+            if ($opts['offset'] !== null) {
+                $sql .= "OFFSET :offset ";
+                $params[':offset'] = (int)$opts['offset'];
+            }
+        }
+
+        try {
+            $stmt = $this->db->executeQuery($sql, $params);
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Query error: " . $e->getMessage() . " SQL: " . $sql);
+        }
+    }
+
+    /**
+     * Count records using flexible query builder
+     *
+     * @param array $options Same options as queryBuilder (select, joins, where ignored for COUNT)
+     * @return int Record count
+     */
+    protected function queryBuilderCount(array $options = []): int
+    {
+        // Override select to COUNT
+        $options['select'] = 'COUNT(*)';
+        unset($options['orderBy'], $options['limit'], $options['offset']);
+
+        $params = $options['params'] ?? [];
+        $whereClauses = [];
+
+        // Add soft delete filter if enabled
+        if ($this->usesSoftDeletes && !isset($options['ignoreSoftDelete'])) {
+            $whereClauses[] = "{$this->table}.is_deleted = 0";
+        }
+
+        // Build WHERE conditions
+        foreach ($options['where'] ?? [] as $index => $condition) {
+            if (!isset($condition['column'], $condition['value'])) {
+                continue;
+            }
+
+            $column = $condition['column'];
+            $operator = $condition['operator'] ?? '=';
+            $value = $condition['value'];
+
+            if (strtoupper($operator) === 'IS NULL') {
+                $whereClauses[] = "{$column} IS NULL";
+            } elseif (strtoupper($operator) === 'IS NOT NULL') {
+                $whereClauses[] = "{$column} IS NOT NULL";
+            } else {
+                $placeholder = ":where_{$index}";
+                $whereClauses[] = "{$column} {$operator} {$placeholder}";
+                $params[$placeholder] = $value;
+            }
+        }
+
+        // Add raw WHERE conditions
+        foreach ($options['whereRaw'] ?? [] as $rawWhere) {
+            if (isset($rawWhere['sql'])) {
+                $whereClauses[] = "(" . $rawWhere['sql'] . ")";
+
+                if (isset($rawWhere['params']) && is_array($rawWhere['params'])) {
+                    $params = array_merge($params, $rawWhere['params']);
+                }
+            }
+        }
+
+        $sql = "SELECT COUNT(*) FROM {$this->table} ";
+
+        // Build JOINs if needed for count
+        foreach ($options['joins'] ?? [] as $join) {
+            $type = strtoupper($join['type'] ?? 'LEFT');
+            $table = $join['table'];
+            $on = $join['on'];
+            $sql .= "{$type} JOIN {$table} ON {$on} ";
+        }
+
+        if (!empty($whereClauses)) {
+            $sql .= "WHERE " . implode(' AND ', $whereClauses);
+        }
+
+        try {
+            $stmt = $this->db->executeQuery($sql, $params);
+            return (int)$stmt->fetchColumn();
+        } catch (\Exception $e) {
+            throw new RuntimeException("Count query error: " . $e->getMessage());
+        }
     }
 }

@@ -182,7 +182,7 @@ if (!empty($tasks)) {
                     ?>
                             <!-- Stop Timer Button -->
                             <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                 <button
                                     type="submit"
                                     class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
@@ -197,7 +197,7 @@ if (!empty($tasks)) {
                         <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all?>
                             <!-- Start Timer Button -->
                             <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                 <button
                                     type="submit"
                                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -237,7 +237,7 @@ if (!empty($tasks)) {
                             onsubmit="return confirm('Are you sure you want to delete this task?');"
                             class="inline"
                         >
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                             <button 
                                 type="submit" 
                                 class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"

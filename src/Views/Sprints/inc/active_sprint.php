@@ -57,7 +57,7 @@ $taskPercentage = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
                     View Details
                 </a>
                 <form action="/sprints/complete/<?= $activeSprint->id ?? 0 ?>" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to complete this sprint?');">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                     <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                         Complete Sprint
                     </button>

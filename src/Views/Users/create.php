@@ -56,7 +56,7 @@ use App\Core\Config;
             <!-- Create User Form -->
             <form method="POST" action="/users/create" class="p-6 space-y-6">
                 <!-- CSRF Token -->
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? ''); ?>">
                 
                 <!-- Form Grid Layout -->
                 <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">

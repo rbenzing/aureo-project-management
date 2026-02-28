@@ -23,7 +23,7 @@ include BASE_PATH . '/../src/Views/Layouts/breadcrumb.php';
         </div>
 
         <!-- Create New Sprint Button -->
-        <?php if (isset($_SESSION['user']['permissions']) && in_array('create_sprints', $_SESSION['user']['permissions'])): ?>
+        <?php if (isset($currentUser['permissions']) && in_array('create_sprints', $currentUser['permissions'])): ?>
         <div class="flex-shrink-0">
             <a
                 href="/sprints/create/<?= $project->id ?? 0 ?>"

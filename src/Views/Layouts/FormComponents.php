@@ -403,5 +403,5 @@ function renderFormButtons(array $options = []): string
  */
 function renderCSRFToken(): string
 {
-    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($_SESSION['csrf_token'] ?? '') . '">';
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken ?? '') . '">';
 }

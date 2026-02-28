@@ -44,7 +44,7 @@ if (!defined('BASE_PATH')) {
                 <option value="/tasks" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView && !isset($_GET['no_subtasks'])) ? 'selected' : '' ?>>All Tasks</option>
                 <option value="/tasks?no_subtasks=1" <?= (!$isMyTasksView && !$isUnassignedView && !$isBacklogView && isset($_GET['no_subtasks'])) ? 'selected' : '' ?>>No Subtasks</option>
                 <option value="/tasks/assigned/<?= $currentUserId ?>" <?= $viewingOwnTasks ? 'selected' : '' ?>>My Tasks</option>
-                <?php if (isset($_SESSION['user']) && isset($_SESSION['user']['permissions']) && in_array('manage_tasks', $_SESSION['user']['permissions'])): ?>
+                <?php if (isset($currentUser) && isset($currentUser['permissions']) && in_array('manage_tasks', $currentUser['permissions'])): ?>
                 <option value="/tasks/unassigned" <?= $isUnassignedView ? 'selected' : '' ?>>Unassigned Tasks</option>
                 <?php endif; ?>
             </select>
@@ -93,7 +93,7 @@ if (!defined('BASE_PATH')) {
         <!-- Active Timer Button (if there's an active timer) -->
         <?php if (isset($activeTimer)): ?>
         <form action="/tasks/stop-timer/<?= $activeTimer['id'] ?>" method="POST" class="inline">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
             <button type="submit" class="h-10 inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

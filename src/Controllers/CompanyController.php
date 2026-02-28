@@ -15,21 +15,23 @@ use App\Utils\Validator;
 use InvalidArgumentException;
 use RuntimeException;
 
-class CompanyController
+class CompanyController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Company $companyModel;
     private Project $projectModel;
     private User $userModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->authMiddleware->hasPermission('view_companies');
+    public function __construct(
+        ?Company $companyModel = null,
+        ?Project $projectModel = null,
+        ?User $userModel = null
+    ) {
+        parent::__construct();
+        $this->requirePermission('view_companies');
 
-        $this->companyModel = new Company();
-        $this->projectModel = new Project();
-        $this->userModel = new User();
+        $this->companyModel = $companyModel ?? new Company();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->userModel = $userModel ?? new User();
     }
 
     /**
@@ -60,12 +62,10 @@ class CompanyController
             $totalUsers = $this->userModel->count(['is_deleted' => 0]);
             $activeProjects = $this->projectModel->count(['status_id' => 2, 'is_deleted' => 0]); // Assuming status_id 2 is "in_progress"
 
-            include BASE_PATH . '/../Views/Companies/index.php';
+            $this->render('Companies/index', compact('activeProjects', 'totalUsers', 'totalPages', 'totalCompanies', 'companies', 'result'));
         } catch (\Exception $e) {
             $securityService = SecurityService::getInstance();
-            $_SESSION['error'] = $securityService->handleError($e, 'CompanyController::index', 'An error occurred while fetching companies.');
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, $securityService->handleError($e, 'CompanyController::index', 'An error occurred while fetching companies.'));
         }
     }
 
@@ -78,7 +78,7 @@ class CompanyController
     public function view(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_companies');
+            $this->requirePermission('view_companies');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -95,16 +95,12 @@ class CompanyController
             $projects = $this->companyModel->getProjects();
             $users = $this->companyModel->getUsers($id);
 
-            include BASE_PATH . '/../Views/Companies/view.php';
+            $this->render('Companies/view', compact('users', 'projects'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in CompanyController::view: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while fetching company details.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, 'An error occurred while fetching company details.');
         }
     }
 
@@ -117,13 +113,11 @@ class CompanyController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_companies');
-            include BASE_PATH . '/../Views/Companies/create.php';
+            $this->requirePermission('create_companies');
+            $this->render('Companies/create', compact('users', 'projects'));
         } catch (\Exception $e) {
             error_log("Exception in CompanyController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -142,7 +136,7 @@ class CompanyController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_companies');
+            $this->requirePermission('create_companies');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
@@ -180,16 +174,13 @@ class CompanyController
                 $e->getMessage()
             );
             $_SESSION['form_data'] = $data;
-            header('Location: /companies/create');
-            exit;
+            $this->redirect(/companies/create);
         } catch (\Exception $e) {
-            $_SESSION['error'] = Config::getErrorMessage(
+            $this->redirectWithError(/companies/create, Config::getErrorMessage(
                 $e,
                 'CompanyController::create',
                 'An error occurred while creating the company.'
-            );
-            header('Location: /companies/create');
-            exit;
+            ));
         }
     }
 
@@ -202,7 +193,7 @@ class CompanyController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_companies');
+            $this->requirePermission('edit_companies');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -214,16 +205,12 @@ class CompanyController
                 throw new InvalidArgumentException('Company not found');
             }
 
-            include BASE_PATH . '/../Views/Companies/edit.php';
+            $this->render('Companies/edit');
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Error in CompanyController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -242,7 +229,7 @@ class CompanyController
         }
 
         try {
-            $this->authMiddleware->hasPermission('edit_companies');
+            $this->requirePermission('edit_companies');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -300,13 +287,11 @@ class CompanyController
     public function delete(string $requestMethod, array $data): void
     {
         if ($requestMethod !== 'POST') {
-            $_SESSION['error'] = 'Invalid request method.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, 'Invalid request method.');
         }
 
         try {
-            $this->authMiddleware->hasPermission('delete_companies');
+            $this->requirePermission('delete_companies');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -329,19 +314,13 @@ class CompanyController
 
             $this->companyModel->update($id, ['is_deleted' => true]);
 
-            $_SESSION['success'] = 'Company deleted successfully.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithSuccess(/companies, 'Company deleted successfully.');
 
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in CompanyController::delete: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while deleting the company.';
-            header('Location: /companies');
-            exit;
+            $this->redirectWithError(/companies, 'An error occurred while deleting the company.');
         }
     }
 }

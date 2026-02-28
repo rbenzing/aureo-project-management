@@ -89,7 +89,7 @@ use App\Services\SettingsService;
             <div class="w-full lg:w-2/3">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <form id="createSprintForm" action="/sprints/create" method="POST" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                 <input type="hidden" name="project_id" value="<?= htmlspecialchars((string)($project->id ?? '')) ?>">
 
                 <!-- Sprint Template Selection -->

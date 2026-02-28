@@ -14,15 +14,14 @@ use App\Models\Favorite;
  *
  * Handles user favorites management
  */
-class FavoritesController
+class FavoritesController extends BaseController
 {
     private Favorite $favoriteModel;
-    private AuthMiddleware $authMiddleware;
 
-    public function __construct()
+    public function __construct(?Favorite $favoriteModel = null)
     {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->favoriteModel = new Favorite();
+        parent::__construct();
+        $this->favoriteModel = $favoriteModel ?? new Favorite();
     }
 
     /**

@@ -59,7 +59,7 @@ use App\Services\SettingsService;
         <!-- Edit Milestone Form -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg p-6">
             <form id="editMilestoneForm" action="/milestones/update" method="POST" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                 <input type="hidden" name="id" value="<?= htmlspecialchars((string)$milestone->id) ?>">
                 
                 <!-- Milestone Type Selection -->

@@ -57,7 +57,7 @@ $taskItems = [
     ],
     [
         'label' => 'My Tasks',
-        'path' => '/tasks/assigned/' . $_SESSION['user']['profile']['id'],
+        'path' => '/tasks/assigned/' . $currentUser['profile']['id'],
         'icon' => '📌',
         'permission' => 'view_tasks',
     ],
@@ -125,7 +125,7 @@ function hasPermission($permission)
     }
 
     // Get user permissions from session
-    $userPermissions = $_SESSION['user']['permissions'] ?? [];
+    $userPermissions = $currentUser['permissions'] ?? [];
 
     return in_array($permission, $userPermissions, true);
 }
@@ -294,9 +294,9 @@ if ($hasTimeTrackingPermission && !empty($timeTrackingItems)):
             <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
                 <?php
                 $userInitials = '';
-if (isset($_SESSION['user']['profile'])) {
-    $firstName = $_SESSION['user']['profile']['first_name'] ?? '';
-    $lastName = $_SESSION['user']['profile']['last_name'] ?? '';
+if (isset($currentUser['profile'])) {
+    $firstName = $currentUser['profile']['first_name'] ?? '';
+    $lastName = $currentUser['profile']['last_name'] ?? '';
     $userInitials = substr($firstName, 0, 1) . substr($lastName, 0, 1);
 }
 echo htmlspecialchars($userInitials);
@@ -305,8 +305,8 @@ echo htmlspecialchars($userInitials);
             <div class="ml-2 flex-1 min-w-0">
                 <p class="text-sm font-medium text-white truncate">
                     <?php
-    if (isset($_SESSION['user']['profile'])) {
-        echo htmlspecialchars($_SESSION['user']['profile']['first_name'] . ' ' . $_SESSION['user']['profile']['last_name']);
+    if (isset($currentUser['profile'])) {
+        echo htmlspecialchars($currentUser['profile']['first_name'] . ' ' . $currentUser['profile']['last_name']);
     } else {
         echo 'Guest User';
     }
@@ -314,8 +314,8 @@ echo htmlspecialchars($userInitials);
                 </p>
                 <p class="text-xs text-gray-400 truncate">
                     <?php
-if (isset($_SESSION['user']['roles']) && !empty($_SESSION['user']['roles'])) {
-    echo htmlspecialchars($_SESSION['user']['roles'][0]);
+if (isset($currentUser['roles']) && !empty($currentUser['roles'])) {
+    echo htmlspecialchars($currentUser['roles'][0]);
 } else {
     echo 'No role assigned';
 }

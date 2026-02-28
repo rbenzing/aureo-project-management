@@ -15,15 +15,14 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Setting;
 use App\Services\SettingsService;
 
-class SettingsController
+class SettingsController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Setting $settingModel;
 
-    public function __construct()
+    public function __construct(?Setting $settingModel = null)
     {
-        $this->authMiddleware = new AuthMiddleware();
-        $this->settingModel = new Setting();
+        parent::__construct();
+        $this->settingModel = $settingModel ?? new Setting();
     }
 
     /**
@@ -125,13 +124,11 @@ class SettingsController
             }
 
             // Load the view
-            include BASE_PATH . '/../src/Views/Settings/index.php';
+            $this->render('Settings/index');
 
         } catch (\Exception $e) {
             error_log("Settings index error: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading settings.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while loading settings.');
         }
     }
 
@@ -149,9 +146,7 @@ class SettingsController
 
         // Validate CSRF token
         if (!isset($data['csrf_token']) || $data['csrf_token'] !== $_SESSION['csrf_token']) {
-            $_SESSION['error'] = 'Invalid security token. Please try again.';
-            header('Location: /settings');
-            exit;
+            $this->redirectWithError(/settings, 'Invalid security token. Please try again.');
         }
 
         try {
@@ -195,8 +190,7 @@ class SettingsController
             $_SESSION['error'] = 'An error occurred while updating settings.';
         }
 
-        header('Location: /settings');
-        exit;
+        $this->redirect(/settings);
     }
 
     /**

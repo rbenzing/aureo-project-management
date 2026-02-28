@@ -56,9 +56,9 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                     <div class="bg-white dark:bg-gray-800 p-3 rounded border">
                         <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">User Info</h4>
                         <div class="text-xs space-y-1">
-                            <div>ID: <?= $_SESSION['user']['profile']['id'] ?? 'Not set' ?></div>
-                            <div>Name: <?= htmlspecialchars(($_SESSION['user']['profile']['first_name'] ?? '') . ' ' . ($_SESSION['user']['profile']['last_name'] ?? '')) ?></div>
-                            <div>Permissions: <?= count($_SESSION['user']['permissions'] ?? []) ?> total</div>
+                            <div>ID: <?= $currentUser['profile']['id'] ?? 'Not set' ?></div>
+                            <div>Name: <?= htmlspecialchars(($currentUser['profile']['first_name'] ?? '') . ' ' . ($currentUser['profile']['last_name'] ?? '')) ?></div>
+                            <div>Permissions: <?= count($currentUser['permissions'] ?? []) ?> total</div>
                         </div>
                     </div>
 
@@ -165,7 +165,7 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
                                 <div class="text-right">
                                     <div id="active-timer" class="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">00:00:00</div>
                                     <form action="/tasks/stop-timer/<?= $_SESSION['active_timer']['task_id'] ?>" method="POST" class="mt-1">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                         <button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
                                             Stop Timer
                                         </button>
@@ -333,13 +333,13 @@ require_once BASE_PATH . '/../src/views/Layouts/ViewHelpers.php';
 
                 <?php
                 // Force reload permissions from database for admin users
-                if (isset($_SESSION['user']['roles']) && in_array('admin', $_SESSION['user']['roles'])) {
+                if (isset($currentUser['roles']) && in_array('admin', $currentUser['roles'])) {
                     // For admin users, ensure they have all permissions
-                    $userId = $_SESSION['user']['profile']['id'] ?? null;
+                    $userId = $currentUser['profile']['id'] ?? null;
                     if ($userId) {
                         $userModel = new User();
                         $rolesAndPermissions = $userModel->getRolesAndPermissions($userId);
-                        $_SESSION['user']['permissions'] = $rolesAndPermissions['permissions'];
+                        $currentUser['permissions'] = $rolesAndPermissions['permissions'];
                     }
                 }
 ?>
@@ -558,7 +558,7 @@ if (!$hasAnyCreatePermission):
                                     ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -569,7 +569,7 @@ if (!$hasAnyCreatePermission):
                                                 <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -636,7 +636,7 @@ if (!empty($inProgressTasks)):
                                     ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -647,7 +647,7 @@ if (!empty($inProgressTasks)):
                                                 <?php elseif (hasUserPermission('view_time_tracking') && !isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -714,7 +714,7 @@ if (!empty($overdueTasks)):
                                     ?>
                                                     <!-- Stop Timer Button -->
                                                     <form action="/tasks/stop-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Stop Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -725,7 +725,7 @@ if (!empty($overdueTasks)):
                                                 <?php elseif (!isset($activeTimer)): // Only show start timer if no timer is running at all?>
                                                     <!-- Start Timer Button -->
                                                     <form action="/tasks/start-timer/<?= $task->id ?>" method="POST" class="inline">
-                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                                         <button type="submit" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Start Timer">
                                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -788,7 +788,7 @@ if (!empty($overdueTasks)):
                             echo "<strong>Recent Projects Debug:</strong><br>";
                             echo "• Projects count: " . count($dashboardData['recent_projects'] ?? []) . "<br>";
                             echo "• User has view_projects permission: " . (hasUserPermission('view_projects') ? 'Yes' : 'No') . "<br>";
-                            echo "• Current user ID: " . ($_SESSION['user']['profile']['id'] ?? 'Not set') . "<br>";
+                            echo "• Current user ID: " . ($currentUser['profile']['id'] ?? 'Not set') . "<br>";
                             echo "• Query filters: Projects where user is owner OR has assigned tasks<br>";
                             if (!empty($dashboardData['recent_projects'])) {
                                 echo "• First project: " . htmlspecialchars($dashboardData['recent_projects'][0]->name ?? 'No name') . "<br>";
@@ -1136,8 +1136,8 @@ if (!empty($overdueTasks)):
         // Debug logging to console
         <?php if (isset($_GET['debug'])): ?>
         console.log('🐛 Dashboard Debug Data:', {
-            user_id: <?= $_SESSION['user']['profile']['id'] ?? 'null' ?>,
-            permissions: <?= json_encode($_SESSION['user']['permissions'] ?? []) ?>,
+            user_id: <?= $currentUser['profile']['id'] ?? 'null' ?>,
+            permissions: <?= json_encode($currentUser['permissions'] ?? []) ?>,
             recent_projects: <?= json_encode($dashboardData['recent_projects'] ?? []) ?>,
             recent_tasks: <?= json_encode($dashboardData['recent_tasks'] ?? []) ?>,
             task_summary: <?= json_encode($dashboardData['task_summary'] ?? []) ?>,

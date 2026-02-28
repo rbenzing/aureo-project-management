@@ -101,7 +101,7 @@ echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo[
                     <?php if (isset($sprint->status_id) && $sprint->status_id == 1): // Planning
                         ?>
                         <form action="/sprints/start/<?= $sprint->id ?? 0 ?>" method="POST" class="inline" onsubmit="return confirm('Start this sprint? This will set it as the active sprint for the project.');">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                             <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                                 Start Sprint
                             </button>
@@ -109,7 +109,7 @@ echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo[
                     <?php elseif (isset($sprint->status_id) && $sprint->status_id == 2): // Active
                         ?>
                         <form action="/sprints/complete/<?= $sprint->id ?? 0 ?>" method="POST" class="inline" onsubmit="return confirm('Complete this sprint? This will update the sprint status to completed.');">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                                 Complete Sprint
                             </button>
@@ -132,7 +132,7 @@ echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo[
                                 <?php if (isset($sprint->status_id) && $sprint->status_id !== 3): // Not delayed
                                     ?>
                                     <form action="/sprints/delay/<?= $sprint->id ?? 0 ?>" method="POST" class="block">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                         <button
                                             type="submit"
                                             class="w-full text-left px-4 py-2 text-sm text-yellow-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -145,7 +145,7 @@ echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo[
                                 <?php if (isset($sprint->status_id) && $sprint->status_id !== 5): // Not cancelled
                                     ?>
                                     <form action="/sprints/cancel/<?= $sprint->id ?? 0 ?>" method="POST" class="block">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                         <button
                                             type="submit"
                                             class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -156,7 +156,7 @@ echo '<span class="ml-3">' . renderStatusPill($statusInfo['label'], $statusInfo[
                                 <?php endif; ?>
 
                                 <form action="/sprints/delete/<?= $sprint->id ?? 0 ?>" method="POST" class="block">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                     <button
                                         type="submit"
                                         class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"

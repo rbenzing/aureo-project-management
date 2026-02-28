@@ -17,16 +17,22 @@ use InvalidArgumentException;
  *
  * Handles sprint template management with configuration options
  */
-class SprintTemplateController
+class SprintTemplateController extends BaseController
 {
-    private AuthMiddleware $authMiddleware;
     private Template $templateModel;
     private Project $projectModel;
     private Company $companyModel;
 
-    public function __construct()
-    {
-        $this->authMiddleware = new AuthMiddleware();
+    public function __construct(
+        ?Template $templateModel = null,
+        ?Project $projectModel = null,
+        ?Company $companyModel = null
+    ) {
+        parent::__construct();
+
+        $this->templateModel = $templateModel ?? new Template();
+        $this->projectModel = $projectModel ?? new Project();
+        $this->companyModel = $companyModel ?? new Company();
         $this->templateModel = new Template();
         $this->projectModel = new Project();
         $this->companyModel = new Company();
@@ -40,7 +46,7 @@ class SprintTemplateController
     public function index(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $page = isset($data['page']) ? max(1, intval($data['page'])) : 1;
             $settingsService = \App\Services\SettingsService::getInstance();
@@ -56,12 +62,10 @@ class SprintTemplateController
             // Get projects for filter dropdown
             $projects = $this->projectModel->getAllWithDetails();
 
-            include BASE_PATH . '/../Views/SprintTemplates/index.php';
+            $this->render('SprintTemplates/index', compact('projects', 'templates', 'companyId', 'projectId', 'limit', 'settingsService', 'page'));
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading sprint templates.';
-            header('Location: /dashboard');
-            exit;
+            $this->redirectWithError(/dashboard, 'An error occurred while loading sprint templates.');
         }
     }
 
@@ -73,17 +77,15 @@ class SprintTemplateController
     public function createForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_templates');
+            $this->requirePermission('create_templates');
 
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
 
-            include BASE_PATH . '/../Views/SprintTemplates/create.php';
+            $this->render('SprintTemplates/create', compact('projects', 'templates', 'companyId', 'projectId', 'limit', 'settingsService', 'page'));
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::createForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the creation form.';
-            header('Location: /sprint-templates');
-            exit;
+            $this->redirectWithError(/sprint-templates, 'An error occurred while loading the creation form.');
         }
     }
 
@@ -101,7 +103,7 @@ class SprintTemplateController
         }
 
         try {
-            $this->authMiddleware->hasPermission('create_templates');
+            $this->requirePermission('create_templates');
 
             $validator = new Validator($data, [
                 'name' => 'required|string|max:255',
@@ -144,19 +146,14 @@ class SprintTemplateController
             // Create sprint template with configuration
             $templateId = $this->templateModel->createSprintTemplate($templateData, $configData);
 
-            $_SESSION['success'] = 'Sprint template created successfully.';
-            header('Location: /sprint-templates');
-            exit;
+            $this->redirectWithSuccess(/sprint-templates, 'Sprint template created successfully.');
         } catch (InvalidArgumentException $e) {
             $_SESSION['error'] = $e->getMessage();
             $_SESSION['form_data'] = $data;
-            header('Location: /sprint-templates/create');
-            exit;
+            $this->redirect(/sprint-templates/create);
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::create: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while creating the sprint template.';
-            header('Location: /sprint-templates/create');
-            exit;
+            $this->redirectWithError(/sprint-templates/create, 'An error occurred while creating the sprint template.');
         }
     }
 
@@ -168,7 +165,7 @@ class SprintTemplateController
     public function editForm(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('edit_templates');
+            $this->requirePermission('edit_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -186,16 +183,12 @@ class SprintTemplateController
             $companies = $this->companyModel->getAllCompanies();
             $projects = $this->projectModel->getAllWithDetails();
 
-            include BASE_PATH . '/../Views/SprintTemplates/edit.php';
+            $this->render('SprintTemplates/edit', compact('projects', 'companies', 'config'));
         } catch (InvalidArgumentException $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprint-templates');
-            exit;
+            $this->redirectWithError(/sprint-templates, $e->getMessage());
         } catch (\Exception $e) {
             error_log("Exception in SprintTemplateController::editForm: " . $e->getMessage());
-            $_SESSION['error'] = 'An error occurred while loading the edit form.';
-            header('Location: /sprint-templates');
-            exit;
+            $this->redirectWithError(/sprint-templates, 'An error occurred while loading the edit form.');
         }
     }
 
@@ -234,7 +227,7 @@ class SprintTemplateController
     public function getTemplate(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $id = filter_var($data['id'] ?? null, FILTER_VALIDATE_INT);
             if (!$id) {
@@ -275,7 +268,7 @@ class SprintTemplateController
     public function applyTemplate(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('create_sprints');
+            $this->requirePermission('create_sprints');
 
             $templateId = filter_var($data['template_id'] ?? null, FILTER_VALIDATE_INT);
             $projectId = filter_var($data['project_id'] ?? null, FILTER_VALIDATE_INT);
@@ -305,9 +298,7 @@ class SprintTemplateController
             header("Location: /sprints/create/{$projectId}?{$queryParams}");
             exit;
         } catch (\Exception $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('Location: /sprint-templates');
-            exit;
+            $this->redirectWithError(/sprint-templates, $e->getMessage());
         }
     }
 
@@ -319,7 +310,7 @@ class SprintTemplateController
     public function getTemplatesApi(string $requestMethod, array $data): void
     {
         try {
-            $this->authMiddleware->hasPermission('view_templates');
+            $this->requirePermission('view_templates');
 
             $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
             $companyId = $_SESSION['user']['company_id'] ?? null;

@@ -113,22 +113,22 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
                                     <a href="/projects/view/<?= $project->id ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                         View Details
                                     </a>
-                                    <?php if (isset($_SESSION['user']['permissions']) && in_array('edit_projects', $_SESSION['user']['permissions'])): ?>
+                                    <?php if (isset($currentUser['permissions']) && in_array('edit_projects', $currentUser['permissions'])): ?>
                                         <a href="/projects/edit/<?= $project->id ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                             Edit Project
                                         </a>
                                     <?php endif; ?>
-                                    <?php if (isset($_SESSION['user']['permissions']) && in_array('create_tasks', $_SESSION['user']['permissions'])): ?>
+                                    <?php if (isset($currentUser['permissions']) && in_array('create_tasks', $currentUser['permissions'])): ?>
                                         <a href="/tasks/create?project_id=<?= $project->id ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                             Add Task
                                         </a>
                                     <?php endif; ?>
-                                    <?php if (isset($_SESSION['user']['permissions']) && in_array('create_milestones', $_SESSION['user']['permissions'])): ?>
+                                    <?php if (isset($currentUser['permissions']) && in_array('create_milestones', $currentUser['permissions'])): ?>
                                         <a href="/milestones/create?project_id=<?= $project->id ?>" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                             Add Milestone
                                         </a>
                                     <?php endif; ?>
-                                    <?php if (isset($_SESSION['user']['permissions']) && in_array('delete_projects', $_SESSION['user']['permissions'])): ?>
+                                    <?php if (isset($currentUser['permissions']) && in_array('delete_projects', $currentUser['permissions'])): ?>
                                         <a href="#" onclick="confirmDelete(<?= $project->id ?>, '<?= htmlspecialchars(addslashes($project->name)) ?>')" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
                                             Delete Project
                                         </a>
@@ -162,7 +162,7 @@ $sortDirection = isset($_GET['dir']) && $_GET['dir'] === 'asc' ? 'asc' : 'desc';
         <p class="mt-2 text-gray-500 dark:text-gray-400">
             Get started by creating your first project or adjust your search filters.
         </p>
-        <?php if (isset($_SESSION['user']['permissions']) && in_array('create_projects', $_SESSION['user']['permissions'])): ?>
+        <?php if (isset($currentUser['permissions']) && in_array('create_projects', $currentUser['permissions'])): ?>
             <div class="mt-6">
                 <a href="/projects/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Create Project

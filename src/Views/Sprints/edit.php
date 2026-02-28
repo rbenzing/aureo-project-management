@@ -81,7 +81,7 @@ unset($_SESSION['form_data']);
             <div class="w-full lg:w-2/3">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <form id="sprint-form" action="/sprints/update/<?= htmlspecialchars((string)($sprint->id ?? '')) ?>" method="POST" class="space-y-6">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                         <input type="hidden" name="id" value="<?= htmlspecialchars((string)($sprint->id ?? '')) ?>">
 
                         <!-- Sprint Name -->
