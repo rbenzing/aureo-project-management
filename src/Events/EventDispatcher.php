@@ -89,7 +89,7 @@ class EventDispatcher
                 }
             } catch (\Exception $e) {
                 // Log error but don't stop other listeners
-                $this->logger->log('error', "Event listener error: " . $e->getMessage(), [
+                $this->logger->error("Event listener error: " . $e->getMessage(), [
                     'event' => $eventClass,
                     'listener' => is_string($listener) ? $listener : 'closure',
                 ]);

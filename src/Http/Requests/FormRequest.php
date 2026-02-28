@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Exceptions\ValidationException;
-use App\Utils\Validator;
 
 /**
  * Base Form Request Class
@@ -16,12 +15,10 @@ abstract class FormRequest
 {
     protected array $data = [];
     protected array $errors = [];
-    protected Validator $validator;
 
     public function __construct(array $data = [])
     {
         $this->data = $data;
-        $this->validator = new Validator();
     }
 
     /**
