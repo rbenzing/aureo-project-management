@@ -261,7 +261,23 @@ class Config
      */
     public static function isDebug(): bool
     {
-        return self::get('debug', false);
+        // Check config first, then fall back to APP_DEBUG env variable
+        $debug = self::get('debug', null);
+        if ($debug !== null) {
+            return (bool) $debug;
+        }
+
+        // Check APP_DEBUG environment variable directly (for tests)
+        return self::getEnvBoolean('APP_DEBUG', false);
+    }
+
+    /**
+     * Check if application is in production mode
+     * @return bool
+     */
+    public static function isProduction(): bool
+    {
+        return !self::isDebug();
     }
 
     /**
